@@ -131,6 +131,19 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
 
   const nistPhase = pmoData.nistPhase || 'Detecção';
 
+  // Progresso Global
+  const jornadaPct = total ? Math.round((counts['Feito'] || 0) / total * 100) : 0;
+  const answersData = getStorage(KEYS.answers(effectiveClientId), {});
+  const TOTAL_QUESTIONS = 29; // 5+5+9+6+4
+  const answeredQs = Object.values(answersData).flatMap(sec => Object.values(sec).filter(v => v?.trim())).length;
+  const perguntasPct = Math.round(Math.min(answeredQs, TOTAL_QUESTIONS) / TOTAL_QUESTIONS * 100);
+  const pmoDone = pmoActions.filter(a => a.status === 'Feito').length;
+  const pmoPct = pmoActions.length ? Math.round(pmoDone / pmoActions.length * 100) : 0;
+  const prazosPct = sla.status === 'critical' ? 0 : sla.status === 'warning' ? 50 : 100;
+  const globalScore = Math.round((jornadaPct + perguntasPct + pmoPct + prazosPct) / 4);
+  const scoreColor = globalScore < 40 ? 'text-red-600' : globalScore < 70 ? 'text-amber-600' : 'text-green-600';
+  const scoreFill = globalScore < 40 ? 'bg-red-500' : globalScore < 70 ? 'bg-amber-500' : 'bg-[#CAFF00]';
+
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
       <div className="p-6 md:p-10">
@@ -250,6 +263,34 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
                 <div className="text-gray-400 font-dm text-sm">Nenhum prazo definido</div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Progresso Global */}
+        <div className="border border-[#E0E0E0] p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-[#111111] text-lg uppercase tracking-tight">Progresso Geral do Incidente</h2>
+            <span className={`font-mono text-2xl font-bold ${scoreColor}`}>{globalScore}%</span>
+          </div>
+          <div className="w-full h-2.5 bg-[#E5E5E5] mb-5">
+            <div className={`h-2.5 ${scoreFill} transition-all duration-700`} style={{ width: `${globalScore}%` }} />
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: 'Jornada', pct: jornadaPct, sub: 'atividades Feito' },
+              { label: 'Perguntas', pct: perguntasPct, sub: 'perguntas respondidas' },
+              { label: 'PMO', pct: pmoPct, sub: 'ações concluídas' },
+              { label: 'Prazos', pct: prazosPct, sub: sla.status === 'critical' ? 'SLA crítico' : sla.status === 'warning' ? 'SLA em atenção' : 'todos no prazo' },
+            ].map(({ label, pct: p, sub }) => (
+              <div key={label} className="flex items-center gap-4">
+                <span className="font-mono text-xs text-[#555555] uppercase w-24 shrink-0">{label}</span>
+                <div className="flex-1 h-1.5 bg-[#E5E5E5]">
+                  <div className={`h-1.5 ${p < 40 ? 'bg-red-500' : p < 70 ? 'bg-amber-500' : 'bg-[#CAFF00]'} transition-all duration-700`} style={{ width: `${p}%` }} />
+                </div>
+                <span className="font-mono text-xs text-[#111111] w-10 text-right shrink-0">{p}%</span>
+                <span className="font-mono text-xs text-[#555555] hidden md:block">{sub}</span>
+              </div>
+            ))}
           </div>
         </div>
 

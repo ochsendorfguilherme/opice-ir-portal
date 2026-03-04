@@ -352,9 +352,41 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
 
   const KANBAN_COLS = ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'];
 
+  // Prazos críticos para barra
+  const anpdDeadline = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), 3) : null;
+  const criticalDeadlines = [
+    anpdDeadline && { label: 'Comunicação ANPD', hours: anpdDeadline.diffHours, overdue: anpdDeadline.overdue },
+  ].filter(Boolean);
+  const showDeadlineBar = criticalDeadlines.some(d => d.overdue || d.hours < 24);
+  const [deadlineBarOpen, setDeadlineBarOpen] = useState(true);
+
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
       <div className="p-6 md:p-10">
+
+        {/* Barra de prazos críticos */}
+        {showDeadlineBar && deadlineBarOpen && (
+          <div className="mb-4 border border-red-300 bg-red-50">
+            <div className="flex items-center justify-between px-4 py-2 bg-red-600">
+              <span className="font-mono text-xs text-white font-bold uppercase tracking-widest">⚖ Prazos Regulatórios Ativos</span>
+              <button onClick={() => setDeadlineBarOpen(false)} className="text-red-200 hover:text-white font-mono text-xs">Recolher ↑</button>
+            </div>
+            <div className="divide-y divide-red-100">
+              {criticalDeadlines.map((d, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-2.5">
+                  <span className="font-mono text-xs text-red-800 flex-1">{d.label}</span>
+                  <span className={`font-mono text-xs px-2 py-0.5 font-bold ${d.overdue ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'}`}>
+                    {d.overdue ? 'VENCIDO' : `Vence em ${formatSLALabel(d.hours)}`}
+                  </span>
+                  <span className={`font-mono text-xs px-2 py-0.5 ${d.overdue ? 'bg-red-700 text-white' : 'bg-amber-100 text-amber-700'}`}>
+                    {d.overdue ? '⛔ VENCIDO' : '🔴 CRÍTICO'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase mb-4">

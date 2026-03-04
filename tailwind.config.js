@@ -22,9 +22,21 @@ export default {
         }
       },
       fontFamily: {
-        syne: ['Syne', 'sans-serif'],
-        dm: ['DM Sans', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['Inter', 'monospace'],
+        display: ['Inter', 'sans-serif'],
+        syne: ['Inter', 'sans-serif'],
+        dm: ['Inter', 'sans-serif'],
+      },
+      letterSpacing: {
+        tightest: '-0.04em',
+        tighter: '-0.03em',
+        tight: '-0.02em',
+        normal: '0em',
+        wide: '0.04em',
+        wider: '0.06em',
+        widest: '0.08em',
+        label: '0.1em',
       },
       borderRadius: {
         DEFAULT: '0px',

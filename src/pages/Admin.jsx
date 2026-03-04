@@ -258,6 +258,53 @@ export default function Admin() {
           </div>
         </div>
 
+        {/* Alertas Consolidados */}
+        {(() => {
+          const alertClients = sorted.filter(c => {
+            const inf = getStorage(KEYS.info(c.id), {});
+            const cr = getStorage(KEYS.crisis(c.id, 'active'));
+            const hasCrisis = cr?.crisisActive === true && cr?.crisisStatus !== 'closed';
+            if (hasCrisis) return true;
+            if (!inf.dataConhecimento) return false;
+            const h = (Date.now() - new Date(inf.dataConhecimento).getTime()) / (1000 * 60 * 60);
+            return h >= 48;
+          });
+          const alertItems = sorted.flatMap(c => {
+            const inf = getStorage(KEYS.info(c.id), {});
+            const cr = getStorage(KEYS.crisis(c.id, 'active'));
+            const hasCrisis = cr?.crisisActive === true && cr?.crisisStatus !== 'closed';
+            const h = inf.dataConhecimento ? (Date.now() - new Date(inf.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+            const anpdResult = inf.dataConhecimento ? businessDaysRemaining(new Date(inf.dataConhecimento), 3) : null;
+            const items = [];
+            if (hasCrisis) items.push({ type: 'warroom', label: `⚡ ${c.name} — WARROOM ATIVA`, time: cr.crisisTimestamp ? `${Math.round((Date.now() - new Date(cr.crisisTimestamp)) / 3600000)}h` : '', id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
+            else if (anpdResult?.overdue) items.push({ type: 'anpd', label: `⛔ ${c.name} — PRAZO ANPD VENCIDO`, time: formatCountdown(anpdResult.diffHours), id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
+            else if (h >= 48) items.push({ type: 'sla', label: `🔴 ${c.name} — SLA Crítico`, time: `${Math.round(h)}h`, id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
+            return items;
+          });
+          return alertItems.length > 0 ? (
+            <div className="mb-8 border border-red-300 bg-white">
+              <div className="bg-red-600 px-5 py-3">
+                <span className="font-mono text-xs text-white font-bold uppercase tracking-widest">🚨 Alertas que requerem atenção imediata</span>
+              </div>
+              <div className="divide-y divide-red-100">
+                {alertItems.map((alert, i) => (
+                  <div key={i} className={`flex items-center gap-4 px-5 py-3 ${alert.color}`}>
+                    <span className="font-mono text-sm flex-1">{alert.label}</span>
+                    {alert.time && <span className="font-mono text-xs opacity-70">{alert.time}</span>}
+                    <button onClick={() => handleAccess({ id: alert.id })} className="flex items-center gap-1 font-mono text-xs bg-[#111111] text-white px-3 py-1 hover:bg-[#333] transition-colors">
+                      Acessar <ArrowRight size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8 border border-green-200 bg-green-50 px-5 py-4 flex items-center gap-3">
+              <span className="text-green-700 font-mono text-sm">✓ Todos os clientes dentro dos prazos</span>
+            </div>
+          );
+        })()}
+
         {/* Client list */}
         <h2 className="font-syne font-bold text-[#111111] text-xl uppercase mb-4">Clientes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

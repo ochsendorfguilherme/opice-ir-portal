@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
 import { QUESTION_SECTIONS } from '../data/questions';
-import { ChevronDown, ChevronUp, FileDown, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileDown, Check, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 function AutoSaveTextarea({ value, onChange, placeholder }) {
@@ -51,6 +51,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
   const [answers, setAnswers] = useState({});
   const [open, setOpen] = useState({ 1: true, 2: false, 3: false, 4: false, 5: false });
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [sentToTimeline, setSentToTimeline] = useState({});
 
   useEffect(() => {
     const stored = getStorage(KEYS.answers(effectiveClientId), {});
@@ -81,6 +82,22 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
   const progressPct = Math.round((sectionsStarted / 5) * 100);
 
   const info = getStorage(KEYS.info(effectiveClientId), {});
+
+  const sendSectionToTimeline = (sec) => {
+    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+    const timeline = pmoData.timeline || [];
+    const newEvent = {
+      id: Date.now(),
+      datetime: new Date().toISOString().slice(0, 16),
+      fase: 'Análise',
+      evento: `Coleta de informações concluída — ${sec.title}. Respondido por: ${user?.email || '—'}`,
+      fonte: user?.email || '—',
+      evidencia: `Ver Perguntas > Seção ${sec.id}`,
+    };
+    const sorted = [...timeline, newEvent].sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+    setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, timeline: sorted });
+    setSentToTimeline(prev => ({ ...prev, [sec.id]: true }));
+  };
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -217,18 +234,30 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
 
             return (
               <div key={sec.id} className="border border-[#E0E0E0]">
-                <button
-                  onClick={() => setOpen(prev => ({ ...prev, [sec.id]: !prev[sec.id] }))}
-                  className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${complete ? 'bg-[#CAFF00]' : 'bg-white hover:bg-gray-50'}`}
-                >
-                  <span className={`font-syne font-bold uppercase text-sm flex-1 ${complete ? 'text-[#111111]' : 'text-[#111111]'}`}>
-                    {sec.title}
-                  </span>
-                  <span className={`font-mono text-xs px-2 py-0.5 border ${complete ? 'bg-[#111111] text-[#CAFF00] border-[#111111]' : answered > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                    {answered}/{total}
-                  </span>
-                  {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
+                <div className={`flex items-center ${complete ? 'bg-[#CAFF00]' : 'bg-white hover:bg-gray-50'} transition-colors`}>
+                  <button
+                    onClick={() => setOpen(prev => ({ ...prev, [sec.id]: !prev[sec.id] }))}
+                    className="flex items-center gap-4 px-5 py-4 text-left flex-1"
+                  >
+                    <span className="font-bold uppercase text-sm flex-1 text-[#111111]">
+                      {sec.title}
+                    </span>
+                    <span className={`font-mono text-xs px-2 py-0.5 border ${complete ? 'bg-[#111111] text-[#CAFF00] border-[#111111]' : answered > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                      {answered}/{total}
+                    </span>
+                    {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  {complete && (
+                    <button
+                      onClick={e => { e.stopPropagation(); sendSectionToTimeline(sec); }}
+                      disabled={sentToTimeline[sec.id]}
+                      className={`shrink-0 flex items-center gap-1.5 mr-3 px-3 py-1.5 font-mono text-xs transition-colors ${sentToTimeline[sec.id] ? 'bg-green-100 text-green-700' : 'bg-[#111111] text-white hover:bg-[#333]'}`}
+                      title="Enviar para Timeline PMO"
+                    >
+                      {sentToTimeline[sec.id] ? <><Check size={11} /> Enviado</> : <><Send size={11} /> Timeline PMO</>}
+                    </button>
+                  )}
+                </div>
 
                 {isOpen && (
                   <div className="p-5 space-y-5 bg-white">

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getStorage, setStorage, KEYS } from '../../utils/storage';
 import { useSLATimer } from '../../hooks/useSLA';
 import { businessDaysRemaining, formatCountdown } from '../../utils/businessDays';
-import { Clock, Shield, AlertTriangle, CheckSquare, Copy } from 'lucide-react';
+import { Clock, Shield, AlertTriangle, CheckSquare, Copy, Info, ExternalLink } from 'lucide-react';
 
 const NIST_PHASES = ['Detecção', 'Análise', 'Contenção', 'Erradicação', 'Recuperação'];
 const STATUSES_GLOBAL = ['CRÍTICO', 'ALTO', 'MÉDIO', 'CONTIDO', 'ERRADICADO'];
@@ -25,7 +26,8 @@ const POST_CHECKLIST = [
   'Simulação agendada',
 ];
 
-export default function TabDashboard({ effectiveClientId }) {
+export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
+  const navigate = useNavigate();
   const [data, setData] = useState({});
   const [info, setInfo] = useState({});
   const [anpdDays, setAnpdDays] = useState(3);
@@ -74,8 +76,56 @@ export default function TabDashboard({ effectiveClientId }) {
   const inputClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full";
   const taClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full resize-none";
 
+  const infoPath = isAdmin ? `/admin/cliente/${effectiveClientId}/informacoes` : '/informacoes';
+  const infoFilled = !!(info.nomeCliente);
+
   return (
     <div className="space-y-6">
+      {/* Card 0 — Contexto do Incidente */}
+      {infoFilled ? (
+        <div className="border border-[#E0E0E0] p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={14} className="text-[#555555]" />
+            <h3 className="font-mono text-xs text-[#555555] uppercase font-semibold tracking-widest">Contexto do Incidente</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Cliente</div>
+              <div className="font-medium text-[#111111]">{info.nomeCliente || '—'}</div>
+            </div>
+            <div>
+              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Data do Incidente</div>
+              <div className="font-medium text-[#111111]">{info.dataIncidente || '—'}</div>
+            </div>
+            <div>
+              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Conhecimento (UTC)</div>
+              <div className="font-medium text-[#111111]">{info.dataConhecimento ? new Date(info.dataConhecimento).toLocaleString('pt-BR') : '—'}</div>
+            </div>
+            <div>
+              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Agente</div>
+              <div className="font-medium text-[#111111]">{info.agente || '—'}</div>
+            </div>
+          </div>
+          {info.contexto && (
+            <div className="mt-3 pt-3 border-t border-[#E0E0E0]">
+              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Contexto Geral</div>
+              <p className="text-sm text-[#333] line-clamp-2">{info.contexto}</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="border border-amber-300 bg-amber-50 p-4 flex items-center gap-3">
+          <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+          <span className="text-amber-800 text-sm">Informações do incidente não preenchidas.</span>
+          <button
+            onClick={() => navigate(infoPath)}
+            className="ml-auto flex items-center gap-1 text-amber-700 font-mono text-xs underline hover:no-underline"
+          >
+            <ExternalLink size={11} /> Preencher Informações
+          </button>
+        </div>
+      )}
+
       {/* Card 1 — Status + Tempo */}
       <div className="bg-[#111111] p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
