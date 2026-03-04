@@ -66,19 +66,16 @@ const EMPTY_FORM = {
 
 // ─── Template Generator ───────────────────────────────────────────────────────
 
-function buildMeiosList(meios, outro, outroCampo) {
-  const list = [...meios];
-  if (meios.includes('Outro') && outroCampo?.trim()) {
-    const idx = list.indexOf('Outro');
-    list[idx] = outroCampo.trim();
-  }
-  return list.join(', ') || '[não informado]';
+function buildMeiosList(meios, outroCampo) {
+  if (!Array.isArray(meios) || meios.length === 0) return '[não informado]';
+  const list = meios.map(m => (m === 'Outro' && outroCampo?.trim()) ? outroCampo.trim() : m);
+  return list.join(', ');
 }
 
 function generateTemplate(f, nomeEmpresa) {
   const prazo = f.agente_pequeno_porte ? 6 : 3;
-  const meiosDiretos = buildMeiosList(f.meios_diretos, f.meios_diretos.includes('Outro'), f.meios_diretos_outro);
-  const meiosDivulgacao = buildMeiosList(f.meios_divulgacao, f.meios_divulgacao.includes('Outro'), f.meios_divulgacao_outro);
+  const meiosDiretos = buildMeiosList(f.meios_diretos, f.meios_diretos_outro);
+  const meiosDivulgacao = buildMeiosList(f.meios_divulgacao, f.meios_divulgacao_outro);
   const isDireta = f.forma_comunicacao === 'Direta e individualizada';
 
   let formaTexto = '';
@@ -263,27 +260,27 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
   useEffect(() => {
     if (!effectiveClientId) return;
     const anpdData = getStorage(storageKey, {});
-    if (anpdData.comunicacaoTitulares) {
-      setForm({ ...EMPTY_FORM, ...anpdData.comunicacaoTitulares });
-    }
+    const saved = anpdData.comunicacaoTitulares || {};
     const info = getStorage(KEYS.info(effectiveClientId), {});
     setNomeEmpresa(info.nomeCliente || '');
-    // Seed data_conhecimento from incident info if not set
-    setForm(f => ({
-      ...f,
-      data_conhecimento: f.data_conhecimento || info.dataConhecimento || '',
-      ...(anpdData.comunicacaoTitulares || {}),
-    }));
+    setForm({
+      ...EMPTY_FORM,
+      data_conhecimento: info.dataConhecimento || '',
+      ...saved,
+      // garantir que arrays sejam sempre arrays mesmo com dados corrompidos
+      meios_diretos: Array.isArray(saved.meios_diretos) ? saved.meios_diretos : [],
+      meios_divulgacao: Array.isArray(saved.meios_divulgacao) ? saved.meios_divulgacao : [],
+    });
   }, [effectiveClientId]);
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
-  // Computed: meios auto-fill (sem useEffect para evitar loop)
+  // Computed: meios auto-fill
   const meiosAutoFill = (() => {
     const isDireta = form.forma_comunicacao === 'Direta e individualizada';
-    const meios = isDireta ? form.meios_diretos : form.meios_divulgacao;
-    const outro = isDireta ? form.meios_diretos_outro : form.meios_divulgacao_outro;
-    const txt = buildMeiosList(meios, meios.includes('Outro'), outro);
+    const txt = isDireta
+      ? buildMeiosList(form.meios_diretos, form.meios_diretos_outro)
+      : buildMeiosList(form.meios_divulgacao, form.meios_divulgacao_outro);
     return txt === '[não informado]' ? '' : txt;
   })();
 

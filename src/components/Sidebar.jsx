@@ -188,8 +188,9 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
               <NavLink
                 to={`${basePath}/anpd`}
+                end
                 onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/anpd`) ? 'active' : ''}`}
               >
                 <Scale size={16} />
                 <span className="flex-1">ANPD</span>
