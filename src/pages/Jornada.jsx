@@ -8,10 +8,23 @@ import { useSLATimer, getSLAStatus, calcSLAHours, formatSLALabel } from '../hook
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
 import {
   Clock, AlertTriangle, Scale, ChevronDown, X, Save,
-  Columns, List, Zap, Shield
+  Columns, List, Zap, Shield, Filter
 } from 'lucide-react';
 
 const STATUSES = ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'];
+
+const TABLE_COLUMNS = [
+  { h: '#',                   key: 'id',          type: 'text' },
+  { h: 'ATIVIDADE',           key: 'nome',        type: 'text' },
+  { h: 'STATUS',              key: 'status',      type: 'select', options: ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'] },
+  { h: 'SLA',                 key: null,          type: null },
+  { h: 'ETAPA',               key: 'etapa',       type: 'select', options: ['Etapa 1', 'Etapa 2', 'Etapa 3'] },
+  { h: 'RESPONSÁVEL',         key: 'responsavel', type: 'text' },
+  { h: 'DATA INÍCIO',         key: 'dataInicio',  type: 'date' },
+  { h: 'DATA FIM',            key: 'dataFim',     type: 'date' },
+  { h: 'OBSERVAÇÕES CLIENTE', key: 'observacoes', type: 'text' },
+  { h: 'FUNDAMENTO',          key: 'fundamento',  type: 'text' },
+];
 
 const STATUS_STYLE = {
   'Feito': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
@@ -269,8 +282,8 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const [slaConfig, setSlaConfig] = useState({});
   const [crisis, setCrisis] = useState(null);
   const [view, setView] = useState('table');
-  const [etapaFilter, setEtapaFilter] = useState('Todas');
-  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [colFilters, setColFilters] = useState({});
+  const [activeFilterCol, setActiveFilterCol] = useState(null);
   const [selected, setSelected] = useState(null);
   const [flashRow, setFlashRow] = useState(null);
 
@@ -303,10 +316,27 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   };
 
   const filtered = activities.filter(a => {
-    if (etapaFilter !== 'Todas' && a.etapa !== etapaFilter) return false;
-    if (statusFilter !== 'Todos' && a.status !== statusFilter) return false;
+    for (const col of TABLE_COLUMNS) {
+      if (!col.key || !col.type) continue;
+      const val = colFilters[col.key];
+      if (!val) continue;
+      const field = String(a[col.key] || '').toLowerCase();
+      if (col.type === 'select') {
+        if (field !== val.toLowerCase()) return false;
+      } else if (col.type === 'date') {
+        if (a[col.key] !== val) return false;
+      } else {
+        if (!field.includes(val.toLowerCase())) return false;
+      }
+    }
     return true;
   });
+
+  useEffect(() => {
+    const handler = () => setActiveFilterCol(null);
+    if (activeFilterCol) document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [activeFilterCol]);
 
   const total = activities.length;
   const done = activities.filter(a => a.status === 'Feito').length;
@@ -362,28 +392,15 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
               </button>
             </div>
 
-            {/* Etapa filter tabs */}
-            <div className="flex border border-[#E0E0E0]">
-              {['Todas', 'Etapa 1', 'Etapa 2', 'Etapa 3'].map(e => (
-                <button
-                  key={e}
-                  onClick={() => setEtapaFilter(e)}
-                  className={`px-3 py-2 font-mono text-xs transition-colors ${etapaFilter === e ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-
-            {/* Status filter */}
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="border border-[#E0E0E0] px-3 py-2 font-mono text-xs bg-white focus:outline-none"
-            >
-              <option>Todos</option>
-              {STATUSES.map(s => <option key={s}>{s}</option>)}
-            </select>
+            {/* Active filters indicator */}
+            {Object.values(colFilters).some(v => v) && (
+              <button
+                onClick={() => setColFilters({})}
+                className="flex items-center gap-1.5 px-3 py-2 font-mono text-xs border border-[#CAFF00] bg-[#CAFF00] text-[#111111] hover:bg-lime-300 transition-colors"
+              >
+                <Filter size={11} /> Limpar filtros
+              </button>
+            )}
           </div>
         </div>
 
@@ -393,9 +410,62 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
             <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="bg-[#111111]">
-                  {['#', 'ATIVIDADE', 'STATUS', 'SLA', 'ETAPA', 'RESPONSÁVEL', 'OBSERVAÇÕES CLIENTE', 'FUNDAMENTO'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left font-mono text-xs text-white uppercase whitespace-nowrap">{h}</th>
-                  ))}
+                  {TABLE_COLUMNS.map(col => {
+                    const hasFilter = col.type != null;
+                    const isActive = !!(col.key && colFilters[col.key]);
+                    const isOpen = activeFilterCol === col.key;
+                    return (
+                      <th key={col.h} className="px-4 py-3 text-left font-mono text-xs text-white uppercase whitespace-nowrap relative">
+                        <div className="flex items-center gap-1.5">
+                          <span>{col.h}</span>
+                          {hasFilter && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setActiveFilterCol(isOpen ? null : col.key); }}
+                              className={`p-0.5 rounded transition-colors ${isActive ? 'text-[#CAFF00]' : 'text-gray-400 hover:text-white'}`}
+                              title="Filtrar coluna"
+                            >
+                              <Filter size={10} />
+                            </button>
+                          )}
+                        </div>
+                        {isOpen && hasFilter && (
+                          <div
+                            className="absolute top-full left-0 z-50 mt-1 bg-white border border-gray-200 rounded shadow-lg p-2 min-w-[160px]"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {col.type === 'select' ? (
+                              <select
+                                autoFocus
+                                value={colFilters[col.key] || ''}
+                                onChange={e => setColFilters(f => ({ ...f, [col.key]: e.target.value }))}
+                                className="w-full text-xs font-mono text-[#111111] border border-gray-200 rounded px-2 py-1"
+                              >
+                                <option value="">Todos</option>
+                                {col.options.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            ) : (
+                              <input
+                                autoFocus
+                                type={col.type === 'date' ? 'date' : 'text'}
+                                value={colFilters[col.key] || ''}
+                                onChange={e => setColFilters(f => ({ ...f, [col.key]: e.target.value }))}
+                                placeholder="Filtrar..."
+                                className="w-full text-xs font-mono text-[#111111] border border-gray-200 rounded px-2 py-1"
+                              />
+                            )}
+                            {colFilters[col.key] && (
+                              <button
+                                onClick={() => setColFilters(f => { const n = { ...f }; delete n[col.key]; return n; })}
+                                className="mt-1 text-xs text-red-500 hover:text-red-700 w-full text-left"
+                              >
+                                Limpar filtro
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -434,6 +504,12 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">{a.etapa}</td>
                       <td className="px-4 py-3 font-dm text-xs text-[#555555]">{a.responsavel || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">
+                        {a.dataInicio ? new Date(a.dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">
+                        {a.dataFim ? new Date(a.dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                      </td>
                       <td className="px-4 py-3 font-dm text-xs text-[#555555] max-w-[150px]">
                         <span className="line-clamp-2">{a.observacoes || '—'}</span>
                       </td>
