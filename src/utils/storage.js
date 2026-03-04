@@ -8,6 +8,10 @@ export const KEYS = {
   slaConfig: (id) => `opice_ir_sla_config_${id}`,
   crisis: (id, actId) => `opice_ir_crisis_${id}_${actId}`,
   notifications: (id) => `opice_ir_notifications_${id}`,
+  meetings: (id) => `opice_ir_meetings_${id}`,
+  anpd: (id) => `opice_ir_anpd_${id}`,
+  mfaVerified: (email) => `opice_ir_mfa_verified_${email}`,
+  welcomeShown: (clientId) => `opice_ir_welcome_shown_${clientId}`,
 };
 
 export function getStorage(key, fallback = null) {

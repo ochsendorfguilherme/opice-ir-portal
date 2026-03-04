@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, GitBranch, HelpCircle, Info, BarChart3, Shield, LogOut, Lock, AlertTriangle, CheckCircle, Menu, X, Zap, Video } from 'lucide-react';
+import { LayoutDashboard, GitBranch, HelpCircle, Info, BarChart3, Shield, LogOut, Lock, AlertTriangle, CheckCircle, X, Zap, BookOpen, Scale } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, KEYS } from '../utils/storage';
 import { useState, useEffect } from 'react';
@@ -17,6 +17,8 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
   const location = useLocation();
   const [crisisActive, setCrisisActive] = useState(false);
   const [pmoAlerts, setPmoAlerts] = useState(0);
+  const [activeMeeting, setActiveMeeting] = useState(false);
+  const [anpdNeedsSEI, setAnpdNeedsSEI] = useState(false);
 
   const effectiveClientId = clientId || user?.clientId;
   const basePath = isAdmin && clientId ? `/admin/cliente/${clientId}` : '';
@@ -35,6 +37,16 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
       return blocked || overdue;
     }).length;
     setPmoAlerts(alerts);
+
+    // Check for active meetings
+    const meetings = getStorage(KEYS.meetings(effectiveClientId), []);
+    setActiveMeeting(meetings.some(m => m.status === 'Em andamento'));
+
+    // Check for ANPD process without SEI number
+    const anpdData = getStorage(KEYS.anpd(effectiveClientId), {});
+    const processo = anpdData.processo || {};
+    const hasAnpdData = Object.keys(processo).length > 0;
+    setAnpdNeedsSEI(hasAnpdData && !processo.numeroProcesso);
   }, [effectiveClientId, location.pathname]);
 
   const getOnboardingStatus = () => {
@@ -59,13 +71,6 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
     logout();
     navigate('/login');
   };
-
-  const navItems = [
-    { path: `${basePath}/dashboard`, label: 'Dashboard', icon: LayoutDashboard, stepKey: null },
-    { path: `${basePath}/jornada`, label: 'Jornada do Incidente', icon: GitBranch, stepKey: 'jornada' },
-    { path: `${basePath}/perguntas`, label: 'Perguntas', icon: HelpCircle, stepKey: 'perguntas' },
-    { path: `${basePath}/informacoes`, label: 'Informações do Incidente', icon: Info, stepKey: 'info' },
-  ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -96,29 +101,81 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto">
-        {navItems.map(({ path, label, icon: Icon, stepKey }) => (
-          <NavLink
-            key={path}
-            to={path}
-            onClick={onClose}
-            className={({ isActive: active }) =>
-              `sidebar-link ${active || isActive(path) ? 'active' : ''}`
-            }
-          >
-            <Icon size={16} />
-            <span className="flex-1">{label}</span>
-            {stepKey && <StepIcon status={onb[stepKey]} />}
-          </NavLink>
-        ))}
+        {/* Dashboard */}
+        <NavLink
+          to={`${basePath}/dashboard`}
+          onClick={onClose}
+          className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/dashboard`) ? 'active' : ''}`}
+        >
+          <LayoutDashboard size={16} />
+          <span className="flex-1">Dashboard</span>
+        </NavLink>
+
+        {/* Jornada */}
+        <NavLink
+          to={`${basePath}/jornada`}
+          onClick={onClose}
+          className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/jornada`) ? 'active' : ''}`}
+        >
+          <GitBranch size={16} />
+          <span className="flex-1">Jornada do Incidente</span>
+          <StepIcon status={onb.jornada} />
+        </NavLink>
+
+        {/* Perguntas */}
+        <NavLink
+          to={`${basePath}/perguntas`}
+          onClick={onClose}
+          className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+        >
+          <HelpCircle size={16} />
+          <span className="flex-1">Perguntas</span>
+          <StepIcon status={onb.perguntas} />
+        </NavLink>
+
+        {/* Informações */}
+        <NavLink
+          to={`${basePath}/informacoes`}
+          onClick={onClose}
+          className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+        >
+          <Info size={16} />
+          <span className="flex-1">Informações do Incidente</span>
+          <StepIcon status={onb.info} />
+        </NavLink>
+
+        {/* Reuniões */}
+        <NavLink
+          to={`${basePath}/reunioes`}
+          onClick={onClose}
+          className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/reunioes`) ? 'active' : ''}`}
+        >
+          <BookOpen size={16} />
+          <span className="flex-1">Reuniões</span>
+          {activeMeeting && (
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Reunião em andamento" />
+          )}
+        </NavLink>
+
+        {/* ANPD */}
+        <NavLink
+          to={`${basePath}/anpd`}
+          onClick={onClose}
+          className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+        >
+          <Scale size={16} />
+          <span className="flex-1">ANPD</span>
+          {anpdNeedsSEI && (
+            <span className="font-mono text-[10px] bg-amber-500 text-white px-1.5 py-0.5">SEI</span>
+          )}
+        </NavLink>
 
         {/* PMO */}
         <div>
           <NavLink
             to={`${basePath}/pmo`}
             onClick={onClose}
-            className={({ isActive: active }) =>
-              `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`
-            }
+            className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}
           >
             <BarChart3 size={16} />
             <span className="flex-1">PMO</span>
@@ -131,9 +188,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
           <NavLink
             to={`${basePath}/pmo/warroom`}
             onClick={onClose}
-            className={({ isActive: active }) =>
-              `sidebar-link pl-10 ${active ? 'active' : ''}`
-            }
+            className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
           >
             {crisisActive ? (
               <Zap size={14} className="text-red-400 animate-pulse" />
@@ -153,9 +208,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
           <NavLink
             to="/admin"
             onClick={onClose}
-            className={({ isActive: active }) =>
-              `sidebar-link ${active ? 'active' : ''}`
-            }
+            className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
           >
             <Shield size={16} />
             <span className="flex-1">Painel Admin</span>

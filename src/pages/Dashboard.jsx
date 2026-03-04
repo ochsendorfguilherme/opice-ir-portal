@@ -6,7 +6,8 @@ import { getStorage, setStorage, KEYS } from '../utils/storage';
 import { DEFAULT_ACTIVITIES } from '../data/activities';
 import { useSLATimer } from '../hooks/useSLA';
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
-import { Clock, AlertTriangle, Shield, Zap, BarChart2, Activity } from 'lucide-react';
+import { Clock, AlertTriangle, Shield, Zap, Scale, ExternalLink } from 'lucide-react';
+import WelcomeModal from '../components/WelcomeModal';
 
 const STATUS_MAP = {
   'Feito': { color: '#22C55E', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
@@ -89,6 +90,7 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
   const [activities, setActivities] = useState([]);
   const [info, setInfo] = useState({});
   const [crisis, setCrisis] = useState(null);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     const stored = getStorage(KEYS.activities(effectiveClientId));
@@ -101,6 +103,10 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
     setInfo(getStorage(KEYS.info(effectiveClientId), {}));
     const c = getStorage(KEYS.crisis(effectiveClientId, 'active'));
     setCrisis(c?.crisisActive === true && c?.crisisStatus !== 'closed' ? c : null);
+    // Welcome modal: show only for clients on first load
+    if (user?.role === 'client' && !getStorage(KEYS.welcomeShown(effectiveClientId))) {
+      setShowWelcome(true);
+    }
   }, [effectiveClientId]);
 
   const sla = useSLATimer(info.dataConhecimento || null);
@@ -266,6 +272,53 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
           </div>
         </div>
 
+        {/* ANPD Card */}
+        {(() => {
+          const anpdData = getStorage(KEYS.anpd(effectiveClientId), {});
+          const processo = anpdData.processo || {};
+          const hasProcess = !!processo.numeroProcesso;
+          const hasAnpdData = Object.keys(processo).length > 0;
+          const nextDeadline = info.dataConhecimento
+            ? businessDaysRemaining(new Date(info.dataConhecimento), 3)
+            : null;
+          return (
+            <div className={`border p-5 mb-8 flex items-center gap-5 ${!hasProcess && hasAnpdData ? 'border-amber-300 bg-amber-50' : 'border-[#E0E0E0] bg-white'}`}>
+              <div className="flex items-center gap-2 shrink-0">
+                <Scale size={20} className={!hasProcess && hasAnpdData ? 'text-amber-600' : 'text-[#555555]'} />
+                <span className="font-mono text-xs text-[#555555] uppercase font-medium">ANPD</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                {hasProcess ? (
+                  <div className="flex flex-wrap gap-4 items-center">
+                    <span className="font-mono text-xs text-[#111111]">Processo: <strong>{processo.numeroProcesso}</strong></span>
+                    <span className={`font-mono text-xs px-2 py-0.5 border ${
+                      processo.statusComunicacao === 'Arquivado' ? 'bg-green-50 text-green-700 border-green-200' :
+                      processo.statusComunicacao === 'Em análise pela ANPD' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}>{processo.statusComunicacao || 'Não comunicado'}</span>
+                    {nextDeadline && !nextDeadline.overdue && (
+                      <span className="font-mono text-xs text-[#555555]">Prazo: {formatCountdown(nextDeadline.diffHours)}</span>
+                    )}
+                    {nextDeadline?.overdue && (
+                      <span className="font-mono text-xs text-red-700 font-bold">⛔ PRAZO VENCIDO</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="font-dm text-sm text-amber-700">
+                    {hasAnpdData ? 'Processo ANPD sem número SEI — preencher urgente' : 'Processo ANPD não iniciado'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/anpd` : '/anpd')}
+                className="flex items-center gap-1 font-mono text-xs text-[#111111] border border-[#E0E0E0] px-3 py-1.5 hover:bg-gray-50 transition-colors shrink-0"
+              >
+                <ExternalLink size={11} /> Ver ANPD
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Progresso Global */}
         <div className="border border-[#E0E0E0] p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -317,6 +370,14 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
           </div>
         </div>
       </div>
+
+      {showWelcome && !isAdmin && (
+        <WelcomeModal
+          clientId={effectiveClientId}
+          clientName={info.nomeCliente}
+          onClose={() => setShowWelcome(false)}
+        />
+      )}
     </Layout>
   );
 }

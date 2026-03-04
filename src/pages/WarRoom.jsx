@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
+import { CrisisHistory } from '../components/CrisisHistory';
 import { getStorage, setStorage, KEYS, generateId, generateHash, addNotification } from '../utils/storage';
 import { formatSLALabel, calcSLAHours } from '../hooks/useSLA';
 import {
@@ -562,10 +563,8 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
               🚨 Declarar Crise
             </button>
 
-            {/* Historical crises */}
-            <div className="w-full max-w-2xl mt-16 pt-8 border-t border-[#E0E0E0]">
-              <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-3">Histórico de Crises Anteriores</h3>
-              <div className="text-gray-400 font-dm text-sm">Nenhuma crise anterior registrada</div>
+            <div className="w-full max-w-2xl mt-16">
+              <CrisisHistory clientId={effectiveClientId} />
             </div>
           </div>
         ) : (

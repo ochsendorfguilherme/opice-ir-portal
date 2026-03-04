@@ -8,7 +8,7 @@ import { useSLATimer, getSLAStatus, calcSLAHours, formatSLALabel } from '../hook
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
 import {
   Clock, AlertTriangle, Scale, ChevronDown, X, Save,
-  Columns, List, Zap, Shield, Filter, ExternalLink, MessageSquare
+  Columns, List, Zap, Shield, Filter, ExternalLink, MessageSquare, GitBranch
 } from 'lucide-react';
 
 const STATUSES = ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'];
@@ -328,6 +328,16 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
               )}
             </div>
 
+            {/* ANPD link for regulatory activities */}
+            {[13, 14, 15, 16, 23, 24].includes(activity.id) && (
+              <button
+                onClick={() => window.location.href = '/anpd'}
+                className="w-full flex items-center gap-2 border border-[#E0E0E0] px-4 py-2.5 font-mono text-xs text-blue-700 hover:bg-blue-50 transition-colors"
+              >
+                <Scale size={13} /> Ver no ANPD → (Atividade vinculada ao processo regulatório)
+              </button>
+            )}
+
             {/* ANPD vinculado */}
             {activity.anpdVinculado && dataConhecimento && (
               <div className="border border-amber-200 bg-amber-50 p-3">
@@ -440,7 +450,7 @@ function KanbanCard({ activity, onClick, dataConhecimento, slaConfig, crisis }) 
   );
 }
 
-export default function Jornada({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack }) {
+export default function Jornada({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack, defaultView = 'table' }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
@@ -450,7 +460,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const [info, setInfo] = useState({});
   const [slaConfig, setSlaConfig] = useState({});
   const [crisis, setCrisis] = useState(null);
-  const [view, setView] = useState('table');
+  const [view, setView] = useState(defaultView);
   const [colFilters, setColFilters] = useState({});
   const [activeFilterCol, setActiveFilterCol] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -597,6 +607,12 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                 className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'kanban' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
               >
                 <Columns size={13} /> Kanban
+              </button>
+              <button
+                onClick={() => setView('timeline')}
+                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'timeline' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
+              >
+                <GitBranch size={13} /> Timeline
               </button>
             </div>
 
@@ -781,6 +797,115 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
           </div>
         )}
       </div>
+
+        {/* TIMELINE VIEW */}
+        {view === 'timeline' && (
+          <div>
+            {/* Progress bar */}
+            <div className="mb-6 border border-[#E0E0E0] p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-mono text-xs text-[#555555] uppercase">Progresso da Jornada</span>
+                <span className="font-mono text-xs font-bold text-[#111111]">{pct}%</span>
+              </div>
+              <div className="relative w-full h-2 bg-[#E5E5E5]">
+                <div className="h-2 bg-[#CAFF00] transition-all duration-700" style={{ width: `${pct}%` }} />
+                {['Etapa 1', 'Etapa 2', 'Etapa 3'].map((stage, i) => {
+                  const stageActs = activities.filter(a => a.etapa === stage);
+                  const stageOffset = activities.filter(a => a.etapa !== stage && activities.findIndex(x => x.etapa === stage) > activities.findIndex(x => x.etapa === a.etapa)).length;
+                  const stagePct = Math.round(activities.findIndex(a => a.etapa === stage) / activities.length * 100);
+                  return (
+                    <div key={i} className="absolute top-4 transform -translate-x-1/2 font-mono text-[10px] text-[#555555]" style={{ left: `${stagePct}%` }}>
+                      {stage}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="relative">
+              {/* Central line */}
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#E5E5E5]" />
+
+              {['Etapa 1', 'Etapa 2', 'Etapa 3'].map(stage => {
+                const stageActs = filtered.filter(a => a.etapa === stage);
+                if (stageActs.length === 0) return null;
+                return (
+                  <div key={stage} className="mb-2">
+                    {/* Stage separator */}
+                    <div className="relative flex items-center mb-4 ml-0">
+                      <div className="z-10 w-12 h-12 bg-[#111111] flex items-center justify-center shrink-0">
+                        <span className="font-mono text-[#CAFF00] text-[10px] font-bold">{stage.replace('Etapa ', 'E')}</span>
+                      </div>
+                      <div className="ml-4 bg-[#111111] px-4 py-2">
+                        <span className="font-mono text-white text-xs uppercase">{stage}</span>
+                      </div>
+                    </div>
+
+                    {stageActs.map(a => {
+                      const s = STATUS_STYLE[a.status] || STATUS_STYLE['Planejado'];
+                      const isAnpd = [13, 14, 15, 16, 23, 24].includes(a.id);
+                      const linkedPMO = pmoActions.find(p => p.jornadaId === a.id);
+                      const isPMOBlocked = linkedPMO?.status === 'Bloqueado';
+
+                      return (
+                        <div key={a.id} className="relative flex items-start mb-3 pl-0">
+                          {/* Node dot */}
+                          <div className={`z-10 w-12 flex items-center justify-center shrink-0 pt-3`}>
+                            <div className={`w-3.5 h-3.5 rounded-full border-2 border-white ${s.dot}`} />
+                          </div>
+
+                          {/* Card */}
+                          <div
+                            className={`ml-4 flex-1 border cursor-pointer hover:shadow-md transition-shadow p-4 ${
+                              a.status === 'Feito' ? 'border-green-200 bg-green-50/30' :
+                              a.status === 'Em andamento' ? 'border-amber-200 bg-amber-50/30' :
+                              'border-[#E0E0E0] bg-white'
+                            }`}
+                            onClick={() => setSelected(a)}
+                          >
+                            <div className="flex items-start gap-3 flex-wrap">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-mono text-xs text-[#555555]">#{a.id}</span>
+                                  <span className="font-dm text-sm text-[#111111] font-medium">{a.nome}</span>
+                                  {isAnpd && <Scale size={12} className="text-amber-500 shrink-0" title="Vinculado ao processo ANPD" />}
+                                  {crisis && <span className="font-mono text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5">⚡ WARROOM</span>}
+                                  {isPMOBlocked && <AlertTriangle size={11} className="text-red-500" title="Ação bloqueada no PMO" />}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                  <span className={`font-mono text-xs px-2 py-0.5 border ${s.bg} ${s.text} ${s.border}`}>{a.status}</span>
+                                  {a.dataInicio || a.dataFim ? (
+                                    <span className="font-mono text-xs text-[#555555]">
+                                      {a.dataInicio ? new Date(a.dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                                      {' → '}
+                                      {a.dataFim ? new Date(a.dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '?'}
+                                    </span>
+                                  ) : (
+                                    <span className="font-mono text-xs text-gray-400">— → —</span>
+                                  )}
+                                  {a.responsavel && <span className="font-dm text-xs text-[#555555]">{a.responsavel}</span>}
+                                </div>
+                                {isAnpd && info.dataConhecimento && (
+                                  <div className="mt-1.5 flex items-center gap-1">
+                                    <Scale size={11} className="text-amber-500" />
+                                    <span className="font-mono text-xs text-amber-700">
+                                      {formatCountdown(businessDaysRemaining(new Date(info.dataConhecimento), 3).diffHours)} restantes
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       {/* Slide-over */}
       {selected && (
