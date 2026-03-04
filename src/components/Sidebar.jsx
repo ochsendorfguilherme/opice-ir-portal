@@ -16,6 +16,7 @@ import {
   X,
   Users,
   MessageSquare,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, KEYS } from '../utils/storage';
@@ -206,6 +207,15 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
               >
                 <MessageSquare size={14} />
                 <span className="flex-1 text-xs">Comunicação (Titulares)</span>
+              </NavLink>
+
+              <NavLink
+                to={`${basePath}/anpd/registro-incidente`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
+              >
+                <FileText size={14} />
+                <span className="flex-1 text-xs">Registro (Art. 10)</span>
               </NavLink>
 
               <NavLink

@@ -12,6 +12,7 @@ import WarRoom from './pages/WarRoom';
 import Admin from './pages/Admin';
 import ANPD from './pages/ANPD';
 import ANPDComunicacaoTitulares from './pages/ANPDComunicacaoTitulares';
+import ANPDRegistroIncidente from './pages/ANPDRegistroIncidente';
 import Reunioes from './pages/Reunioes';
 import ReuniaoDetalhe from './pages/ReuniaoDetalhe';
 import MFAPage from './pages/MFAPage';
@@ -103,6 +104,7 @@ export default function App() {
           <Route path="/pmo/warroom" element={<ProtectedRoute><WarRoom /></ProtectedRoute>} />
           <Route path="/anpd" element={<ProtectedRoute><ANPD /></ProtectedRoute>} />
           <Route path="/anpd/comunicacao-titulares" element={<ProtectedRoute><ANPDComunicacaoTitulares /></ProtectedRoute>} />
+          <Route path="/anpd/registro-incidente" element={<ProtectedRoute><ANPDRegistroIncidente /></ProtectedRoute>} />
           <Route path="/reunioes" element={<ProtectedRoute><Reunioes /></ProtectedRoute>} />
           <Route path="/reunioes/:meetingId" element={<ProtectedRoute><ReuniaoDetalhe /></ProtectedRoute>} />
 
@@ -117,6 +119,7 @@ export default function App() {
           <Route path="/admin/cliente/:clientId/pmo/warroom" element={<AdminRoute><AdminClientWarRoom /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/anpd" element={<AdminRoute><AdminClientWrapper Page={ANPD} /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/anpd/comunicacao-titulares" element={<AdminRoute><AdminClientWrapper Page={ANPDComunicacaoTitulares} /></AdminRoute>} />
+          <Route path="/admin/cliente/:clientId/anpd/registro-incidente" element={<AdminRoute><AdminClientWrapper Page={ANPDRegistroIncidente} /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/reunioes" element={<AdminRoute><AdminClientWrapper Page={Reunioes} /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/reunioes/:meetingId" element={<AdminRoute><AdminClientReuniaoDetalhe /></AdminRoute>} />
 
