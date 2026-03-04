@@ -13,6 +13,7 @@ import Admin from './pages/Admin';
 import ANPD from './pages/ANPD';
 import Reunioes from './pages/Reunioes';
 import ReuniaoDetalhe from './pages/ReuniaoDetalhe';
+import MFAPage from './pages/MFAPage';
 
 function AdminClientWrapper({ Page, pageProps = {} }) {
   const { clientId } = useParams();
@@ -82,6 +83,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/mfa" element={<MFAPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Client routes */}

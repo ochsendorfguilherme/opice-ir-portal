@@ -93,9 +93,8 @@ function MFAInput({ onVerify, email, onBack }) {
             value={d}
             onChange={e => handleDigit(i, e.target.value)}
             onKeyDown={e => handleKeyDown(i, e)}
-            className={`w-11 h-14 text-center border-2 font-mono text-xl focus:outline-none transition-colors ${
-              d ? 'border-[#111111] bg-[#CAFF00] text-[#111111] font-bold' : 'border-[#E0E0E0] text-[#111111] focus:border-[#111111]'
-            }`}
+            className={`w-11 h-14 text-center border-2 font-mono text-xl focus:outline-none transition-colors ${d ? 'border-[#111111] bg-[#CAFF00] text-[#111111] font-bold' : 'border-[#E0E0E0] text-[#111111] focus:border-[#111111]'
+              }`}
           />
         ))}
       </div>
@@ -138,82 +137,44 @@ function MFAInput({ onVerify, email, onBack }) {
 }
 
 export default function Login() {
-  const { user, login } = useAuth();
+  const { user, login, authStep } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1=credentials, 2=mfa
-  const [pendingUser, setPendingUser] = useState(null);
 
-  if (user) {
-    if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    const info = getStorage(KEYS.info(user.clientId));
-    const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
-    if (!hasInfo) return <Navigate to="/informacoes" replace />;
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const isMFAFresh = (email) => {
-    const mfa = getStorage(KEYS.mfaVerified(email));
-    return mfa?.verified && mfa?.expiry > Date.now();
-  };
-
-  const doLogin = (resultUser) => {
-    // Call login to set user in context — re-call with original credentials
-    const result = login(email.trim(), password);
-    if (result.success) {
-      if (result.user.role === 'admin') {
+  useEffect(() => {
+    if (authStep === 'AUTHENTICATED') {
+      if (user.role === 'admin') {
         navigate('/admin');
       } else {
-        const info = getStorage(KEYS.info(result.user.clientId));
+        const info = getStorage(KEYS.info(user.clientId));
         const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
         navigate(hasInfo ? '/dashboard' : '/informacoes');
       }
+    } else if (authStep === 'MFA_REQUIRED') {
+      navigate('/mfa');
     }
-  };
+  }, [authStep, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 400));
+
+    // Pequeno delay para UX
+    await new Promise(r => setTimeout(r, 600));
+
     const result = login(email.trim(), password);
     setLoading(false);
+
     if (result.success) {
-      // Check MFA session freshness
-      if (result.user.role !== 'admin' && !isMFAFresh(email.trim())) {
-        // Simulate sending code
-        setLoading(true);
-        await new Promise(r => setTimeout(r, 1000));
-        setLoading(false);
-        setPendingUser(result.user);
-        setStep(2);
-        // Need to reset session since login() already set it — we need to re-login after MFA
-        // For simplicity, we keep the login state and just verify in MFA step
-      } else {
-        if (result.user.role === 'admin') {
-          navigate('/admin');
-        } else {
-          const info = getStorage(KEYS.info(result.user.clientId));
-          const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
-          navigate(hasInfo ? '/dashboard' : '/informacoes');
-        }
+      if (result.needsMFA) {
+        navigate('/mfa');
       }
     } else {
       setError(result.error);
-    }
-  };
-
-  const handleMFAVerified = () => {
-    if (!pendingUser) return;
-    if (pendingUser.role === 'admin') {
-      navigate('/admin');
-    } else {
-      const info = getStorage(KEYS.info(pendingUser.clientId));
-      const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
-      navigate(hasInfo ? '/dashboard' : '/informacoes');
     }
   };
 
@@ -247,67 +208,61 @@ export default function Login() {
 
       {/* Right — Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-8">
-        {step === 1 ? (
-          <div className="w-full max-w-sm">
-            <div className="mb-8 lg:hidden">
-              <OpiceLogo light />
-            </div>
-            <div className="mb-8">
-              <h2 className="font-syne font-extrabold text-[#111111] text-3xl uppercase">Acesso ao Portal</h2>
-              <p className="text-[#555555] font-dm mt-1 text-sm">Entre com suas credenciais para continuar</p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  placeholder="seu@email.com.br"
-                  className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">Senha</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors"
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-4 py-3 text-red-700 font-dm text-sm">
-                  <AlertCircle size={15} />
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#111111] text-white font-dm font-medium py-3.5 text-sm hover:bg-[#333] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Enviando código de verificação...' : 'Entrar no Portal →'}
-              </button>
-            </form>
-
-            <div className="mt-8 pt-6 border-t border-[#E0E0E0]">
-              <p className="text-[#555555] font-dm text-xs">Problemas de acesso? Contate o time Opice Blum.</p>
-            </div>
+        <div className="w-full max-w-sm">
+          <div className="mb-8 lg:hidden">
+            <OpiceLogo light />
           </div>
-        ) : (
-          <MFAInput
-            email={email}
-            onVerify={handleMFAVerified}
-            onBack={() => { setStep(1); setError(''); }}
-          />
-        )}
+          <div className="mb-8">
+            <h2 className="font-syne font-extrabold text-[#111111] text-3xl uppercase">Acesso ao Portal</h2>
+            <p className="text-[#555555] font-dm mt-1 text-sm">Entre com suas credenciais para continuar</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                placeholder="seu@email.com.br"
+                className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors"
+                autoComplete="email"
+              />
+            </div>
+            <div>
+              <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors"
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-4 py-3 text-red-700 font-dm text-sm">
+                <AlertCircle size={15} />
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#111111] text-white font-dm font-medium py-3.5 text-sm hover:bg-[#333] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Verificando credenciais...' : 'Entrar no Portal →'}
+            </button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-[#E0E0E0]">
+            <p className="text-[#555555] font-dm text-xs">Problemas de acesso? Contate o time Opice Blum.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
