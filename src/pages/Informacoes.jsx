@@ -7,10 +7,10 @@ import { Save, ArrowRight, Lock, AlertTriangle } from 'lucide-react';
 
 const AGENTE_OPTIONS = ['Controlador', 'Operador', 'Ambos'];
 
-function Field({ label, children }) {
+function Field({ label, children, dark = false }) {
   return (
     <div>
-      <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">{label}</label>
+      <label className={`block font-mono text-xs font-medium uppercase mb-1.5 ${dark ? 'text-[#CAFF00]' : 'text-[#111111]'}`}>{label}</label>
       {children}
     </div>
   );
@@ -86,7 +86,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
         <div className="bg-[#111111] p-6 mb-6">
           <h2 className="font-syne font-bold text-white text-lg uppercase mb-5">Dados do Cliente</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Field label="Nome do Cliente *">
+            <Field label="Nome do Cliente *" dark>
               <input
                 type="text"
                 value={form.nomeCliente}
@@ -95,7 +95,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
                 className={inputClass}
               />
             </Field>
-            <Field label="Código do Cliente *">
+            <Field label="Código do Cliente *" dark>
               <input
                 type="text"
                 value={form.codigoCliente}
@@ -104,7 +104,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
                 className={inputClass}
               />
             </Field>
-            <Field label="Data do Incidente *">
+            <Field label="Data do Incidente *" dark>
               <input
                 type="date"
                 value={form.dataIncidente}
@@ -112,7 +112,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
                 className={inputClass}
               />
             </Field>
-            <Field label="Data/Hora de Conhecimento (UTC) *">
+            <Field label="Data/Hora de Conhecimento (UTC) *" dark>
               <input
                 type="datetime-local"
                 value={form.dataConhecimento}
@@ -121,7 +121,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
               />
               <p className="text-gray-400 text-xs font-mono mt-1">Usado para cálculo de SLA e prazos ANPD</p>
             </Field>
-            <Field label="Posição de Agente de Tratamento *">
+            <Field label="Posição de Agente de Tratamento *" dark>
               <select
                 value={form.agente}
                 onChange={e => handleChange('agente', e.target.value)}
