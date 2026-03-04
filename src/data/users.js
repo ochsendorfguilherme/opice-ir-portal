@@ -21,5 +21,13 @@ export const USERS = [
     role: "client",
     name: "Teste Ltda",
     clientId: "client_002"
+  },
+  {
+    id: "client_003",
+    email: "cliente2@exemplo.com.br",
+    password: "Opice@2025",
+    role: "client",
+    name: "Exemplo 2 S.A",
+    clientId: "client_003"
   }
 ];
