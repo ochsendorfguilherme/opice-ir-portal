@@ -16,17 +16,20 @@ const STATUS_STYLE = {
 
 const EMPTY_FORM = {
   publico: '', mensagem: '', canal: 'Email',
-  statusAprovacao: 'Rascunho', aprovadoPor: '', dataEnvio: '', observacoes: ''
+  statusAprovacao: 'Rascunho', aprovadoPor: '', dataEnvio: '', observacoes: '',
+  actividadeId: '',
 };
 
 export default function TabComms({ effectiveClientId }) {
   const [comms, setComms] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
     setComms(pmoData.commsLog || []);
+    setActivities(getStorage(KEYS.activities(effectiveClientId), []));
   }, [effectiveClientId]);
 
   const saveComms = (c) => {
@@ -113,6 +116,15 @@ export default function TabComms({ effectiveClientId }) {
               <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Observações</label>
               <input type="text" value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} className={inputClass} />
             </div>
+            <div className="md:col-span-2">
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Atividade relacionada na Jornada</label>
+              <select value={form.actividadeId} onChange={e => setForm(f => ({ ...f, actividadeId: e.target.value ? Number(e.target.value) : '' }))} className={inputClass}>
+                <option value="">— Nenhuma —</option>
+                {activities.map(a => (
+                  <option key={a.id} value={a.id}>#{a.id} {a.nome}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex gap-3">
             <button onClick={() => setShowForm(false)} className="border border-[#E0E0E0] px-4 py-2 font-mono text-xs">Cancelar</button>
@@ -158,6 +170,12 @@ export default function TabComms({ effectiveClientId }) {
               <p className="font-dm text-sm text-[#111111] mb-1">{c.mensagem}</p>
               {c.aprovadoPor && <p className="font-mono text-xs text-[#555555]">Aprovado por: {c.aprovadoPor}</p>}
               {c.dataEnvio && <p className="font-mono text-xs text-[#555555]">Enviado: {c.dataEnvio.replace('T', ' ')}</p>}
+              {c.actividadeId && (() => {
+                const act = activities.find(a => a.id === c.actividadeId);
+                return act ? (
+                  <p className="font-mono text-xs text-blue-600 mt-1">↗ Atividade #{act.id}: {act.nome}</p>
+                ) : null;
+              })()}
             </div>
           );
         })}

@@ -161,14 +161,14 @@ export default function TabMatriz({ effectiveClientId }) {
           <table className="w-full min-w-[800px]">
             <thead>
               <tr className="bg-[#111111]">
-                {['ID', 'DESCRIÇÃO', 'RESPONSÁVEL', 'ÁREA', 'STATUS', 'PRAZO', 'PRIORIDADE', 'AÇÕES'].map(h => (
+                {['ID', 'ORIGEM', 'DESCRIÇÃO', 'RESPONSÁVEL', 'ÁREA', 'STATUS', 'PRAZO', 'PRIORIDADE', 'AÇÕES'].map(h => (
                   <th key={h} className="px-3 py-3 text-left font-mono text-xs text-white uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400 font-dm text-sm">Nenhuma ação encontrada</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400 font-dm text-sm">Nenhuma ação encontrada</td></tr>
               )}
               {filtered.map((a, idx) => {
                 const overdue = isOverdue(a);
@@ -176,6 +176,15 @@ export default function TabMatriz({ effectiveClientId }) {
                 return (
                   <tr key={a.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'} ${isBlocked ? 'border-l-4 border-l-red-500 bg-red-50/40' : ''}`}>
                     <td className="px-3 py-3 font-mono text-xs text-[#555555]">{a.id}</td>
+                    <td className="px-3 py-3">
+                      {a.origem === 'Jornada' ? (
+                        <span className="font-mono text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200">Jornada</span>
+                      ) : a.origem === 'WarRoom' ? (
+                        <span className="font-mono text-xs px-2 py-0.5 bg-red-50 text-red-700 border border-red-200">WarRoom</span>
+                      ) : (
+                        <span className="font-mono text-xs px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200">PMO</span>
+                      )}
+                    </td>
                     <td className="px-3 py-3 font-dm text-sm text-[#111111] max-w-[200px]">
                       <div>{a.descricao}</div>
                       {a.observacoes && <div className="text-xs text-gray-500 mt-0.5">{a.observacoes}</div>}

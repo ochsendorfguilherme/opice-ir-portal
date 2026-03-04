@@ -7,6 +7,7 @@ export const KEYS = {
   pmo: (id) => `opice_ir_pmo_${id}`,
   slaConfig: (id) => `opice_ir_sla_config_${id}`,
   crisis: (id, actId) => `opice_ir_crisis_${id}_${actId}`,
+  notifications: (id) => `opice_ir_notifications_${id}`,
 };
 
 export function getStorage(key, fallback = null) {
@@ -34,4 +35,12 @@ export function generateHash() {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
   return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function addNotification(clientId, { type, message, link }) {
+  if (!clientId) return;
+  const key = KEYS.notifications(clientId);
+  const existing = getStorage(key, []);
+  const notif = { id: Date.now(), type, message, link: link || null, timestamp: new Date().toISOString(), read: false };
+  setStorage(key, [notif, ...existing].slice(0, 50));
 }

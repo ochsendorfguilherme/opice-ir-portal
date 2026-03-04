@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
-import { getStorage, setStorage, KEYS, generateId, generateHash } from '../utils/storage';
+import { getStorage, setStorage, KEYS, generateId, generateHash, addNotification } from '../utils/storage';
 import { formatSLALabel, calcSLAHours } from '../hooks/useSLA';
 import {
   Shield, ShieldOff, ShieldCheck, Zap, Copy, Check,
@@ -234,12 +234,19 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
 }
 
 // ——— CLOSE MODAL ———
-function CloseModal({ crisis, slaHours, onClose, onConfirm, user }) {
+function CloseModal({ crisis, slaHours, onClose, onConfirm, user, activities }) {
   const [step, setStep] = useState(1);
   const [checklist, setChecklist] = useState([]);
   const [motivo, setMotivo] = useState('');
   const [members, setMembers] = useState(CRI_MEMBERS.map(m => ({ ...m, present: false })));
+  const [activityUpdates, setActivityUpdates] = useState([]);
   const elapsed = useCrisisTimer(crisis?.crisisTimestamp);
+
+  // Pre-select active activities for update
+  useEffect(() => {
+    const active = (activities || []).filter(a => a.status === 'Em andamento' || a.status === 'Planejado');
+    setActivityUpdates(active.map(a => ({ ...a, selected: false })));
+  }, [activities]);
 
   const allChecked = checklist.length === CLOSE_CHECKLIST.length && motivo.trim().length >= 50;
 
@@ -251,9 +258,14 @@ function CloseModal({ crisis, slaHours, onClose, onConfirm, user }) {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, present: !m.present } : m));
   };
 
+  const toggleActivityUpdate = (id) => {
+    setActivityUpdates(prev => prev.map(a => a.id === id ? { ...a, selected: !a.selected } : a));
+  };
+
   const confirm = () => {
     const closeHash = generateHash();
-    onConfirm({ closeHash, motivo, members, elapsed });
+    const selectedActivityIds = activityUpdates.filter(a => a.selected).map(a => a.id);
+    onConfirm({ closeHash, motivo, members, elapsed, selectedActivityIds });
     setStep(2);
   };
 
@@ -292,6 +304,26 @@ function CloseModal({ crisis, slaHours, onClose, onConfirm, user }) {
                 {motivo.length}/50 caracteres mínimos
               </div>
             </div>
+
+            {/* INT-4: Activity update selection */}
+            {activityUpdates.length > 0 && (
+              <div className="mb-5">
+                <label className="block font-mono text-xs text-gray-400 uppercase mb-2">
+                  Atualizar status das atividades vinculadas? (marcar como Feito)
+                </label>
+                <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                  {activityUpdates.map(a => (
+                    <label key={a.id} className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={a.selected} onChange={() => toggleActivityUpdate(a.id)} className="w-3.5 h-3.5" />
+                      <span className={`font-dm text-xs ${a.selected ? 'text-green-300' : 'text-gray-400'}`}>
+                        #{a.id} {a.nome}
+                        <span className="ml-1 font-mono text-[10px] text-gray-500">({a.status})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={confirm}
@@ -339,6 +371,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
   const [feedInput, setFeedInput] = useState('');
   const [feed, setFeed] = useState([]);
   const [copiedTeams, setCopiedTeams] = useState(false);
+  const [jornadaActivities, setJornadaActivities] = useState([]);
 
   const elapsed = useCrisisTimer(crisis?.crisisTimestamp);
   const slaHours = info?.dataConhecimento ? calcSLAHours(info.dataConhecimento) : 0;
@@ -350,6 +383,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
     if (c?.feed) setFeed(c.feed);
     if (c?.members) setMembers(c.members);
     if (c?.immediateActions) setActions(c.immediateActions);
+    setJornadaActivities(getStorage(KEYS.activities(effectiveClientId), []));
   }, [effectiveClientId]);
 
   const saveCrisis = (update) => {
@@ -405,10 +439,26 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
     }));
 
     setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, timeline, actions: [...existingActions, ...newActions] });
+
+    // INT-4: Auto-update Jornada activities Planejado → Em andamento
+    const currentActivities = getStorage(KEYS.activities(effectiveClientId), []);
+    const updatedActivities = currentActivities.map(a =>
+      a.status === 'Planejado' ? { ...a, status: 'Em andamento' } : a
+    );
+    setStorage(KEYS.activities(effectiveClientId), updatedActivities);
+    setJornadaActivities(updatedActivities);
+
+    // Add notification
+    addNotification(effectiveClientId, {
+      type: 'crisis',
+      message: `CRISE DECLARADA — ${result.crisisId}`,
+      link: '/pmo/warroom',
+    });
+
     setShowDeclareModal(false);
   };
 
-  const handleCloseCrisis = ({ closeHash, motivo, members: finalMembers, elapsed: dur }) => {
+  const handleCloseCrisis = ({ closeHash, motivo, members: finalMembers, elapsed: dur, selectedActivityIds }) => {
     const closed = {
       ...crisis,
       crisisStatus: 'closed',
@@ -433,6 +483,17 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
       evidencia: `Hash: ${closeHash} | Duração: ${dur}`,
     });
     setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, timeline });
+
+    // INT-4: Update selected activities to Feito
+    if (selectedActivityIds?.length > 0) {
+      const currentActivities = getStorage(KEYS.activities(effectiveClientId), []);
+      const updatedActivities = currentActivities.map(a =>
+        selectedActivityIds.includes(a.id) ? { ...a, status: 'Feito' } : a
+      );
+      setStorage(KEYS.activities(effectiveClientId), updatedActivities);
+      setJornadaActivities(updatedActivities);
+    }
+
     setShowCloseModal(false);
   };
 
@@ -652,6 +713,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
           onClose={() => setShowCloseModal(false)}
           onConfirm={handleCloseCrisis}
           user={user}
+          activities={jornadaActivities}
         />
       )}
     </Layout>

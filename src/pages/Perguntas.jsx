@@ -43,6 +43,14 @@ function AutoSaveTextarea({ value, onChange, placeholder }) {
   );
 }
 
+const PDF_SECTIONS = [
+  { id: 'perguntas', label: 'Respostas das Perguntas', default: true },
+  { id: 'jornada', label: 'Status atual da Jornada do Incidente', default: false },
+  { id: 'pmo', label: 'Resumo Executivo do PMO (campos C-Level)', default: false },
+  { id: 'timeline', label: 'Timeline de Eventos (últimos 10)', default: false },
+  { id: 'info', label: 'Informações do Cliente', default: false },
+];
+
 export default function Perguntas({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +60,9 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
   const [open, setOpen] = useState({ 1: true, 2: false, 3: false, 4: false, 5: false });
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [sentToTimeline, setSentToTimeline] = useState({});
+  const [pdfSections, setPdfSections] = useState(
+    PDF_SECTIONS.reduce((acc, s) => ({ ...acc, [s.id]: s.default }), {})
+  );
 
   useEffect(() => {
     const stored = getStorage(KEYS.answers(effectiveClientId), {});
@@ -107,7 +118,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
     const addPage = () => { doc.addPage(); y = 20; };
     const checkPage = (need = 20) => { if (y + need > 270) addPage(); };
 
-    // Header
+    // Cover header (always)
     doc.setFillColor(17, 17, 17);
     doc.rect(0, 0, pageW, 35, 'F');
     doc.setTextColor(202, 255, 0);
@@ -119,44 +130,189 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
     doc.text('OPICE BLUM — Relatório de Investigação', 14, 22);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Cliente: ${info.nomeCliente || '—'} | Data: ${info.dataIncidente || '—'}`, 14, 30);
+    doc.text(`Cliente: ${info.nomeCliente || '—'} | Data: ${info.dataIncidente || '—'} | Gerado: ${new Date().toLocaleString('pt-BR')}`, 14, 30);
     y = 50;
 
-    QUESTION_SECTIONS.forEach(sec => {
+    // Section: Informações do Cliente
+    if (pdfSections.info) {
       checkPage(15);
       doc.setTextColor(17, 17, 17);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text(`SEÇÃO ${sec.id} — ${sec.title}`, 14, y);
+      doc.text('INFORMAÇÕES DO CLIENTE', 14, y);
       y += 8;
-
-      sec.questions.forEach((q, qi) => {
-        checkPage(20);
-        const ans = answers[sec.id]?.[qi] || '';
+      const infoFields = [
+        ['Nome do Cliente', info.nomeCliente],
+        ['Data do Incidente', info.dataIncidente],
+        ['Data de Conhecimento', info.dataConhecimento],
+        ['Agente de Tratamento', info.agenteTratamento],
+        ['Contexto Geral', info.contextoGeral],
+      ];
+      infoFields.forEach(([label, val]) => {
+        if (!val) return;
+        checkPage(10);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(17, 17, 17);
-        const qLines = doc.splitTextToSize(`${qi + 1}. ${q}`, pageW - 28);
-        doc.text(qLines, 14, y);
-        y += qLines.length * 5 + 2;
-
+        doc.text(`${label}:`, 14, y);
         doc.setFont('helvetica', 'normal');
-        if (ans.trim()) {
-          doc.setTextColor(40, 40, 40);
-          const lines = doc.splitTextToSize(ans, pageW - 28);
-          checkPage(lines.length * 5 + 5);
-          doc.text(lines, 14, y);
-          y += lines.length * 5 + 4;
-        } else {
-          doc.setTextColor(150, 150, 150);
-          doc.text('(Não respondido)', 14, y);
-          y += 6;
-        }
+        doc.setTextColor(40, 40, 40);
+        const lines = doc.splitTextToSize(String(val), pageW - 28);
+        doc.text(lines, 14, y + 4);
+        y += lines.length * 5 + 6;
       });
       y += 5;
-    });
+    }
 
-    // Footer each page
+    // Section: Perguntas
+    if (pdfSections.perguntas) {
+      checkPage(15);
+      doc.setTextColor(17, 17, 17);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PERGUNTAS DO INCIDENTE', 14, y);
+      y += 10;
+
+      QUESTION_SECTIONS.forEach(sec => {
+        checkPage(15);
+        doc.setTextColor(17, 17, 17);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`SEÇÃO ${sec.id} — ${sec.title}`, 14, y);
+        y += 8;
+
+        sec.questions.forEach((q, qi) => {
+          checkPage(20);
+          const ans = answers[sec.id]?.[qi] || '';
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(17, 17, 17);
+          const qLines = doc.splitTextToSize(`${qi + 1}. ${q}`, pageW - 28);
+          doc.text(qLines, 14, y);
+          y += qLines.length * 5 + 2;
+
+          doc.setFont('helvetica', 'normal');
+          if (ans.trim()) {
+            doc.setTextColor(40, 40, 40);
+            const lines = doc.splitTextToSize(ans, pageW - 28);
+            checkPage(lines.length * 5 + 5);
+            doc.text(lines, 14, y);
+            y += lines.length * 5 + 4;
+          } else {
+            doc.setTextColor(150, 150, 150);
+            doc.text('(Não respondido)', 14, y);
+            y += 6;
+          }
+        });
+        y += 5;
+      });
+    }
+
+    // Section: Jornada
+    if (pdfSections.jornada) {
+      addPage();
+      const activities = getStorage(KEYS.activities(effectiveClientId), []);
+      doc.setTextColor(17, 17, 17);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STATUS DA JORNADA DO INCIDENTE', 14, y);
+      y += 10;
+
+      const statusGroups = ['Feito', 'Em andamento', 'Planejado', 'Não se aplica'];
+      statusGroups.forEach(st => {
+        const acts = activities.filter(a => a.status === st);
+        if (acts.length === 0) return;
+        checkPage(10);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(17, 17, 17);
+        doc.text(`${st.toUpperCase()} (${acts.length})`, 14, y);
+        y += 6;
+        acts.forEach(a => {
+          checkPage(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(60, 60, 60);
+          const line = doc.splitTextToSize(`#${a.id} ${a.nome} — ${a.etapa} — ${a.responsavel || '—'}`, pageW - 28);
+          doc.text(line, 18, y);
+          y += line.length * 5 + 2;
+        });
+        y += 3;
+      });
+    }
+
+    // Section: PMO Executive Summary
+    if (pdfSections.pmo) {
+      addPage();
+      const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+      const clevel = pmoData.clevel || {};
+      doc.setTextColor(17, 17, 17);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RESUMO EXECUTIVO PMO (C-LEVEL)', 14, y);
+      y += 10;
+      const fields = [
+        ['O que houve', clevel.oQueHouve],
+        ['Impacto', clevel.impacto],
+        ['O que estamos fazendo', clevel.oQueFazendo],
+      ];
+      fields.forEach(([label, val]) => {
+        checkPage(15);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(17, 17, 17);
+        doc.text(`${label}:`, 14, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 40, 40);
+        const text = val?.trim() || '(Não preenchido)';
+        const lines = doc.splitTextToSize(text, pageW - 28);
+        checkPage(lines.length * 5 + 5);
+        doc.text(lines, 14, y);
+        y += lines.length * 5 + 6;
+      });
+    }
+
+    // Section: Timeline
+    if (pdfSections.timeline) {
+      addPage();
+      const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+      const timeline = (pmoData.timeline || []).slice(0, 10);
+      doc.setTextColor(17, 17, 17);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TIMELINE DE EVENTOS (ÚLTIMOS 10)', 14, y);
+      y += 10;
+
+      if (timeline.length === 0) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text('Nenhum evento registrado', 14, y);
+        y += 6;
+      } else {
+        timeline.forEach(ev => {
+          checkPage(18);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(17, 17, 17);
+          doc.text(`${ev.datetime?.replace('T', ' ') || '—'} — [${ev.fase || '—'}]`, 14, y);
+          y += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(40, 40, 40);
+          const evLines = doc.splitTextToSize(ev.evento || '', pageW - 28);
+          checkPage(evLines.length * 4 + 5);
+          doc.text(evLines, 14, y);
+          y += evLines.length * 4 + 4;
+          if (ev.fonte) {
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Fonte: ${ev.fonte}`, 18, y);
+            y += 4;
+          }
+        });
+      }
+    }
+
+    // Footer on each page
     const totalPages = doc.internal.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
       doc.setPage(p);
@@ -304,26 +460,87 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                 </div>
               </div>
 
-              {/* Scrollable preview */}
-              <div className="overflow-y-auto flex-1 p-5" style={{ maxHeight: '60vh' }}>
-                {QUESTION_SECTIONS.map(sec => (
-                  <div key={sec.id} className="mb-6">
-                    <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-3 pb-2 border-b border-[#E0E0E0]">
-                      SEÇÃO {sec.id} — {sec.title}
-                    </h4>
-                    {sec.questions.map((q, qi) => {
-                      const ans = answers[sec.id]?.[qi];
-                      return (
-                        <div key={qi} className="mb-3">
-                          <p className="font-dm text-sm font-medium text-[#111111]">{qi + 1}. {q}</p>
-                          <p className={`font-dm text-sm mt-1 ml-4 ${ans?.trim() ? 'text-[#333]' : 'text-gray-400 italic'}`}>
-                            {ans?.trim() || '(Não respondido)'}
-                          </p>
-                        </div>
-                      );
-                    })}
+              <div className="flex flex-1 overflow-hidden">
+                {/* Left: section selector */}
+                <div className="w-56 shrink-0 border-r border-[#E0E0E0] p-4 bg-gray-50 overflow-y-auto">
+                  <div className="font-mono text-xs uppercase text-[#555555] mb-3 tracking-widest">Incluir no relatório:</div>
+                  <div className="space-y-2">
+                    {PDF_SECTIONS.map(s => (
+                      <label key={s.id} className="flex items-start gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={pdfSections[s.id]}
+                          onChange={e => setPdfSections(prev => ({ ...prev, [s.id]: e.target.checked }))}
+                          className="w-3.5 h-3.5 mt-0.5 shrink-0 accent-[#111111]"
+                        />
+                        <span className={`font-dm text-xs leading-tight ${pdfSections[s.id] ? 'text-[#111111] font-medium' : 'text-gray-500'}`}>
+                          {s.label}
+                          {s.default && <span className="ml-1 font-mono text-[10px] text-gray-400">(padrão)</span>}
+                        </span>
+                      </label>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* Right: preview */}
+                <div className="overflow-y-auto flex-1 p-5">
+                  {pdfSections.info && (
+                    <div className="mb-6">
+                      <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-3 pb-2 border-b border-[#E0E0E0]">
+                        INFORMAÇÕES DO CLIENTE
+                      </h4>
+                      {[
+                        ['Nome', info.nomeCliente],
+                        ['Data do Incidente', info.dataIncidente],
+                        ['Data de Conhecimento', info.dataConhecimento],
+                        ['Agente', info.agenteTratamento],
+                      ].filter(([, v]) => v).map(([l, v]) => (
+                        <div key={l} className="flex gap-2 mb-1">
+                          <span className="font-mono text-xs text-[#555555] shrink-0">{l}:</span>
+                          <span className="font-dm text-xs text-[#111111]">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {pdfSections.perguntas && QUESTION_SECTIONS.map(sec => (
+                    <div key={sec.id} className="mb-6">
+                      <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-3 pb-2 border-b border-[#E0E0E0]">
+                        SEÇÃO {sec.id} — {sec.title}
+                      </h4>
+                      {sec.questions.map((q, qi) => {
+                        const ans = answers[sec.id]?.[qi];
+                        return (
+                          <div key={qi} className="mb-3">
+                            <p className="font-dm text-sm font-medium text-[#111111]">{qi + 1}. {q}</p>
+                            <p className={`font-dm text-sm mt-1 ml-4 ${ans?.trim() ? 'text-[#333]' : 'text-gray-400 italic'}`}>
+                              {ans?.trim() || '(Não respondido)'}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  {!pdfSections.perguntas && !pdfSections.info && !pdfSections.jornada && !pdfSections.pmo && !pdfSections.timeline && (
+                    <div className="text-center py-10 text-gray-400 font-dm text-sm">
+                      Selecione ao menos uma seção para incluir no relatório.
+                    </div>
+                  )}
+                  {pdfSections.jornada && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 font-dm text-xs text-blue-700">
+                      ✓ Status da Jornada será incluído no PDF
+                    </div>
+                  )}
+                  {pdfSections.pmo && (
+                    <div className="mb-4 p-3 bg-purple-50 border border-purple-200 font-dm text-xs text-purple-700">
+                      ✓ Resumo Executivo PMO será incluído no PDF
+                    </div>
+                  )}
+                  {pdfSections.timeline && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 font-dm text-xs text-amber-700">
+                      ✓ Timeline de Eventos (últimos 10) será incluída no PDF
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Footer */}
@@ -338,7 +555,8 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                   </button>
                   <button
                     onClick={generatePDF}
-                    className="bg-[#CAFF00] text-[#111111] font-dm font-medium text-sm px-6 py-2 hover:bg-[#b8e600] transition-colors"
+                    disabled={!Object.values(pdfSections).some(Boolean)}
+                    className="bg-[#CAFF00] text-[#111111] font-dm font-medium text-sm px-6 py-2 hover:bg-[#b8e600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Confirmar Download
                   </button>

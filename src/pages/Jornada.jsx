@@ -8,7 +8,7 @@ import { useSLATimer, getSLAStatus, calcSLAHours, formatSLALabel } from '../hook
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
 import {
   Clock, AlertTriangle, Scale, ChevronDown, X, Save,
-  Columns, List, Zap, Shield, Filter
+  Columns, List, Zap, Shield, Filter, ExternalLink, MessageSquare
 } from 'lucide-react';
 
 const STATUSES = ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'];
@@ -39,6 +39,14 @@ const STATUS_LEFT = {
   'Planejado': 'border-l-4 border-l-blue-500',
   'Não se aplica': 'border-l-4 border-l-gray-400',
 };
+
+// Activities that involve communications (INT-9)
+const COMM_ACTIVITY_IDS = [17, 18, 19, 20, 21];
+
+function nextPMOId(actions) {
+  const nums = actions.map(a => parseInt(a.id?.replace('#', '') || 0)).filter(Boolean);
+  return `#${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`;
+}
 
 function SLABadge({ dataConhecimento, slaConfig, crisis }) {
   const { hours, status, label } = useSLATimer(
@@ -107,8 +115,94 @@ function StatusDropdown({ value, onChange }) {
   );
 }
 
-function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisis, onWarroom }) {
+// INT-3: Modal to create PMO action from a Jornada activity
+function CreatePMOActionModal({ activity, effectiveClientId, onClose, onCreated }) {
+  const AREAS = ['TI', 'Jurídico', 'DPO', 'Comunicação', 'RH', 'Diretoria', 'Segurança', 'Compliance'];
+  const [form, setForm] = useState({
+    descricao: activity.nome,
+    responsavel: activity.responsavel || '',
+    area: 'TI',
+    status: activity.status === 'Feito' ? 'Feito' : activity.status === 'Em andamento' ? 'Em andamento' : 'Aberto',
+    prazo: activity.dataFim ? `${activity.dataFim}T00:00` : '',
+    prioridade: 'Alta',
+    observacoes: '',
+  });
+
+  const handleCreate = () => {
+    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+    const actions = pmoData.actions || [];
+    const newAction = {
+      id: nextPMOId(actions),
+      ...form,
+      origem: 'Jornada',
+      jornadaId: activity.id,
+    };
+    setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, actions: [...actions, newAction] });
+    onCreated(newAction.id);
+    onClose();
+  };
+
+  const inputClass = "w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111]";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="bg-white border border-[#E0E0E0] w-full max-w-md shadow-2xl">
+        <div className="bg-[#111111] px-5 py-3 flex items-center justify-between">
+          <div>
+            <div className="text-[#CAFF00] font-mono text-xs">CRIAR AÇÃO NO PMO</div>
+            <div className="text-white font-dm text-sm">#{activity.id} — {activity.etapa}</div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={16} /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          <div>
+            <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Descrição</label>
+            <input type="text" value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Responsável</label>
+              <input type="text" value={form.responsavel} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} className={inputClass} />
+            </div>
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Área</label>
+              <select value={form.area} onChange={e => setForm(f => ({ ...f, area: e.target.value }))} className={inputClass}>
+                {AREAS.map(a => <option key={a}>{a}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Status</label>
+              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={inputClass}>
+                {['Aberto', 'Em andamento', 'Bloqueado', 'Feito'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Prioridade</label>
+              <select value={form.prioridade} onChange={e => setForm(f => ({ ...f, prioridade: e.target.value }))} className={inputClass}>
+                {['Crítica', 'Alta', 'Média', 'Baixa'].map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Prazo</label>
+            <input type="datetime-local" value={form.prazo} onChange={e => setForm(f => ({ ...f, prazo: e.target.value }))} className={inputClass} />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={onClose} className="flex-1 border border-[#E0E0E0] text-[#111111] font-dm text-sm py-2.5 hover:bg-gray-50">Cancelar</button>
+            <button onClick={handleCreate} className="flex-1 bg-[#111111] text-white font-dm text-sm py-2.5 hover:bg-[#333] flex items-center justify-center gap-2">
+              <ExternalLink size={13} /> Criar no PMO
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisis, onWarroom, effectiveClientId, comms, pmoActions }) {
   const [form, setForm] = useState({ ...activity });
+  const [showPMOModal, setShowPMOModal] = useState(false);
+  const [pmoActionCreated, setPMOActionCreated] = useState(null);
 
   if (!activity) return null;
 
@@ -117,122 +211,197 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
   const inputClass = "w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors";
   const disabledClass = "w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm bg-gray-50 text-gray-500 cursor-not-allowed";
 
+  // INT-9: comms linked to this activity
+  const linkedComms = (comms || []).filter(c => c.actividadeId === activity.id);
+
+  // INT-3: check if linked PMO action exists and is blocked
+  const linkedPMOAction = (pmoActions || []).find(a => a.jornadaId === activity.id);
+
   return (
-    <div className="fixed inset-0 z-40 flex">
-      <div className="flex-1 bg-black/40" onClick={onClose} />
-      <div className="w-full max-w-md bg-white flex flex-col shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-[#111111] px-5 py-4 flex items-center justify-between shrink-0">
-          <div className="flex-1 min-w-0">
-            <div className="font-mono text-[#CAFF00] text-xs">#{activity.id} · {activity.etapa}</div>
-            <div className="text-white font-dm text-sm font-medium mt-0.5 line-clamp-2">{activity.nome}</div>
-          </div>
-          <div className="flex items-center gap-2 ml-3 shrink-0">
-            <button
-              onClick={onWarroom}
-              className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 transition-colors ${
-                crisis ? 'bg-red-600 text-white animate-pulse-red' : 'bg-red-700 text-white hover:bg-red-600'
-              }`}
-            >
-              {crisis ? <Zap size={11} /> : <Shield size={11} />}
-              {crisis ? '⚡ WARROOM ATIVA' : '🚨 WarRoom'}
-            </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-white p-1">
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Status */}
-          <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Status</label>
-            <StatusDropdown value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} />
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Data Início</label>
-              <input type="date" value={form.dataInicio || ''} onChange={e => setForm(f => ({ ...f, dataInicio: e.target.value }))} className={inputClass} />
+    <>
+      <div className="fixed inset-0 z-40 flex">
+        <div className="flex-1 bg-black/40" onClick={onClose} />
+        <div className="w-full max-w-md bg-white flex flex-col shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-[#111111] px-5 py-4 flex items-center justify-between shrink-0">
+            <div className="flex-1 min-w-0">
+              <div className="font-mono text-[#CAFF00] text-xs">#{activity.id} · {activity.etapa}</div>
+              <div className="text-white font-dm text-sm font-medium mt-0.5 line-clamp-2">{activity.nome}</div>
             </div>
-            <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Data Fim</label>
-              <input type="date" value={form.dataFim || ''} onChange={e => setForm(f => ({ ...f, dataFim: e.target.value }))} className={inputClass} />
+            <div className="flex items-center gap-2 ml-3 shrink-0">
+              <button
+                onClick={onWarroom}
+                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 transition-colors ${
+                  crisis ? 'bg-red-600 text-white animate-pulse-red' : 'bg-red-700 text-white hover:bg-red-600'
+                }`}
+              >
+                {crisis ? <Zap size={11} /> : <Shield size={11} />}
+                {crisis ? '⚡ WARROOM ATIVA' : '🚨 WarRoom'}
+              </button>
+              <button onClick={onClose} className="text-gray-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
             </div>
           </div>
 
-          {/* Responsável & Revisão */}
-          <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Responsável</label>
-            <input type="text" value={form.responsavel || ''} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} className={inputClass} placeholder="Nome do responsável" />
-          </div>
-          <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Revisão</label>
-            <input type="text" value={form.revisao || ''} onChange={e => setForm(f => ({ ...f, revisao: e.target.value }))} className={inputClass} placeholder="Revisado por" />
-          </div>
-
-          {/* Obs Cliente */}
-          <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Observações Cliente</label>
-            <textarea value={form.observacoes || ''} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} rows={3} className={`${inputClass} resize-none`} placeholder="Notas do cliente..." />
-          </div>
-
-          {/* Obs Opice — admin only */}
-          <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">
-              Observações Opice
-              {!isAdmin && <span className="ml-2 text-gray-400">(Apenas uso interno)</span>}
-            </label>
-            {isAdmin ? (
-              <textarea value={form.observacoesOpice || ''} onChange={e => setForm(f => ({ ...f, observacoesOpice: e.target.value }))} rows={3} className={`${inputClass} resize-none`} placeholder="Notas internas Opice Blum..." />
+          {/* INT-3: Create PMO Action button */}
+          <div className="border-b border-[#E0E0E0] px-5 py-2.5 flex items-center justify-between bg-gray-50">
+            {linkedPMOAction ? (
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5">
+                  ↗ Ação PMO {linkedPMOAction.id} vinculada
+                </span>
+                {linkedPMOAction.status === 'Bloqueado' && (
+                  <span className="font-mono text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 flex items-center gap-1">
+                    <AlertTriangle size={10} /> Bloqueada
+                  </span>
+                )}
+              </div>
             ) : (
-              <textarea value={form.observacoesOpice || ''} disabled rows={3} className={`${disabledClass} resize-none`} title="Apenas uso interno Opice Blum" />
+              pmoActionCreated ? (
+                <span className="font-mono text-xs text-green-700">✓ Ação {pmoActionCreated} criada no PMO</span>
+              ) : (
+                <button
+                  onClick={() => setShowPMOModal(true)}
+                  className="flex items-center gap-1.5 font-mono text-xs text-[#111111] border border-[#E0E0E0] px-3 py-1.5 hover:bg-white hover:border-[#111111] transition-colors"
+                >
+                  <ExternalLink size={11} /> Criar Ação no PMO ↗
+                </button>
+              )
             )}
           </div>
 
-          {/* Fundamento Legal */}
-          <div className="bg-gray-50 border border-[#E0E0E0] p-3">
-            <div className="font-mono text-xs text-[#555555] uppercase mb-1">Fundamento Legal</div>
-            <p className="font-dm text-xs text-[#333]">{activity.fundamento}</p>
-            {activity.observacoes && (
-              <p className="font-dm text-xs text-[#555555] mt-1 italic">{activity.observacoes}</p>
-            )}
-          </div>
-
-          {/* ANPD vinculado */}
-          {activity.anpdVinculado && dataConhecimento && (
-            <div className="border border-amber-200 bg-amber-50 p-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Scale size={13} className="text-amber-600" />
-                <span className="font-mono text-xs text-amber-700 uppercase">Prazo Regulatório ANPD</span>
-              </div>
-              <div className="font-mono text-sm text-amber-800">
-                {formatCountdown(businessDaysRemaining(new Date(dataConhecimento), 3).diffHours)}
-              </div>
-              <p className="text-amber-700 font-dm text-xs mt-1">3 dias úteis do conhecimento do incidente</p>
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* Status */}
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Status</label>
+              <StatusDropdown value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} />
             </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div className="border-t border-[#E0E0E0] p-4 flex gap-3 shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 border border-[#E0E0E0] text-[#111111] font-dm text-sm py-2.5 hover:bg-gray-50 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 bg-[#111111] text-white font-dm text-sm py-2.5 hover:bg-[#333] transition-colors flex items-center justify-center gap-2"
-          >
-            <Save size={14} />
-            Salvar
-          </button>
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Data Início</label>
+                <input type="date" value={form.dataInicio || ''} onChange={e => setForm(f => ({ ...f, dataInicio: e.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Data Fim</label>
+                <input type="date" value={form.dataFim || ''} onChange={e => setForm(f => ({ ...f, dataFim: e.target.value }))} className={inputClass} />
+              </div>
+            </div>
+
+            {/* Responsável & Revisão */}
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Responsável</label>
+              <input type="text" value={form.responsavel || ''} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} className={inputClass} placeholder="Nome do responsável" />
+            </div>
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Revisão</label>
+              <input type="text" value={form.revisao || ''} onChange={e => setForm(f => ({ ...f, revisao: e.target.value }))} className={inputClass} placeholder="Revisado por" />
+            </div>
+
+            {/* Obs Cliente */}
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Observações Cliente</label>
+              <textarea value={form.observacoes || ''} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} rows={3} className={`${inputClass} resize-none`} placeholder="Notas do cliente..." />
+            </div>
+
+            {/* Obs Opice — admin only */}
+            <div>
+              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">
+                Observações Opice
+                {!isAdmin && <span className="ml-2 text-gray-400">(Apenas uso interno)</span>}
+              </label>
+              {isAdmin ? (
+                <textarea value={form.observacoesOpice || ''} onChange={e => setForm(f => ({ ...f, observacoesOpice: e.target.value }))} rows={3} className={`${inputClass} resize-none`} placeholder="Notas internas Opice Blum..." />
+              ) : (
+                <textarea value={form.observacoesOpice || ''} disabled rows={3} className={`${disabledClass} resize-none`} title="Apenas uso interno Opice Blum" />
+              )}
+            </div>
+
+            {/* Fundamento Legal */}
+            <div className="bg-gray-50 border border-[#E0E0E0] p-3">
+              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Fundamento Legal</div>
+              <p className="font-dm text-xs text-[#333]">{activity.fundamento}</p>
+              {activity.observacoes && (
+                <p className="font-dm text-xs text-[#555555] mt-1 italic">{activity.observacoes}</p>
+              )}
+            </div>
+
+            {/* ANPD vinculado */}
+            {activity.anpdVinculado && dataConhecimento && (
+              <div className="border border-amber-200 bg-amber-50 p-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Scale size={13} className="text-amber-600" />
+                  <span className="font-mono text-xs text-amber-700 uppercase">Prazo Regulatório ANPD</span>
+                </div>
+                <div className="font-mono text-sm text-amber-800">
+                  {formatCountdown(businessDaysRemaining(new Date(dataConhecimento), 3).diffHours)}
+                </div>
+                <p className="text-amber-700 font-dm text-xs mt-1">3 dias úteis do conhecimento do incidente</p>
+              </div>
+            )}
+
+            {/* INT-9: Linked communications */}
+            {COMM_ACTIVITY_IDS.includes(activity.id) && (
+              <div className="border border-[#E0E0E0]">
+                <div className="bg-[#111111] px-3 py-2 flex items-center gap-2">
+                  <MessageSquare size={12} className="text-[#CAFF00]" />
+                  <span className="font-mono text-xs text-white uppercase">Comunicações Registradas</span>
+                  <span className="font-mono text-xs text-[#CAFF00] ml-auto">{linkedComms.length}</span>
+                </div>
+                {linkedComms.length === 0 ? (
+                  <div className="p-3 text-center text-gray-400 font-dm text-xs">Nenhuma comunicação vinculada</div>
+                ) : (
+                  <div className="divide-y divide-[#F0F0F0]">
+                    {linkedComms.map(c => (
+                      <div key={c.id} className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`font-mono text-xs px-1.5 py-0.5 border ${
+                            c.statusAprovacao === 'Enviado' ? 'bg-green-50 text-green-700 border-green-200' :
+                            c.statusAprovacao === 'Aprovado' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            'bg-gray-100 text-gray-600 border-gray-200'
+                          }`}>{c.statusAprovacao}</span>
+                          <span className="font-mono text-xs text-[#555555]">{c.publico} · {c.canal}</span>
+                        </div>
+                        <p className="font-dm text-xs text-[#111111] line-clamp-2">{c.mensagem}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-[#E0E0E0] p-4 flex gap-3 shrink-0">
+            <button
+              onClick={onClose}
+              className="flex-1 border border-[#E0E0E0] text-[#111111] font-dm text-sm py-2.5 hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 bg-[#111111] text-white font-dm text-sm py-2.5 hover:bg-[#333] transition-colors flex items-center justify-center gap-2"
+            >
+              <Save size={14} />
+              Salvar
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* INT-3: Create PMO Action Modal */}
+      {showPMOModal && (
+        <CreatePMOActionModal
+          activity={activity}
+          effectiveClientId={effectiveClientId}
+          onClose={() => setShowPMOModal(false)}
+          onCreated={(id) => { setPMOActionCreated(id); setShowPMOModal(false); }}
+        />
+      )}
+    </>
   );
 }
 
@@ -286,6 +455,8 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const [activeFilterCol, setActiveFilterCol] = useState(null);
   const [selected, setSelected] = useState(null);
   const [flashRow, setFlashRow] = useState(null);
+  const [pmoActions, setPmoActions] = useState([]);
+  const [comms, setComms] = useState([]);
 
   useEffect(() => {
     const stored = getStorage(KEYS.activities(effectiveClientId));
@@ -299,6 +470,11 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
     setSlaConfig(getStorage(KEYS.slaConfig(effectiveClientId), {}));
     const c = getStorage(KEYS.crisis(effectiveClientId, 'active'));
     setCrisis(c?.crisisActive === true && c?.crisisStatus !== 'closed' ? c : null);
+
+    // Load PMO actions and comms (INT-3, INT-9)
+    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+    setPmoActions(pmoData.actions || []);
+    setComms(pmoData.commsLog || []);
   }, [effectiveClientId]);
 
   const updateStatus = (id, newStatus) => {
@@ -505,6 +681,11 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                   const leftStyle = STATUS_LEFT[a.status] || STATUS_LEFT['Planejado'];
                   const isCritical = info.dataConhecimento && getSLAStatus(slaHours, slaConfig?.warnThreshold || 36, slaConfig?.critThreshold || 48) === 'critical';
                   const isFlash = flashRow === a.id;
+                  // INT-3: check blocked PMO action
+                  const linkedPMO = pmoActions.find(p => p.jornadaId === a.id);
+                  const isPMOBlocked = linkedPMO?.status === 'Bloqueado';
+                  // INT-9: comm count for comm activities
+                  const commCount = COMM_ACTIVITY_IDS.includes(a.id) ? comms.filter(c => c.actividadeId === a.id).length : 0;
                   return (
                     <tr
                       key={a.id}
@@ -518,7 +699,16 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                           {a.anpdVinculado && (
                             <Scale size={12} className="text-amber-500 shrink-0" title="Prazo regulatório vinculado — ver SLA & Prazos" />
                           )}
+                          {isPMOBlocked && (
+                            <AlertTriangle size={12} className="text-red-500 shrink-0" title="Ação bloqueada no PMO" />
+                          )}
                           <span className="line-clamp-2">{a.nome}</span>
+                          {commCount > 0 && (
+                            <span className="flex items-center gap-0.5 ml-1 shrink-0">
+                              <MessageSquare size={11} className="text-blue-500" />
+                              <span className="font-mono text-[10px] text-blue-600">{commCount}</span>
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -602,6 +792,9 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
           dataConhecimento={info.dataConhecimento}
           crisis={crisis}
           onWarroom={handleWarroom}
+          effectiveClientId={effectiveClientId}
+          comms={comms}
+          pmoActions={pmoActions}
         />
       )}
     </Layout>
