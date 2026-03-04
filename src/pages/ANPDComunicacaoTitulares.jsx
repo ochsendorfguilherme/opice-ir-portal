@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
@@ -278,14 +278,14 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
-  // Auto-fill meios_utilizados_resumo when meios change
-  useEffect(() => {
+  // Computed: meios auto-fill (sem useEffect para evitar loop)
+  const meiosAutoFill = (() => {
     const isDireta = form.forma_comunicacao === 'Direta e individualizada';
     const meios = isDireta ? form.meios_diretos : form.meios_divulgacao;
     const outro = isDireta ? form.meios_diretos_outro : form.meios_divulgacao_outro;
     const txt = buildMeiosList(meios, meios.includes('Outro'), outro);
-    setForm(f => ({ ...f, meios_utilizados_resumo: txt === '[não informado]' ? '' : txt }));
-  }, [form.forma_comunicacao, form.meios_diretos, form.meios_divulgacao, form.meios_diretos_outro, form.meios_divulgacao_outro]);
+    return txt === '[não informado]' ? '' : txt;
+  })();
 
   const prazo = form.agente_pequeno_porte ? 6 : 3;
   const deadlineDate = calcDeadline(form.data_conhecimento, prazo);
@@ -759,7 +759,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
                         <FieldLabel hint="Preenchido automaticamente, editável para complementar">Meios utilizados (resumo)</FieldLabel>
                         <textarea
                           rows={2}
-                          value={form.meios_utilizados_resumo}
+                          value={form.meios_utilizados_resumo || meiosAutoFill}
                           onChange={e => set('meios_utilizados_resumo', e.target.value)}
                           className={taClass}
                         />
