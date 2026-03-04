@@ -5,16 +5,23 @@ import BlockedModal from './BlockedModal';
 import { useState } from 'react';
 
 export function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, authStep } = useAuth();
   const location = useLocation();
+
+  if (authStep === 'MFA_REQUIRED') return <Navigate to="/mfa" state={{ from: location }} replace />;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+
   return children;
 }
 
 export function AdminRoute({ children }) {
-  const { user } = useAuth();
+  const { user, authStep } = useAuth();
+  const location = useLocation();
+
+  if (authStep === 'MFA_REQUIRED') return <Navigate to="/mfa" state={{ from: location }} replace />;
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== 'admin') return <Navigate to="/dashboard" replace />;
+
   return children;
 }
 
@@ -32,7 +39,7 @@ export function OnboardingRoute({ children, requireStep }) {
   const answers = getStorage(KEYS.answers(clientId), {});
 
   const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
-  const sectionsStarted = [1,2,3,4,5].filter(sid => {
+  const sectionsStarted = [1, 2, 3, 4, 5].filter(sid => {
     const sAnswers = answers[sid] || {};
     return Object.values(sAnswers).some(v => v?.trim());
   }).length;
