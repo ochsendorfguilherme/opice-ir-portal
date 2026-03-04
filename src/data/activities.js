@@ -9,7 +9,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 1,
     nome: "Criação de Comitê de Crise ou acionamento do time da CSIRT",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "NIST SP 800-61 Rev. 2 (Seção 3.5.1)",
     observacoes: "",
@@ -22,7 +22,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 2,
     nome: "Análise do Plano de Resposta a Incidentes",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-1 (Seção 6); NIST SP 800-61 Rev. 2 (Seção 3)",
     observacoes: "",
@@ -35,7 +35,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 3,
     nome: "Realização de medidas técnicas e administrativas de segurança após o incidente",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-2 (Seções 5,6,8); NIST SP 800-61 Rev. 2 (Seções 3.4.3, 3.4.4, 3.4.5)",
     observacoes: "",
@@ -48,7 +48,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 4,
     nome: "Data Discovery (Identificação dos dados e dos titulares impactados)",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-1 (Seção 6.3); NIST SP 800-61 Rev. 2 (Seção 3.3)",
     observacoes: "",
@@ -61,7 +61,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 5,
     nome: "Análise de Risco (Score) – Identificação de quem deve ser comunicado",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "Art. 5, § 1º da Resolução nº 15/2024 da ANPD",
     observacoes: "O controlador deve comunicar incidente que pode acarretar risco ou dano relevante aos titulares.",
@@ -74,7 +74,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 6,
     nome: "Relatório Técnico do Incidente",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-2 (Seção 7); NIST SP 800-61 Rev. 2 (Seção 3.4.2)",
     observacoes: "A ANPD poderá realizar auditorias a qualquer momento.",
@@ -87,7 +87,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 7,
     nome: "Preservação de Evidências",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-2 (Seções 9,7); NIST SP 800-86",
     observacoes: "A ANPD poderá realizar auditorias a qualquer momento.",
@@ -100,7 +100,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 8,
     nome: "Revisão de contrato com parceiros e/ou clientes",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "NIST SP 800-61 Rev. 2 (Seção 3.4.1.3)",
     observacoes: "",
@@ -113,7 +113,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 9,
     nome: "Varredura e Monitoramento da Internet (Surface, Deep e Dark Web)",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-1 (Seção 8.1); NIST CSF 2.0",
     observacoes: "",
@@ -126,7 +126,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 10,
     nome: "Contratação de consultoria técnica especializada",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-2 (Seções 9,7); NIST SP 800-86",
     observacoes: "",
@@ -139,7 +139,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 11,
     nome: "Outras Medidas Judiciais e Extrajudiciais (BO, Notificação, Quebra de Sigilo, Ação Inibitória)",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "ISO/IEC 27035-1 (Seção 6.5); NIST SP 800-61 Rev. 2 (Seção 3.6)",
     observacoes: "",
@@ -152,7 +152,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 12,
     nome: "Comunicação à seguradora (Seguro Cibernético)",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 1",
     fundamento: "NIST SP 800-61 Rev. 2 (Seção 3.4.1.3)",
     observacoes: "",
@@ -166,7 +166,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 13,
     nome: "Levantamento das informações para preenchimento e protocolo do formulário à ANPD",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 6º § 2º da Resolução nº 15/2024",
     observacoes: "Via SEI! da ANPD.",
@@ -180,7 +180,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 14,
     nome: "Comunicação Completa à ANPD",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 48 LGPD; Arts. 4º e 6º da Resolução nº 15/2024",
     observacoes: "Prazo 3 dias úteis.",
@@ -194,7 +194,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 15,
     nome: "*Comunicação Preliminar à ANPD",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 6º § 3º da Resolução nº 15/2024",
     observacoes: "Prazo 3 dias úteis.",
@@ -208,7 +208,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 16,
     nome: "*Comunicação Complementar à ANPD",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 6º § 3º da Resolução nº 15/2024",
     observacoes: "20 dias úteis da comunicação preliminar.",
@@ -222,7 +222,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 17,
     nome: "Plano de Comunicação (imprensa, comunicado ao mercado e fato relevante)",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "ISO/IEC 27035-1 (Seção 5.3)",
     observacoes: "",
@@ -235,7 +235,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 18,
     nome: "Notificação para clientes, terceiros e órgãos reguladores",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "NIST SP 800-61 Rev. 2 (Seção 3.4.1.3)",
     observacoes: "",
@@ -248,7 +248,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 19,
     nome: "Definição do canal e processo de atendimento aos titulares",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 9, § 2º da Resolução nº 15/2024 da ANPD",
     observacoes: "",
@@ -261,7 +261,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 20,
     nome: "Plano e comunicação aos titulares",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 9, § 3º da Resolução nº 15/2024 da ANPD",
     observacoes: "",
@@ -274,7 +274,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 21,
     nome: "*Comunicação pública aos titulares",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 9, § 3º da Resolução nº 15/2024",
     observacoes: "Quando individual inviável, publicar por mín. 3 meses.",
@@ -287,7 +287,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 22,
     nome: "Medidas de mitigação de risco aos titulares",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 15 da Resolução nº 15/2024 da ANPD",
     observacoes: "",
@@ -300,7 +300,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 23,
     nome: "Declaração de comunicação assinada pelo DPO",
-    status: "Feito",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 9, § 4º da Resolução nº 15/2024 da ANPD",
     observacoes: "Em até 3 dias úteis do término do prazo.",
@@ -314,7 +314,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 24,
     nome: "Envio de Procuração e Contrato Social",
-    status: "Em andamento",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "gov.br/anpd (CIS)",
     observacoes: "Documentação de legitimidade para representar o controlador.",
@@ -328,7 +328,7 @@ export const DEFAULT_ACTIVITIES = [
   {
     id: 25,
     nome: "Registro do Incidente",
-    status: "Não se aplica",
+    status: "Planejado",
     etapa: "Etapa 2",
     fundamento: "Art. 10 da Resolução nº 15/2024",
     observacoes: "Arquivar por mín. 5 anos.",

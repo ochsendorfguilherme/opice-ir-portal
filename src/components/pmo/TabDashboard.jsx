@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getStorage, setStorage, KEYS } from '../../utils/storage';
 import { useSLATimer } from '../../hooks/useSLA';
 import { businessDaysRemaining, formatCountdown } from '../../utils/businessDays';
-import { Clock, Shield, AlertTriangle, CheckSquare, Copy, Info, ExternalLink } from 'lucide-react';
+import { Clock, Shield, AlertTriangle, CheckSquare, Copy, Info, ExternalLink, FileText, ArrowRight } from 'lucide-react';
 
 const NIST_PHASES = ['Detecção', 'Análise', 'Contenção', 'Erradicação', 'Recuperação'];
 const STATUSES_GLOBAL = ['CRÍTICO', 'ALTO', 'MÉDIO', 'CONTIDO', 'ERRADICADO'];
@@ -26,12 +26,11 @@ const POST_CHECKLIST = [
   'Simulação agendada',
 ];
 
-export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
+export default function TabDashboard({ effectiveClientId, isAdmin = false, onNavigateTab }) {
   const navigate = useNavigate();
   const [data, setData] = useState({});
   const [info, setInfo] = useState({});
   const [anpdDays, setAnpdDays] = useState(3);
-  const [briefingCopied, setBriefingCopied] = useState(false);
   const [checklist, setChecklist] = useState([]);
 
   useEffect(() => {
@@ -55,8 +54,8 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
   const isPulsing = status === 'CRÍTICO' || status === 'ALTO';
   const showPostChecklist = status === 'CONTIDO' || status === 'ERRADICADO';
 
-  const impacts = data.impacts || {};
-  const briefing = `O QUE HOUVE:\n${data.oQueHouve || '—'}\n\nIMPACTO:\n${data.impacto || '—'}\n\nO QUE ESTAMOS FAZENDO:\n${data.oQueFazendo || '—'}`;
+  const isBriefingFilled = !!(data.oQueHouve && data.impacto && data.oQueFazendo);
+  const briefingPreview = data.oQueHouve ? data.oQueHouve.slice(0, 80) : '';
 
   const actions = data.actions || [];
   const openActions = actions.filter(a => a.status !== 'Feito').length;
@@ -72,9 +71,6 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
     setChecklist(updated);
     save({ postChecklist: updated });
   };
-
-  const inputClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full";
-  const taClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full resize-none";
 
   const infoPath = isAdmin ? `/admin/cliente/${effectiveClientId}/informacoes` : '/informacoes';
   const infoFilled = !!(info.nomeCliente);
@@ -151,12 +147,11 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
             <Shield size={12} className="text-[#CAFF00]" />
             Countdown ANPD
           </div>
-          <div className={`font-mono text-2xl font-bold ${
-            anpd?.overdue ? 'text-red-400' :
+          <div className={`font-mono text-2xl font-bold ${anpd?.overdue ? 'text-red-400' :
             anpd && anpd.diffHours < 24 ? 'text-red-400' :
-            anpd && anpd.diffHours < 48 ? 'text-amber-400' :
-            'text-green-400'
-          }`}>
+              anpd && anpd.diffHours < 48 ? 'text-amber-400' :
+                'text-green-400'
+            }`}>
             {anpd ? formatCountdown(anpd.diffHours) : '—'}
           </div>
           <div className="flex items-center gap-2 mt-2">
@@ -184,11 +179,10 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
               <button
                 key={phase}
                 onClick={() => save({ nistPhase: phase })}
-                className={`flex-1 min-w-[100px] px-3 py-3 font-mono text-xs text-center transition-all cursor-pointer border ${
-                  isActive ? 'bg-[#CAFF00] text-[#111111] font-bold border-[#CAFF00]' :
+                className={`flex-1 min-w-[100px] px-3 py-3 font-mono text-xs text-center transition-all cursor-pointer border ${isActive ? 'bg-[#CAFF00] text-[#111111] font-bold border-[#CAFF00]' :
                   isDone ? 'bg-[#111111] text-white border-[#111111]' :
-                  'bg-white text-gray-500 border-[#E0E0E0] hover:bg-gray-50'
-                }`}
+                    'bg-white text-gray-500 border-[#E0E0E0] hover:bg-gray-50'
+                  }`}
               >
                 {isDone && '✓ '}
                 {phase}
@@ -198,52 +192,42 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false }) {
         </div>
       </div>
 
-      {/* Card 2 — Briefing */}
-      <div className="border border-[#E0E0E0] p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-syne font-bold text-[#111111] uppercase text-sm">Resumo C-Level</h3>
-          <button
-            onClick={() => { navigator.clipboard.writeText(briefing); setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2000); }}
-            className="flex items-center gap-1.5 text-xs font-mono text-[#555555] hover:text-[#111111] transition-colors"
-          >
-            <Copy size={12} />
-            {briefingCopied ? '✓ Copiado' : 'Copiar Briefing'}
-          </button>
+      {/* Card 2 — Briefing C-Level Preview */}
+      <div className={`border p-5 ${!isBriefingFilled ? 'border-amber-300 bg-amber-50 animate-pulse-amber' : 'bg-[#111111] border-[#111111]'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className={`font-syne font-bold uppercase text-sm flex items-center gap-2 ${!isBriefingFilled ? 'text-amber-800' : 'text-white'}`}>
+            <FileText size={14} className={!isBriefingFilled ? 'text-amber-600' : 'text-[#CAFF00]'} />
+            Briefing C-Level
+          </h3>
         </div>
-        <div className="space-y-3">
-          {[
-            { key: 'oQueHouve', label: 'O que houve:' },
-            { key: 'impacto', label: 'Impacto:' },
-            { key: 'oQueFazendo', label: 'O que estamos fazendo:' },
-          ].map(({ key, label }) => (
-            <div key={key}>
-              <label className="block font-mono text-xs text-[#555555] uppercase mb-1">{label}</label>
-              <textarea
-                value={data[key] || ''}
-                onChange={e => save({ [key]: e.target.value })}
-                rows={2}
-                className={taClass}
-                placeholder={label}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Card 3 — Impacto */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {['💰 Financeiro', '⚙ Operacional', '📰 Reputacional', '⚖ Legal'].map(cat => (
-          <div key={cat} className="border border-[#E0E0E0] p-4">
-            <div className="font-mono text-xs text-[#555555] uppercase mb-2">{cat}</div>
-            <textarea
-              value={impacts[cat] || ''}
-              onChange={e => save({ impacts: { ...impacts, [cat]: e.target.value } })}
-              rows={3}
-              className={`${taClass} text-xs`}
-              placeholder="Descrever impacto..."
-            />
+        {!isBriefingFilled ? (
+          <div>
+            <p className="font-dm text-sm text-amber-800 mb-3">
+              ⚠ Resumo executivo não preenchido completamente. <br />
+              É fundamental manter o relato atualizado para reportar à diretoria.
+            </p>
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('clevel')}
+              className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+            >
+              Preencher Resumo Executivo <ArrowRight size={13} />
+            </button>
           </div>
-        ))}
+        ) : (
+          <div>
+            <div className="font-mono text-xs text-gray-400 uppercase mb-1">Preview: O que houve</div>
+            <p className="font-dm text-sm text-gray-200 mb-4 line-clamp-2">
+              "{briefingPreview}..."
+            </p>
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('clevel')}
+              className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-gray-600 text-white hover:bg-white hover:text-[#111111] transition-colors"
+            >
+              Ver e Editar Completo <ArrowRight size={13} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Card 4 — Mini KPIs */}

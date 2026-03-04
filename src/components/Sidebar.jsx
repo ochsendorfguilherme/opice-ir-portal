@@ -1,5 +1,21 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, GitBranch, HelpCircle, Info, BarChart3, Shield, LogOut, Lock, AlertTriangle, CheckCircle, X, Zap, BookOpen, Scale } from 'lucide-react';
+import {
+  BarChart2,
+  ClipboardList,
+  HelpCircle,
+  Info,
+  BookOpen,
+  Scale,
+  Briefcase,
+  Siren,
+  AlertOctagon,
+  LogOut,
+  Lock,
+  CheckCircle,
+  AlertTriangle,
+  X,
+  Users
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, KEYS } from '../utils/storage';
 import { useState, useEffect } from 'react';
@@ -54,7 +70,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
     const info = getStorage(KEYS.info(effectiveClientId));
     const answers = getStorage(KEYS.answers(effectiveClientId), {});
     const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
-    const sectionsDone = [1,2,3,4,5].filter(sid => {
+    const sectionsDone = [1, 2, 3, 4, 5].filter(sid => {
       const sAnswers = answers[sid] || {};
       return Object.values(sAnswers).some(v => v?.trim());
     }).length;
@@ -101,118 +117,117 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto">
-        {/* Dashboard */}
-        <NavLink
-          to={`${basePath}/dashboard`}
-          onClick={onClose}
-          className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/dashboard`) ? 'active' : ''}`}
-        >
-          <LayoutDashboard size={16} />
-          <span className="flex-1">Dashboard</span>
-        </NavLink>
+        {!effectiveClientId && isAdmin ? (
+          <div className="h-full flex flex-col items-center justify-center px-6 text-center">
+            <Users size={40} className="text-gray-600 mb-4 opacity-50" />
+            <p className="font-dm text-sm text-gray-400">
+              Selecione um cliente no Painel Admin para navegar
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Dashboard Group */}
+            <div className="mb-6">
+              <NavLink
+                to={`${basePath}/dashboard`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/dashboard`) ? 'active' : ''}`}
+              >
+                <BarChart2 size={16} />
+                <span className="flex-1">Dashboard</span>
+              </NavLink>
+            </div>
 
-        {/* Jornada */}
-        <NavLink
-          to={`${basePath}/jornada`}
-          onClick={onClose}
-          className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/jornada`) ? 'active' : ''}`}
-        >
-          <GitBranch size={16} />
-          <span className="flex-1">Jornada do Incidente</span>
-          <StepIcon status={onb.jornada} />
-        </NavLink>
+            {/* Incident Info Group */}
+            <div className="space-y-1 mb-6">
+              <NavLink
+                to={`${basePath}/informacoes`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+              >
+                <Info size={16} />
+                <span className="flex-1">Informações do Incidente</span>
+                <StepIcon status={onb.info} />
+              </NavLink>
 
-        {/* Perguntas */}
-        <NavLink
-          to={`${basePath}/perguntas`}
-          onClick={onClose}
-          className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
-        >
-          <HelpCircle size={16} />
-          <span className="flex-1">Perguntas</span>
-          <StepIcon status={onb.perguntas} />
-        </NavLink>
+              <NavLink
+                to={`${basePath}/perguntas`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+              >
+                <HelpCircle size={16} />
+                <span className="flex-1">Perguntas</span>
+                <StepIcon status={onb.perguntas} />
+              </NavLink>
 
-        {/* Informações */}
-        <NavLink
-          to={`${basePath}/informacoes`}
-          onClick={onClose}
-          className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
-        >
-          <Info size={16} />
-          <span className="flex-1">Informações do Incidente</span>
-          <StepIcon status={onb.info} />
-        </NavLink>
+              <NavLink
+                to={`${basePath}/jornada`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/jornada`) ? 'active' : ''}`}
+              >
+                <ClipboardList size={16} />
+                <span className="flex-1">Jornada do Incidente</span>
+                <StepIcon status={onb.jornada} />
+              </NavLink>
+            </div>
 
-        {/* Reuniões */}
-        <NavLink
-          to={`${basePath}/reunioes`}
-          onClick={onClose}
-          className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/reunioes`) ? 'active' : ''}`}
-        >
-          <BookOpen size={16} />
-          <span className="flex-1">Reuniões</span>
-          {activeMeeting && (
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Reunião em andamento" />
-          )}
-        </NavLink>
+            {/* Management Group */}
+            <div className="space-y-1">
+              <NavLink
+                to={`${basePath}/reunioes`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/reunioes`) ? 'active' : ''}`}
+              >
+                <BookOpen size={16} />
+                <span className="flex-1">Reuniões</span>
+                {activeMeeting && (
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Reunião em andamento" />
+                )}
+              </NavLink>
 
-        {/* ANPD */}
-        <NavLink
-          to={`${basePath}/anpd`}
-          onClick={onClose}
-          className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
-        >
-          <Scale size={16} />
-          <span className="flex-1">ANPD</span>
-          {anpdNeedsSEI && (
-            <span className="font-mono text-[10px] bg-amber-500 text-white px-1.5 py-0.5">SEI</span>
-          )}
-        </NavLink>
+              <NavLink
+                to={`${basePath}/anpd`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
+              >
+                <Scale size={16} />
+                <span className="flex-1">ANPD</span>
+                {anpdNeedsSEI && (
+                  <span className="font-mono text-[10px] bg-amber-500 text-white px-1.5 py-0.5">SEI</span>
+                )}
+              </NavLink>
 
-        {/* PMO */}
-        <div>
-          <NavLink
-            to={`${basePath}/pmo`}
-            onClick={onClose}
-            className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}
-          >
-            <BarChart3 size={16} />
-            <span className="flex-1">PMO</span>
-            {pmoAlerts > 0 && (
-              <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 min-w-[20px] text-center animate-pulse-red">
-                {pmoAlerts}
-              </span>
-            )}
-          </NavLink>
-          <NavLink
-            to={`${basePath}/pmo/warroom`}
-            onClick={onClose}
-            className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
-          >
-            {crisisActive ? (
-              <Zap size={14} className="text-red-400 animate-pulse" />
-            ) : (
-              <Shield size={14} />
-            )}
-            <span className="flex-1 text-xs">
-              WarRoom
-              {crisisActive && (
-                <span className="ml-1 text-red-400 font-mono text-[10px]">⚡ ATIVA</span>
-              )}
-            </span>
-          </NavLink>
-        </div>
+              <NavLink
+                to={`${basePath}/pmo`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}
+              >
+                <Briefcase size={16} />
+                <span className="flex-1">PMO</span>
+                {pmoAlerts > 0 && (
+                  <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 min-w-[20px] text-center animate-pulse-red">
+                    {pmoAlerts}
+                  </span>
+                )}
+              </NavLink>
 
-        {isAdmin && (
-          <NavLink
-            to="/admin"
-            onClick={onClose}
-            className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
-          >
-            <Shield size={16} />
-            <span className="flex-1">Painel Admin</span>
-          </NavLink>
+              <NavLink
+                to={`${basePath}/pmo/warroom`}
+                onClick={onClose}
+                className={({ isActive: active }) =>
+                  `sidebar-link pl-10 ${active ? 'active' : ''} ${crisisActive ? 'animate-pulse text-[#DC2626]' : 'text-[#DC2626]'}`
+                }
+              >
+                <Siren size={14} color="#DC2626" />
+                <span className="flex-1 text-xs font-bold">
+                  WarRoom
+                  {crisisActive && (
+                    <span className="ml-1 font-mono text-[10px]">⚡ ATIVA</span>
+                  )}
+                </span>
+              </NavLink>
+            </div>
+          </>
         )}
       </nav>
 

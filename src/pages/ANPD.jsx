@@ -109,9 +109,8 @@ function Field({ label, children, dark = false }) {
   return (
     <div>
       <label
-        className={`block font-mono text-xs font-medium uppercase mb-1.5 ${
-          dark ? 'text-[#CAFF00]' : 'text-[#111111]'
-        }`}
+        className={`block font-mono text-xs font-medium uppercase mb-1.5 ${dark ? 'text-[#CAFF00]' : 'text-[#111111]'
+          }`}
       >
         {label}
       </label>
@@ -162,8 +161,8 @@ function TabProcesso({ data, onSave, isAdmin }) {
   };
 
   const canEdit = (field) => {
-    if (isAdmin) return true;
-    return ['numeroProcesso', 'dataAbertura', 'observacoes'].includes(field);
+    // Liberando edição para todos os usuários conforme solicitado
+    return true;
   };
 
   return (
@@ -296,13 +295,12 @@ function TabProcesso({ data, onSave, isAdmin }) {
                 <button
                   onClick={() => toggleStage(idx)}
                   title={`Marcar "${stage}"`}
-                  className={`w-8 h-8 flex items-center justify-center font-mono text-xs font-bold transition-colors shrink-0 ${
-                    completed
+                  className={`w-8 h-8 flex items-center justify-center font-mono text-xs font-bold transition-colors shrink-0 ${completed
                       ? 'bg-[#111111] text-white'
                       : idx === Math.min(...TIMELINE_STAGES.map((_, i) => (form.etapas.includes(i) ? 99 : i)).filter((i) => !form.etapas.includes(i)))
-                      ? 'bg-[#CAFF00] text-[#111111]'
-                      : 'bg-gray-100 text-[#555555]'
-                  }`}
+                        ? 'bg-[#CAFF00] text-[#111111]'
+                        : 'bg-gray-100 text-[#555555]'
+                    }`}
                 >
                   {completed ? <Check size={14} /> : idx + 1}
                 </button>
@@ -313,9 +311,8 @@ function TabProcesso({ data, onSave, isAdmin }) {
                   <div className="hidden sm:block flex-1 h-px bg-[#E0E0E0] w-full mt-4" />
                 )}
                 <p
-                  className={`font-mono text-xs text-center mt-2 px-1 leading-tight ${
-                    completed ? 'text-[#111111] font-bold' : 'text-[#555555]'
-                  }`}
+                  className={`font-mono text-xs text-center mt-2 px-1 leading-tight ${completed ? 'text-[#111111] font-bold' : 'text-[#555555]'
+                    }`}
                 >
                   {stage}
                 </p>
@@ -505,9 +502,8 @@ function TabAndamentos({ items, onAdd, onDelete }) {
                   </td>
                   <td className="py-3 pr-4">
                     <span
-                      className={`font-mono text-xs px-2 py-0.5 ${
-                        ANDAMENTO_BADGE[item.tipo] || 'bg-gray-100 text-gray-700'
-                      }`}
+                      className={`font-mono text-xs px-2 py-0.5 ${ANDAMENTO_BADGE[item.tipo] || 'bg-gray-100 text-gray-700'
+                        }`}
                     >
                       {item.tipo}
                     </span>
@@ -706,9 +702,8 @@ function TabDocumentos({ items, onAdd, onDelete }) {
                   </td>
                   <td className="py-3 pr-4">
                     <span
-                      className={`font-mono text-xs px-2 py-0.5 ${
-                        DOC_STATUS_BADGE[doc.status] || 'bg-gray-100 text-gray-700'
-                      }`}
+                      className={`font-mono text-xs px-2 py-0.5 ${DOC_STATUS_BADGE[doc.status] || 'bg-gray-100 text-gray-700'
+                        }`}
                     >
                       {doc.status}
                     </span>
@@ -988,11 +983,10 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative ${
-                activeTab === tab.id
+              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative ${activeTab === tab.id
                   ? 'text-[#111111] border-b-2 border-[#111111] -mb-px'
                   : 'text-[#555555] hover:text-[#111111]'
-              }`}
+                }`}
             >
               {tab.label}
             </button>

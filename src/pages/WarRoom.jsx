@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { CrisisHistory } from '../components/CrisisHistory';
@@ -79,8 +78,8 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
       if (idx >= CRI_MEMBERS.length) {
         setTimeout(() => {
           const hash = generateHash();
-          const crisisId = `CRISIS-${clientId}-${generateId('').slice(0,6)}`;
-          const teamsLink = `https://teams.microsoft.com/l/meetup-join/crisis-${hash.slice(0,6)}`;
+          const crisisId = `CRISIS-${clientId}-${generateId('').slice(0, 6)}`;
+          const teamsLink = `https://teams.microsoft.com/l/meetup-join/crisis-${hash.slice(0, 6)}`;
           setResult({ hash, crisisId, teamsLink });
           setStep(3);
         }, 600);
@@ -174,11 +173,10 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
             <div className="space-y-3">
               {membersState.map(m => (
                 <div key={m.id} className={`flex items-center gap-3 ${m.state === 'pending' ? 'opacity-40' : 'opacity-100'} transition-opacity`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    m.state === 'done' ? 'bg-green-500' :
-                    m.state === 'sending' ? 'bg-amber-400 animate-pulse' :
-                    'bg-gray-600'
-                  }`} />
+                  <div className={`w-2 h-2 rounded-full ${m.state === 'done' ? 'bg-green-500' :
+                      m.state === 'sending' ? 'bg-amber-400 animate-pulse' :
+                        'bg-gray-600'
+                    }`} />
                   <span className="font-dm text-sm text-gray-200 flex-1">{m.role}</span>
                   {m.state === 'sending' && <span className="font-mono text-xs text-amber-400">Enviando...</span>}
                   {m.state === 'done' && <span className="font-mono text-xs text-green-400 flex items-center gap-1"><Check size={11} /> Notificado</span>}
@@ -235,7 +233,7 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
 }
 
 // ——— CLOSE MODAL ———
-function CloseModal({ crisis, slaHours, onClose, onConfirm, user, activities }) {
+function CloseModal({ crisis, onClose, onConfirm, activities }) {
   const [step, setStep] = useState(1);
   const [checklist, setChecklist] = useState([]);
   const [motivo, setMotivo] = useState('');
@@ -253,10 +251,6 @@ function CloseModal({ crisis, slaHours, onClose, onConfirm, user, activities }) 
 
   const toggle = (item) => {
     setChecklist(prev => prev.includes(item) ? prev.filter(c => c !== item) : [...prev, item]);
-  };
-
-  const toggleMember = (id) => {
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, present: !m.present } : m));
   };
 
   const toggleActivityUpdate = (id) => {
@@ -329,9 +323,8 @@ function CloseModal({ crisis, slaHours, onClose, onConfirm, user, activities }) 
             <button
               onClick={confirm}
               disabled={!allChecked}
-              className={`w-full font-syne font-bold py-3 uppercase tracking-wide transition-colors ${
-                allChecked ? 'bg-green-600 text-white hover:bg-green-500 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full font-syne font-bold py-3 uppercase tracking-wide transition-colors ${allChecked ? 'bg-green-600 text-white hover:bg-green-500 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                }`}
             >
               CONFIRMAR ENCERRAMENTO
             </button>
@@ -360,7 +353,6 @@ function CloseModal({ crisis, slaHours, onClose, onConfirm, user, activities }) 
 // ——— MAIN WARROOM PAGE ———
 export default function WarRoom({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
 
   const [crisis, setCrisis] = useState(null);
@@ -371,7 +363,6 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
   const [actions, setActions] = useState(IMMEDIATE_ACTIONS.map(a => ({ ...a, done: false })));
   const [feedInput, setFeedInput] = useState('');
   const [feed, setFeed] = useState([]);
-  const [copiedTeams, setCopiedTeams] = useState(false);
   const [jornadaActivities, setJornadaActivities] = useState([]);
 
   const elapsed = useCrisisTimer(crisis?.crisisTimestamp);
@@ -435,7 +426,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
       area: a.id === 'A003' ? 'DPO' : a.id === 'A004' || a.id === 'A006' ? 'Jurídico' : a.id === 'A005' ? 'Comunicação' : 'TI',
       status: 'Aberto',
       prazo: '',
-      prioridade: ['A001','A002','A003'].includes(a.id) ? 'Crítica' : 'Alta',
+      prioridade: ['A001', 'A002', 'A003'].includes(a.id) ? 'Crítica' : 'Alta',
       observacoes: '',
     }));
 
@@ -459,7 +450,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
     setShowDeclareModal(false);
   };
 
-  const handleCloseCrisis = ({ closeHash, motivo, members: finalMembers, elapsed: dur, selectedActivityIds }) => {
+  const handleCloseCrisis = ({ closeHash, motivo, elapsed: dur, selectedActivityIds }) => {
     const closed = {
       ...crisis,
       crisisStatus: 'closed',
@@ -613,11 +604,10 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
                       </div>
                       <button
                         onClick={() => toggleMember(m.id)}
-                        className={`font-mono text-xs px-3 py-1 border transition-colors ${
-                          m.present
+                        className={`font-mono text-xs px-3 py-1 border transition-colors ${m.present
                             ? 'bg-green-50 text-green-700 border-green-200'
                             : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-                        }`}
+                          }`}
                       >
                         {m.present ? '✓ Presente' : 'Ausente'}
                       </button>
@@ -708,10 +698,8 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
       {showCloseModal && (
         <CloseModal
           crisis={crisis}
-          slaHours={slaHours}
           onClose={() => setShowCloseModal(false)}
           onConfirm={handleCloseCrisis}
-          user={user}
           activities={jornadaActivities}
         />
       )}

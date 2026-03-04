@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
@@ -59,16 +59,16 @@ function genItemId() {
 }
 
 const CATEGORY_STYLES = {
-  Decisão:    'bg-blue-100 text-blue-800 border-blue-200',
-  Tarefa:     'bg-[#CAFF00] text-[#111111] border-[#b0e000]',
-  Pendência:  'bg-amber-100 text-amber-800 border-amber-200',
+  Decisão: 'bg-blue-100 text-blue-800 border-blue-200',
+  Tarefa: 'bg-[#CAFF00] text-[#111111] border-[#b0e000]',
+  Pendência: 'bg-amber-100 text-amber-800 border-amber-200',
   Observação: 'bg-[#E0E0E0] text-[#111111] border-[#ccc]',
 };
 
 const CATEGORY_EMOJI = {
-  Decisão:    '📌',
-  Tarefa:     '✅',
-  Pendência:  '⚠',
+  Decisão: '📌',
+  Tarefa: '✅',
+  Pendência: '⚠',
   Observação: '💬',
 };
 
@@ -108,10 +108,10 @@ function buildAta({ meeting, endTimeIso, observacoesFinais, proximaReuniao }) {
   const sep1 = '══════════════════════════════════════';
   const sep2 = '──────────────────────────────────────';
 
-  const decisoes  = (meeting.items || []).filter(i => i.categoria === 'Decisão');
-  const tarefas   = (meeting.items || []).filter(i => i.categoria === 'Tarefa');
+  const decisoes = (meeting.items || []).filter(i => i.categoria === 'Decisão');
+  const tarefas = (meeting.items || []).filter(i => i.categoria === 'Tarefa');
   const pendencias = (meeting.items || []).filter(i => i.categoria === 'Pendência');
-  const obs       = (meeting.items || []).filter(i => i.categoria === 'Observação');
+  const obs = (meeting.items || []).filter(i => i.categoria === 'Observação');
 
   const lines = [];
   lines.push('ATA DE REUNIÃO');
@@ -164,8 +164,8 @@ function buildAta({ meeting, endTimeIso, observacoesFinais, proximaReuniao }) {
   }
 
   if (proximaReuniao && (proximaReuniao.data || proximaReuniao.horario)) {
-    const dataStr  = proximaReuniao.data   ? fmtDate(proximaReuniao.data)   : '';
-    const horaStr  = proximaReuniao.horario ? proximaReuniao.horario          : '';
+    const dataStr = proximaReuniao.data ? fmtDate(proximaReuniao.data) : '';
+    const horaStr = proximaReuniao.horario ? proximaReuniao.horario : '';
     lines.push(`PRÓXIMA REUNIÃO: ${[dataStr, horaStr].filter(Boolean).join(' às ')}`);
   }
 
@@ -178,7 +178,7 @@ function buildAta({ meeting, endTimeIso, observacoesFinais, proximaReuniao }) {
 
 // ─── Close Modal ─────────────────────────────────────────────────────────────
 
-function CloseModal({ meeting, effectiveClientId, elapsedSeconds, onClose, onFinalize }) {
+function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
   const [step, setStep] = useState(1); // 1 = summary, 2 = ata preview
   const [observacoesFinais, setObservacoesFinais] = useState('');
   const [proximaReuniao, setProximaReuniao] = useState({ data: '', horario: '' });
@@ -186,7 +186,7 @@ function CloseModal({ meeting, effectiveClientId, elapsedSeconds, onClose, onFin
   const [ataText, setAtaText] = useState('');
 
   const endHM = new Date(endTimeIso).toTimeString().slice(0, 5);
-  const dur   = diffMinutes(meeting.criadaEm, endTimeIso);
+  const dur = diffMinutes(meeting.criadaEm, endTimeIso);
 
   function handleGerarAta() {
     const text = buildAta({ meeting, endTimeIso, observacoesFinais, proximaReuniao });
@@ -225,15 +225,15 @@ function CloseModal({ meeting, effectiveClientId, elapsedSeconds, onClose, onFin
     // Update PMO timeline + actions
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
 
-    // Add timeline event
+    // Add timeline event matching TabTimeline fields
     const timeline = pmoData.timeline || [];
     timeline.push({
       id: `EVT_${Date.now()}`,
-      tipo: 'Reunião',
-      titulo: meeting.titulo,
-      descricao: `Reunião encerrada. Duração: ${dur}. Participantes: ${(meeting.participantes || []).join(', ')}`,
-      data: endTimeIso,
-      origem: 'Reunião',
+      datetime: endTimeIso.slice(0, 16), // format: YYYY-MM-DDTHH:mm
+      fase: 'Análise', // Default phase for meetings
+      evento: `[Reunião: ${meeting.titulo}] Duração: ${dur}. Participantes: ${(meeting.participantes || []).join(', ')}`,
+      fonte: 'Portal IR',
+      evidencia: `Ata ${meeting.id}`,
       meetingId: meeting.id,
     });
 
@@ -245,7 +245,9 @@ function CloseModal({ meeting, effectiveClientId, elapsedSeconds, onClose, onFin
         id: `ACT_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
         descricao: item.texto,
         responsavel: item.responsavel || '',
-        status: 'Pendente',
+        area: 'TI', // Default area
+        status: 'Aberto', // Status expected by TabMatriz
+        prioridade: 'Alta', // Default priority
         origem: 'Reunião',
         meetingId: meeting.id,
         criadaEm: new Date().toISOString(),
@@ -267,10 +269,10 @@ function CloseModal({ meeting, effectiveClientId, elapsedSeconds, onClose, onFin
     onFinalize({ endTimeIso, observacoesFinais, proximaReuniao, ataGerada: false });
   }
 
-  const decisoes   = (meeting.items || []).filter(i => i.categoria === 'Decisão');
-  const tarefas    = (meeting.items || []).filter(i => i.categoria === 'Tarefa');
+  const decisoes = (meeting.items || []).filter(i => i.categoria === 'Decisão');
+  const tarefas = (meeting.items || []).filter(i => i.categoria === 'Tarefa');
   const pendencias = (meeting.items || []).filter(i => i.categoria === 'Pendência');
-  const obsItems   = (meeting.items || []).filter(i => i.categoria === 'Observação');
+  const obsItems = (meeting.items || []).filter(i => i.categoria === 'Observação');
 
   return (
     <div
@@ -453,11 +455,15 @@ function CloseModal({ meeting, effectiveClientId, elapsedSeconds, onClose, onFin
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack }) {
+export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: propMeetingId, isAdmin = false, adminClientName, onAdminBack }) {
   const { user } = useAuth();
-  const { meetingId } = useParams();
+  const params = useParams();
   const navigate = useNavigate();
-  const effectiveClientId = propClientId || user?.clientId;
+  const location = useLocation();
+
+  // Get IDs from props, URL params, or navigation state
+  const effectiveClientId = propClientId || location.state?.clientId || user?.clientId;
+  const effectiveMeetingId = propMeetingId || params.meetingId;
 
   const [meeting, setMeeting] = useState(null);
   const [notFound, setNotFound] = useState(false);
@@ -482,15 +488,44 @@ export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false
 
   // ── Load meeting ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!effectiveClientId || !meetingId) return;
-    const meetings = getStorage(KEYS.meetings(effectiveClientId), []);
-    const found = meetings.find(m => m.id === meetingId);
-    if (found) {
-      setMeeting(found);
-    } else {
-      setNotFound(true);
+    // Priority 1: meeting passed via navigation state (most reliable)
+    if (location.state?.meeting && location.state.meeting.id === effectiveMeetingId) {
+      setMeeting(location.state.meeting);
+      return;
     }
-  }, [effectiveClientId, meetingId]);
+
+    // Priority 2: look up from localStorage
+    if (effectiveMeetingId) {
+      // Try with effectiveClientId, or scan all meeting keys
+      const cid = effectiveClientId || 'default';
+      const meetings = getStorage(KEYS.meetings(cid), []);
+      const found = meetings.find(m => m.id === effectiveMeetingId);
+      if (found) {
+        setMeeting(found);
+        return;
+      }
+
+      // Priority 3: scan ALL localStorage keys for meetings containing this ID
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('opice_ir_meetings_')) {
+          try {
+            const stored = JSON.parse(localStorage.getItem(key));
+            if (Array.isArray(stored)) {
+              const match = stored.find(m => m.id === effectiveMeetingId);
+              if (match) {
+                setMeeting(match);
+                return;
+              }
+            }
+          } catch { /* skip */ }
+        }
+      }
+    }
+
+    // Nothing found
+    setNotFound(true);
+  }, [effectiveMeetingId]);
 
   // ── Live timer ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -507,16 +542,33 @@ export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false
     return () => clearInterval(iv);
   }, [meeting]);
 
+  // ── Resolve storage clientId (find the correct localStorage key) ───────────
+  const resolvedClientId = (() => {
+    if (effectiveClientId) return effectiveClientId;
+    // Scan localStorage for any meetings key containing this meeting
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('opice_ir_meetings_')) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(data) && data.find(m => m.id === effectiveMeetingId)) {
+            return key.replace('opice_ir_meetings_', '');
+          }
+        } catch { /* skip */ }
+      }
+    }
+    return 'default';
+  })();
+
   // ── Auto-save every 10 seconds ──────────────────────────────────────────────
   const saveMeeting = useCallback((updated) => {
-    if (!effectiveClientId) return;
-    const meetings = getStorage(KEYS.meetings(effectiveClientId), []);
-    const idx = meetings.findIndex(m => m.id === meetingId);
+    const meetings = getStorage(KEYS.meetings(resolvedClientId), []);
+    const idx = meetings.findIndex(m => m.id === effectiveMeetingId);
     if (idx !== -1) {
       meetings[idx] = updated;
-      setStorage(KEYS.meetings(effectiveClientId), meetings);
+      setStorage(KEYS.meetings(resolvedClientId), meetings);
     }
-  }, [effectiveClientId, meetingId]);
+  }, [resolvedClientId, effectiveMeetingId]);
 
   useEffect(() => {
     if (!meeting) return;
@@ -581,7 +633,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false
   function handleQuickTask() {
     if (!quickDesc.trim() || !meeting) return;
 
-    const texto = `✅ TAREFA: ${quickDesc.trim()}`;
+
     const newItem = {
       id: genItemId(),
       timestamp: fmtItemTs(elapsedSeconds),
@@ -765,9 +817,8 @@ export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false
                       setHighlightedItemId(item.id);
                       setTimeout(() => setHighlightedItemId(null), 2500);
                     }}
-                    className={`w-full text-left px-4 py-3 flex items-start gap-2 hover:bg-[#f5f5f5] transition-colors ${
-                      highlightedItemId === item.id ? 'bg-[#CAFF00]/20' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-3 flex items-start gap-2 hover:bg-[#f5f5f5] transition-colors ${highlightedItemId === item.id ? 'bg-[#CAFF00]/20' : ''
+                      }`}
                   >
                     <CategoryBadge cat={item.categoria} />
                     <span className="font-mono text-xs text-[#555555] shrink-0">{item.timestamp}</span>
@@ -790,9 +841,9 @@ export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false
 
             {/* Toolbar */}
             <div className="px-5 py-3 border-b border-[#E0E0E0] flex flex-wrap gap-2">
-              <ToolbarBtn emoji="📌" label="Decisão"    onClick={() => insertPrefix('📌 DECISÃO: ')} />
-              <ToolbarBtn emoji="✅" label="Tarefa"     onClick={() => insertPrefix('✅ TAREFA: ')} />
-              <ToolbarBtn emoji="⚠" label="Pendência"  onClick={() => insertPrefix('⚠ PENDÊNCIA: ')} />
+              <ToolbarBtn emoji="📌" label="Decisão" onClick={() => insertPrefix('📌 DECISÃO: ')} />
+              <ToolbarBtn emoji="✅" label="Tarefa" onClick={() => insertPrefix('✅ TAREFA: ')} />
+              <ToolbarBtn emoji="⚠" label="Pendência" onClick={() => insertPrefix('⚠ PENDÊNCIA: ')} />
               <ToolbarBtn emoji="💬" label="Observação" onClick={() => insertPrefix('💬 OBSERVAÇÃO: ')} />
             </div>
 
@@ -857,8 +908,8 @@ export default function ReuniaoDetalhe({ clientId: propClientId, isAdmin = false
       {showCloseModal && (
         <CloseModal
           meeting={{ ...meeting, notasLivres: notepadText }}
-          effectiveClientId={effectiveClientId}
-          elapsedSeconds={elapsedSeconds}
+          effectiveClientId={resolvedClientId}
+
           onClose={() => setShowCloseModal(false)}
           onFinalize={handleFinalize}
         />

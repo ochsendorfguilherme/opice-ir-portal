@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 import { getStorage, setStorage, KEYS } from '../../utils/storage';
-import { businessDaysRemaining, formatCountdown, addBusinessDays } from '../../utils/businessDays';
-import { DEFAULT_ACTIVITIES } from '../../data/activities';
+import { businessDaysRemaining, formatCountdown } from '../../utils/businessDays';
 import { Shield, Plus, Trash2, AlertTriangle } from 'lucide-react';
+
+const DEFAULT_ACTIVITIES = [
+  { id: 1, nome: 'Notificação Preliminar ANPD' },
+  { id: 2, nome: 'Comunicação aos Titulares' },
+  { id: 3, nome: 'Coleta de Evidências' },
+  { id: 4, nome: 'Análise de Impacto' },
+  { id: 5, nome: 'Elaboração de Relatório' },
+  { id: 6, nome: 'Revisão Jurídica' }
+];
 
 function SemaphoreCard({ title, base, diffHours, totalHours, activities, linked }) {
   const pct = totalHours ? diffHours / totalHours : 1;
@@ -251,7 +259,7 @@ export default function TabSLA({ effectiveClientId }) {
                 <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Atividade Vinculada</label>
                 <select value={customForm.atividade} onChange={e => setCustomForm(f => ({ ...f, atividade: e.target.value }))} className={`${inputClass} w-full`}>
                   <option value="">Nenhuma</option>
-                  {activities.map(a => <option key={a.id} value={a.id}>#{a.id} — {a.nome.slice(0,40)}...</option>)}
+                  {activities.map(a => <option key={a.id} value={a.id}>#{a.id} — {a.nome.slice(0, 40)}...</option>)}
                 </select>
               </div>
               <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Responsável</label><input type="text" value={customForm.responsavel} onChange={e => setCustomForm(f => ({ ...f, responsavel: e.target.value }))} className={`${inputClass} w-full`} /></div>
@@ -272,12 +280,12 @@ export default function TabSLA({ effectiveClientId }) {
           {customDeadlines.map(d => {
             const result = d.dataInicio ? (
               d.tipo === 'uteis' ? businessDaysRemaining(new Date(d.dataInicio), d.dias) :
-              (() => {
-                const now = new Date();
-                const deadline = new Date(new Date(d.dataInicio).getTime() + d.dias * 24 * 60 * 60 * 1000);
-                const diffMs = deadline - now;
-                return { diffHours: diffMs / (1000 * 60 * 60), overdue: diffMs < 0 };
-              })()
+                (() => {
+                  const now = new Date();
+                  const deadline = new Date(new Date(d.dataInicio).getTime() + d.dias * 24 * 60 * 60 * 1000);
+                  const diffMs = deadline - now;
+                  return { diffHours: diffMs / (1000 * 60 * 60), overdue: diffMs < 0 };
+                })()
             ) : null;
             return (
               <div key={d.id} className={`border p-4 flex items-center justify-between gap-4 ${result?.overdue ? 'border-red-300 bg-red-50' : 'border-[#E0E0E0]'}`}>

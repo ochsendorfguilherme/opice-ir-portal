@@ -70,23 +70,21 @@ function ClientCard({ client, onAccess }) {
       <div className="flex flex-wrap gap-3 text-xs">
         {/* SLA */}
         {info.dataConhecimento && (
-          <span className={`font-mono px-2 py-0.5 ${
-            sla.status === 'critical' ? 'bg-red-100 text-red-700 animate-pulse-red' :
+          <span className={`font-mono px-2 py-0.5 ${sla.status === 'critical' ? 'bg-red-100 text-red-700 animate-pulse-red' :
             sla.status === 'warning' ? 'bg-amber-100 text-amber-700 animate-pulse-amber' :
-            'bg-gray-100 text-gray-600'
-          }`}>
+              'bg-gray-100 text-gray-600'
+            }`}>
             SLA: {sla.label}
           </span>
         )}
 
         {/* ANPD */}
         {anpd && (
-          <span className={`font-mono px-2 py-0.5 ${
-            anpd.overdue ? 'bg-red-100 text-red-700' :
+          <span className={`font-mono px-2 py-0.5 ${anpd.overdue ? 'bg-red-100 text-red-700' :
             anpd.diffHours < 24 ? 'bg-red-50 text-red-600' :
-            anpd.diffHours < 48 ? 'bg-amber-50 text-amber-700' :
-            'bg-gray-50 text-gray-600'
-          }`}>
+              anpd.diffHours < 48 ? 'bg-amber-50 text-amber-700' :
+                'bg-gray-50 text-gray-600'
+            }`}>
             ANPD: {anpd.overdue ? 'VENCIDO' : formatCountdown(anpd.diffHours)}
           </span>
         )}
@@ -164,6 +162,12 @@ export default function Admin() {
     navigate(`/admin/cliente/${client.id}/dashboard`);
   };
 
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Global stats
   const allActivities = clients.flatMap(c => getStorage(KEYS.activities(c.id), []));
   const totalOngoing = allActivities.filter(a => a.status === 'Em andamento').length;
@@ -173,14 +177,14 @@ export default function Admin() {
   const slaAlerts = clients.filter(c => {
     const info = getStorage(KEYS.info(c.id), {});
     if (!info.dataConhecimento) return false;
-    const h = (Date.now() - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
+    const h = (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
     return h >= 36;
   }).length;
 
   const criticalAlerts = clients.filter(c => {
     const info = getStorage(KEYS.info(c.id), {});
     if (!info.dataConhecimento) return false;
-    const h = (Date.now() - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
+    const h = (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
     return h >= 48;
   }).length;
 
@@ -192,8 +196,8 @@ export default function Admin() {
     if (!crisisA && crisisB) return 1;
     const infoA = getStorage(KEYS.info(a.id), {});
     const infoB = getStorage(KEYS.info(b.id), {});
-    const hA = infoA.dataConhecimento ? (Date.now() - new Date(infoA.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
-    const hB = infoB.dataConhecimento ? (Date.now() - new Date(infoB.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+    const hA = infoA.dataConhecimento ? (currentTime - new Date(infoA.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+    const hB = infoB.dataConhecimento ? (currentTime - new Date(infoB.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
     return hB - hA;
   });
 
@@ -260,23 +264,14 @@ export default function Admin() {
 
         {/* Alertas Consolidados */}
         {(() => {
-          const alertClients = sorted.filter(c => {
-            const inf = getStorage(KEYS.info(c.id), {});
-            const cr = getStorage(KEYS.crisis(c.id, 'active'));
-            const hasCrisis = cr?.crisisActive === true && cr?.crisisStatus !== 'closed';
-            if (hasCrisis) return true;
-            if (!inf.dataConhecimento) return false;
-            const h = (Date.now() - new Date(inf.dataConhecimento).getTime()) / (1000 * 60 * 60);
-            return h >= 48;
-          });
           const alertItems = sorted.flatMap(c => {
             const inf = getStorage(KEYS.info(c.id), {});
             const cr = getStorage(KEYS.crisis(c.id, 'active'));
             const hasCrisis = cr?.crisisActive === true && cr?.crisisStatus !== 'closed';
-            const h = inf.dataConhecimento ? (Date.now() - new Date(inf.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+            const h = inf.dataConhecimento ? (currentTime - new Date(inf.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
             const anpdResult = inf.dataConhecimento ? businessDaysRemaining(new Date(inf.dataConhecimento), 3) : null;
             const items = [];
-            if (hasCrisis) items.push({ type: 'warroom', label: `⚡ ${c.name} — WARROOM ATIVA`, time: cr.crisisTimestamp ? `${Math.round((Date.now() - new Date(cr.crisisTimestamp)) / 3600000)}h` : '', id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
+            if (hasCrisis) items.push({ type: 'warroom', label: `⚡ ${c.name} — WARROOM ATIVA`, time: cr.crisisTimestamp ? `${Math.round((currentTime - new Date(cr.crisisTimestamp)) / 3600000)}h` : '', id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
             else if (anpdResult?.overdue) items.push({ type: 'anpd', label: `⛔ ${c.name} — PRAZO ANPD VENCIDO`, time: formatCountdown(anpdResult.diffHours), id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
             else if (h >= 48) items.push({ type: 'sla', label: `🔴 ${c.name} — SLA Crítico`, time: `${Math.round(h)}h`, id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
             return items;
@@ -304,7 +299,6 @@ export default function Admin() {
             </div>
           );
         })()}
-
         {/* Client list */}
         <h2 className="font-syne font-bold text-[#111111] text-xl uppercase mb-4">Clientes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

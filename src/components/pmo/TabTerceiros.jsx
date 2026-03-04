@@ -18,6 +18,12 @@ export default function TabTerceiros({ effectiveClientId }) {
   const [terceiros, setTerceiros] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
@@ -41,7 +47,7 @@ export default function TabTerceiros({ effectiveClientId }) {
 
   const getSLAStatus = (t) => {
     if (!t.horaNotificacao || !t.protocoloSLA) return null;
-    const elapsed = (Date.now() - new Date(t.horaNotificacao)) / (1000 * 60 * 60);
+    const elapsed = (currentTime - new Date(t.horaNotificacao)) / (1000 * 60 * 60);
     const limit = parseFloat(t.protocoloSLA);
     if (isNaN(limit)) return null;
     return { elapsed: elapsed.toFixed(1), limit, overdue: elapsed > limit };

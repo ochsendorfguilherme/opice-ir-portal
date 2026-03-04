@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, Bell, X, CheckCheck } from 'lucide-react';
+import { Menu, Bell, X, CheckCheck, LayoutGrid, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TLPBanner from './TLPBanner';
 import { useAuth } from '../contexts/AuthContext';
@@ -127,9 +128,10 @@ function NotificationBell({ effectiveClientId }) {
   );
 }
 
-export default function Layout({ children, clientId: propClientId, isAdmin = false, adminClientName = null, adminBack = false, onAdminBack }) {
+export default function Layout({ children, clientId: propClientId, isAdmin = false, adminClientName = null, onAdminBack }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
 
   return (
@@ -156,27 +158,31 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
           <div className="flex-1">
             <TLPBanner />
           </div>
-          <div className="flex items-center px-3 bg-[#111111]">
+          <div className="flex items-center px-3 bg-[#111111] gap-2">
+            {user?.role === 'admin' && (
+              <div className="flex mr-2">
+                {isAdmin && adminClientName ? (
+                  <button
+                    onClick={onAdminBack}
+                    className="flex items-center gap-2 bg-[#111111] text-[#CAFF00] border border-[#CAFF00] px-3 py-1.5 h-[36px] font-dm text-xs hover:bg-[#CAFF00] hover:text-[#111111] transition-colors"
+                  >
+                    <ArrowLeft size={16} /> Voltar ao Admin
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="w-9 h-9 bg-[#CAFF00] text-[#111111] flex items-center justify-center hover:bg-white border-2 border-transparent hover:border-[#111111] transition-all"
+                    title="Painel Admin — Todos os Clientes"
+                  >
+                    <LayoutGrid size={18} />
+                  </button>
+                )}
+              </div>
+            )}
             <NotificationBell effectiveClientId={effectiveClientId} />
           </div>
         </div>
 
-        {/* Admin Banner */}
-        {isAdmin && adminClientName && (
-          <div className="bg-[#CAFF00] px-6 py-2.5 flex items-center gap-4">
-            <span className="text-[#111111] font-dm font-medium text-sm">
-              👁 Visualizando como: <strong>{adminClientName}</strong>
-            </span>
-            {onAdminBack && (
-              <button
-                onClick={onAdminBack}
-                className="text-[#111111] font-dm text-sm underline hover:no-underline"
-              >
-                ← Voltar ao Painel Admin
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Mobile header */}
         <div className="md:hidden flex items-center px-4 py-3 border-b border-gray-200">

@@ -68,7 +68,7 @@ function ANPDCountdown({ dataConhecimento }) {
       <div className="flex items-center gap-2 mb-3">
         <Shield size={16} className={c.text} />
         <span className={`font-mono text-xs font-medium uppercase ${c.text}`}>Countdown ANPD</span>
-        <span className={`ml-auto font-mono text-xs px-2 py-0.5 border ${c.bg} ${c.text} ${c.bg.replace('50','200')}`}>
+        <span className={`ml-auto font-mono text-xs px-2 py-0.5 border ${c.bg} ${c.text} ${c.bg.replace('50', '200')}`}>
           {c.label}
         </span>
       </div>
@@ -130,7 +130,6 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
   const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
   const pmoActions = pmoData.actions || [];
   const openActions = pmoActions.filter(a => a.status !== 'Feito').length;
-  const now = new Date();
   const upcoming = pmoActions
     .filter(a => a.prazo && a.status !== 'Feito')
     .sort((a, b) => new Date(a.prazo) - new Date(b.prazo))[0];
@@ -221,11 +220,10 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
           <div className="space-y-4">
             <ANPDCountdown dataConhecimento={info.dataConhecimento} />
 
-            <div className={`border p-5 ${
-              sla.status === 'critical' ? 'border-red-200 bg-red-50' :
-              sla.status === 'warning' ? 'border-amber-200 bg-amber-50' :
-              'border-[#E0E0E0] bg-white'
-            }`}>
+            <div className={`border p-5 ${sla.status === 'critical' ? 'border-red-200 bg-red-50' :
+                sla.status === 'warning' ? 'border-amber-200 bg-amber-50' :
+                  'border-[#E0E0E0] bg-white'
+              }`}>
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={14} className={sla.status === 'critical' ? 'text-red-600' : sla.status === 'warning' ? 'text-amber-600' : 'text-gray-500'} />
                 <span className="font-mono text-xs text-[#555555] uppercase">Tempo Decorrido (SLA)</span>
@@ -233,11 +231,10 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
                   <span className="ml-auto font-mono text-xs text-amber-600">⏸ Pausado</span>
                 )}
               </div>
-              <div className={`font-mono text-2xl font-bold ${
-                sla.status === 'critical' ? 'text-red-600 animate-pulse-red' :
-                sla.status === 'warning' ? 'text-amber-600 animate-pulse-amber' :
-                'text-[#111111]'
-              }`}>
+              <div className={`font-mono text-2xl font-bold ${sla.status === 'critical' ? 'text-red-600 animate-pulse-red' :
+                  sla.status === 'warning' ? 'text-amber-600 animate-pulse-amber' :
+                    'text-[#111111]'
+                }`}>
                 {info.dataConhecimento ? sla.label : '—'}
               </div>
             </div>
@@ -291,11 +288,10 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
                 {hasProcess ? (
                   <div className="flex flex-wrap gap-4 items-center">
                     <span className="font-mono text-xs text-[#111111]">Processo: <strong>{processo.numeroProcesso}</strong></span>
-                    <span className={`font-mono text-xs px-2 py-0.5 border ${
-                      processo.statusComunicacao === 'Arquivado' ? 'bg-green-50 text-green-700 border-green-200' :
-                      processo.statusComunicacao === 'Em análise pela ANPD' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      'bg-amber-50 text-amber-700 border-amber-200'
-                    }`}>{processo.statusComunicacao || 'Não comunicado'}</span>
+                    <span className={`font-mono text-xs px-2 py-0.5 border ${processo.statusComunicacao === 'Arquivado' ? 'bg-green-50 text-green-700 border-green-200' :
+                        processo.statusComunicacao === 'Em análise pela ANPD' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>{processo.statusComunicacao || 'Não comunicado'}</span>
                     {nextDeadline && !nextDeadline.overdue && (
                       <span className="font-mono text-xs text-[#555555]">Prazo: {formatCountdown(nextDeadline.diffHours)}</span>
                     )}
