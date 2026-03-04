@@ -14,16 +14,17 @@ import {
 const STATUSES = ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'];
 
 const TABLE_COLUMNS = [
-  { h: '#',                   key: 'id',          type: 'text' },
-  { h: 'ATIVIDADE',           key: 'nome',        type: 'text' },
-  { h: 'STATUS',              key: 'status',      type: 'select', options: ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'] },
-  { h: 'SLA',                 key: null,          type: null },
-  { h: 'ETAPA',               key: 'etapa',       type: 'select', options: ['Etapa 1', 'Etapa 2', 'Etapa 3'] },
-  { h: 'RESPONSÁVEL',         key: 'responsavel', type: 'text' },
-  { h: 'DATA INÍCIO',         key: 'dataInicio',  type: 'date' },
-  { h: 'DATA FIM',            key: 'dataFim',     type: 'date' },
+  { h: '', key: 'select', type: 'checkbox' },
+  { h: '#', key: 'id', type: 'text' },
+  { h: 'ATIVIDADE', key: 'nome', type: 'text' },
+  { h: 'STATUS', key: 'status', type: 'select', options: ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'] },
+  { h: 'SLA', key: null, type: null },
+  { h: 'ETAPA', key: 'etapa', type: 'select', options: ['Etapa 1', 'Etapa 2', 'Etapa 3'] },
+  { h: 'RESPONSÁVEL', key: 'responsavel', type: 'text' },
+  { h: 'DATA INÍCIO', key: 'dataInicio', type: 'date' },
+  { h: 'DATA FIM', key: 'dataFim', type: 'date' },
   { h: 'OBSERVAÇÕES CLIENTE', key: 'observacoes', type: 'text' },
-  { h: 'FUNDAMENTO',          key: 'fundamento',  type: 'text' },
+  { h: 'FUNDAMENTO', key: 'fundamento', type: 'text' },
 ];
 
 const STATUS_STYLE = {
@@ -231,9 +232,8 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
             <div className="flex items-center gap-2 ml-3 shrink-0">
               <button
                 onClick={onWarroom}
-                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 transition-colors ${
-                  crisis ? 'bg-red-600 text-white animate-pulse-red' : 'bg-red-700 text-white hover:bg-red-600'
-                }`}
+                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 transition-colors ${crisis ? 'bg-red-600 text-white animate-pulse-red' : 'bg-red-700 text-white hover:bg-red-600'
+                  }`}
               >
                 {crisis ? <Zap size={11} /> : <Shield size={11} />}
                 {crisis ? '⚡ WARROOM ATIVA' : '🚨 WarRoom'}
@@ -367,11 +367,10 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
                     {linkedComms.map(c => (
                       <div key={c.id} className="p-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`font-mono text-xs px-1.5 py-0.5 border ${
-                            c.statusAprovacao === 'Enviado' ? 'bg-green-50 text-green-700 border-green-200' :
+                          <span className={`font-mono text-xs px-1.5 py-0.5 border ${c.statusAprovacao === 'Enviado' ? 'bg-green-50 text-green-700 border-green-200' :
                             c.statusAprovacao === 'Aprovado' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                            'bg-gray-100 text-gray-600 border-gray-200'
-                          }`}>{c.statusAprovacao}</span>
+                              'bg-gray-100 text-gray-600 border-gray-200'
+                            }`}>{c.statusAprovacao}</span>
                           <span className="font-mono text-xs text-[#555555]">{c.publico} · {c.canal}</span>
                         </div>
                         <p className="font-dm text-xs text-[#111111] line-clamp-2">{c.mensagem}</p>
@@ -427,9 +426,8 @@ function KanbanCard({ activity, onClick, dataConhecimento, slaConfig, crisis }) 
   return (
     <div
       onClick={() => onClick(activity)}
-      className={`bg-white p-3 cursor-pointer hover:shadow-md transition-shadow ${
-        isCritical ? 'border-2 border-red-500 bg-red-50' : isWarning ? 'border-l-4 border-l-amber-500 border border-amber-100' : 'border border-[#E0E0E0]'
-      }`}
+      className={`bg-white p-3 cursor-pointer hover:shadow-md transition-shadow ${isCritical ? 'border-2 border-red-500 bg-red-50' : isWarning ? 'border-l-4 border-l-amber-500 border border-amber-100' : 'border border-[#E0E0E0]'
+        }`}
     >
       {crisis && (
         <div className="font-mono text-xs text-red-600 mb-1 flex items-center gap-1">
@@ -439,9 +437,8 @@ function KanbanCard({ activity, onClick, dataConhecimento, slaConfig, crisis }) 
       <div className="font-dm text-xs text-[#111111] line-clamp-2 mb-2">{activity.nome}</div>
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[#555555]">{activity.etapa}</span>
-        <span className={`font-mono text-xs flex items-center gap-1 ${
-          isCritical ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-gray-500'
-        }`}>
+        <span className={`font-mono text-xs flex items-center gap-1 ${isCritical ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-gray-500'
+          }`}>
           <Clock size={9} />
           {dataConhecimento ? slaLabel : '—'}
         </span>
@@ -466,6 +463,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const [selected, setSelected] = useState(null);
   const [flashRow, setFlashRow] = useState(null);
   const [pmoActions, setPmoActions] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [comms, setComms] = useState([]);
 
   useEffect(() => {
@@ -501,9 +499,36 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
     setStorage(KEYS.activities(effectiveClientId), newActs);
   };
 
+  const handleBulkStatusUpdate = (newStatus) => {
+    const updated = activities.map(a =>
+      selectedIds.includes(a.id) ? { ...a, status: newStatus } : a
+    );
+    setActivities(updated);
+    setStorage(KEYS.activities(effectiveClientId), updated);
+    setSelectedIds([]);
+
+    // Flash effect for updated rows
+    setFlashRow('bulk');
+    setTimeout(() => setFlashRow(null), 600);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filtered.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map(a => a.id));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   const filtered = activities.filter(a => {
     for (const col of TABLE_COLUMNS) {
-      if (!col.key || !col.type) continue;
+      if (!col.key || !col.type || col.key === 'select') continue;
       const val = colFilters[col.key];
       if (!val) continue;
       const field = String(a[col.key] || '').toLowerCase();
@@ -641,7 +666,16 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                     return (
                       <th key={col.h} className="px-4 py-3 text-left font-mono text-xs text-white uppercase whitespace-nowrap relative">
                         <div className="flex items-center gap-1.5">
-                          <span>{col.h}</span>
+                          {col.type === 'checkbox' ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.length > 0 && selectedIds.length === filtered.length}
+                              onChange={toggleSelectAll}
+                              className="w-3 h-3 accent-[#CAFF00] cursor-pointer"
+                            />
+                          ) : (
+                            <span>{col.h}</span>
+                          )}
                           {hasFilter && (
                             <button
                               onClick={e => { e.stopPropagation(); setActiveFilterCol(isOpen ? null : col.key); }}
@@ -705,9 +739,17 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                   return (
                     <tr
                       key={a.id}
-                      className={`cursor-pointer hover:bg-[rgba(202,255,0,0.08)] transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'} ${isCritical ? 'bg-[rgba(220,38,38,0.04)]' : ''} ${isFlash ? 'animate-flash-lime' : ''} ${leftStyle}`}
+                      className={`cursor-pointer hover:bg-[rgba(202,255,0,0.08)] transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'} ${isCritical ? 'bg-[rgba(220,38,38,0.04)]' : ''} ${isFlash || (flashRow === 'bulk' && selectedIds.includes(a.id)) ? 'animate-flash-lime' : ''} ${leftStyle} ${selectedIds.includes(a.id) ? 'bg-[rgba(202,255,0,0.12)]' : ''}`}
                       onClick={() => setSelected(a)}
                     >
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(a.id)}
+                          onChange={() => toggleSelect(a.id)}
+                          className="w-3 h-3 accent-[#111111] cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">{a.id}</td>
                       <td className="px-4 py-3 font-dm text-sm text-[#111111] max-w-[200px]">
                         <div className="flex items-center gap-1.5">
@@ -798,114 +840,111 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
         )}
       </div>
 
-        {/* TIMELINE VIEW */}
-        {view === 'timeline' && (
-          <div>
-            {/* Progress bar */}
-            <div className="mb-6 border border-[#E0E0E0] p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-mono text-xs text-[#555555] uppercase">Progresso da Jornada</span>
-                <span className="font-mono text-xs font-bold text-[#111111]">{pct}%</span>
-              </div>
-              <div className="relative w-full h-2 bg-[#E5E5E5]">
-                <div className="h-2 bg-[#CAFF00] transition-all duration-700" style={{ width: `${pct}%` }} />
-                {['Etapa 1', 'Etapa 2', 'Etapa 3'].map((stage, i) => {
-                  const stageActs = activities.filter(a => a.etapa === stage);
-                  const stageOffset = activities.filter(a => a.etapa !== stage && activities.findIndex(x => x.etapa === stage) > activities.findIndex(x => x.etapa === a.etapa)).length;
-                  const stagePct = Math.round(activities.findIndex(a => a.etapa === stage) / activities.length * 100);
-                  return (
-                    <div key={i} className="absolute top-4 transform -translate-x-1/2 font-mono text-[10px] text-[#555555]" style={{ left: `${stagePct}%` }}>
-                      {stage}
-                    </div>
-                  );
-                })}
-              </div>
+      {/* TIMELINE VIEW */}
+      {view === 'timeline' && (
+        <div>
+          {/* Progress bar */}
+          <div className="mb-6 border border-[#E0E0E0] p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-mono text-xs text-[#555555] uppercase">Progresso da Jornada</span>
+              <span className="font-mono text-xs font-bold text-[#111111]">{pct}%</span>
             </div>
-
-            {/* Timeline */}
-            <div className="relative">
-              {/* Central line */}
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#E5E5E5]" />
-
-              {['Etapa 1', 'Etapa 2', 'Etapa 3'].map(stage => {
-                const stageActs = filtered.filter(a => a.etapa === stage);
-                if (stageActs.length === 0) return null;
+            <div className="relative w-full h-2 bg-[#E5E5E5]">
+              <div className="h-2 bg-[#CAFF00] transition-all duration-700" style={{ width: `${pct}%` }} />
+              {['Etapa 1', 'Etapa 2', 'Etapa 3'].map((stage, i) => {
+                const stagePct = Math.round(activities.findIndex(a => a.etapa === stage) / activities.length * 100);
                 return (
-                  <div key={stage} className="mb-2">
-                    {/* Stage separator */}
-                    <div className="relative flex items-center mb-4 ml-0">
-                      <div className="z-10 w-12 h-12 bg-[#111111] flex items-center justify-center shrink-0">
-                        <span className="font-mono text-[#CAFF00] text-[10px] font-bold">{stage.replace('Etapa ', 'E')}</span>
-                      </div>
-                      <div className="ml-4 bg-[#111111] px-4 py-2">
-                        <span className="font-mono text-white text-xs uppercase">{stage}</span>
-                      </div>
-                    </div>
-
-                    {stageActs.map(a => {
-                      const s = STATUS_STYLE[a.status] || STATUS_STYLE['Planejado'];
-                      const isAnpd = [13, 14, 15, 16, 23, 24].includes(a.id);
-                      const linkedPMO = pmoActions.find(p => p.jornadaId === a.id);
-                      const isPMOBlocked = linkedPMO?.status === 'Bloqueado';
-
-                      return (
-                        <div key={a.id} className="relative flex items-start mb-3 pl-0">
-                          {/* Node dot */}
-                          <div className={`z-10 w-12 flex items-center justify-center shrink-0 pt-3`}>
-                            <div className={`w-3.5 h-3.5 rounded-full border-2 border-white ${s.dot}`} />
-                          </div>
-
-                          {/* Card */}
-                          <div
-                            className={`ml-4 flex-1 border cursor-pointer hover:shadow-md transition-shadow p-4 ${
-                              a.status === 'Feito' ? 'border-green-200 bg-green-50/30' :
-                              a.status === 'Em andamento' ? 'border-amber-200 bg-amber-50/30' :
-                              'border-[#E0E0E0] bg-white'
-                            }`}
-                            onClick={() => setSelected(a)}
-                          >
-                            <div className="flex items-start gap-3 flex-wrap">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-mono text-xs text-[#555555]">#{a.id}</span>
-                                  <span className="font-dm text-sm text-[#111111] font-medium">{a.nome}</span>
-                                  {isAnpd && <Scale size={12} className="text-amber-500 shrink-0" title="Vinculado ao processo ANPD" />}
-                                  {crisis && <span className="font-mono text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5">⚡ WARROOM</span>}
-                                  {isPMOBlocked && <AlertTriangle size={11} className="text-red-500" title="Ação bloqueada no PMO" />}
-                                </div>
-                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                                  <span className={`font-mono text-xs px-2 py-0.5 border ${s.bg} ${s.text} ${s.border}`}>{a.status}</span>
-                                  {a.dataInicio || a.dataFim ? (
-                                    <span className="font-mono text-xs text-[#555555]">
-                                      {a.dataInicio ? new Date(a.dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
-                                      {' → '}
-                                      {a.dataFim ? new Date(a.dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '?'}
-                                    </span>
-                                  ) : (
-                                    <span className="font-mono text-xs text-gray-400">— → —</span>
-                                  )}
-                                  {a.responsavel && <span className="font-dm text-xs text-[#555555]">{a.responsavel}</span>}
-                                </div>
-                                {isAnpd && info.dataConhecimento && (
-                                  <div className="mt-1.5 flex items-center gap-1">
-                                    <Scale size={11} className="text-amber-500" />
-                                    <span className="font-mono text-xs text-amber-700">
-                                      {formatCountdown(businessDaysRemaining(new Date(info.dataConhecimento), 3).diffHours)} restantes
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div key={i} className="absolute top-4 transform -translate-x-1/2 font-mono text-[10px] text-[#555555]" style={{ left: `${stagePct}%` }}>
+                    {stage}
                   </div>
                 );
               })}
             </div>
           </div>
-        )}
+
+          {/* Timeline */}
+          <div className="relative">
+            {/* Central line */}
+            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#E5E5E5]" />
+
+            {['Etapa 1', 'Etapa 2', 'Etapa 3'].map(stage => {
+              const stageActs = filtered.filter(a => a.etapa === stage);
+              if (stageActs.length === 0) return null;
+              return (
+                <div key={stage} className="mb-2">
+                  {/* Stage separator */}
+                  <div className="relative flex items-center mb-4 ml-0">
+                    <div className="z-10 w-12 h-12 bg-[#111111] flex items-center justify-center shrink-0">
+                      <span className="font-mono text-[#CAFF00] text-[10px] font-bold">{stage.replace('Etapa ', 'E')}</span>
+                    </div>
+                    <div className="ml-4 bg-[#111111] px-4 py-2">
+                      <span className="font-mono text-white text-xs uppercase">{stage}</span>
+                    </div>
+                  </div>
+
+                  {stageActs.map(a => {
+                    const s = STATUS_STYLE[a.status] || STATUS_STYLE['Planejado'];
+                    const isAnpd = [13, 14, 15, 16, 23, 24].includes(a.id);
+                    const linkedPMO = pmoActions.find(p => p.jornadaId === a.id);
+                    const isPMOBlocked = linkedPMO?.status === 'Bloqueado';
+
+                    return (
+                      <div key={a.id} className="relative flex items-start mb-3 pl-0">
+                        {/* Node dot */}
+                        <div className={`z-10 w-12 flex items-center justify-center shrink-0 pt-3`}>
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 border-white ${s.dot}`} />
+                        </div>
+
+                        {/* Card */}
+                        <div
+                          className={`ml-4 flex-1 border cursor-pointer hover:shadow-md transition-shadow p-4 ${a.status === 'Feito' ? 'border-green-200 bg-green-50/30' :
+                            a.status === 'Em andamento' ? 'border-amber-200 bg-amber-50/30' :
+                              'border-[#E0E0E0] bg-white'
+                            }`}
+                          onClick={() => setSelected(a)}
+                        >
+                          <div className="flex items-start gap-3 flex-wrap">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs text-[#555555]">#{a.id}</span>
+                                <span className="font-dm text-sm text-[#111111] font-medium">{a.nome}</span>
+                                {isAnpd && <Scale size={12} className="text-amber-500 shrink-0" title="Vinculado ao processo ANPD" />}
+                                {crisis && <span className="font-mono text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5">⚡ WARROOM</span>}
+                                {isPMOBlocked && <AlertTriangle size={11} className="text-red-500" title="Ação bloqueada no PMO" />}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                <span className={`font-mono text-xs px-2 py-0.5 border ${s.bg} ${s.text} ${s.border}`}>{a.status}</span>
+                                {a.dataInicio || a.dataFim ? (
+                                  <span className="font-mono text-xs text-[#555555]">
+                                    {a.dataInicio ? new Date(a.dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                                    {' → '}
+                                    {a.dataFim ? new Date(a.dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '?'}
+                                  </span>
+                                ) : (
+                                  <span className="font-mono text-xs text-gray-400">— → —</span>
+                                )}
+                                {a.responsavel && <span className="font-dm text-xs text-[#555555]">{a.responsavel}</span>}
+                              </div>
+                              {isAnpd && info.dataConhecimento && (
+                                <div className="mt-1.5 flex items-center gap-1">
+                                  <Scale size={11} className="text-amber-500" />
+                                  <span className="font-mono text-xs text-amber-700">
+                                    {formatCountdown(businessDaysRemaining(new Date(info.dataConhecimento), 3).diffHours)} restantes
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Slide-over */}
       {selected && (
@@ -921,6 +960,42 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
           comms={comms}
           pmoActions={pmoActions}
         />
+      )}
+      {/* Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-[#111111] border border-[#CAFF00] shadow-2xl px-6 py-4 flex items-center gap-8 ring-8 ring-black/10">
+            <div className="flex flex-col">
+              <span className="font-mono text-[10px] text-[#CAFF00] uppercase tracking-widest">Ações em Lote</span>
+              <span className="font-dm text-sm text-white font-bold">{selectedIds.length} selecionados</span>
+            </div>
+
+            <div className="h-8 w-px bg-gray-700" />
+
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-gray-400 uppercase mr-1">Mudar Status:</span>
+              {STATUSES.map(st => (
+                <button
+                  key={st}
+                  onClick={() => handleBulkStatusUpdate(st)}
+                  className="bg-transparent border border-gray-700 text-gray-300 px-3 py-1.5 font-mono text-[10px] uppercase hover:bg-white hover:text-black hover:border-white transition-all"
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-8 w-px bg-gray-700" />
+
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-gray-400 hover:text-white transition-colors"
+              title="Cancelar seleção"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
       )}
     </Layout>
   );
