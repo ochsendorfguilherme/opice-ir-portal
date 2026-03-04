@@ -14,7 +14,8 @@ import {
   CheckCircle,
   AlertTriangle,
   X,
-  Users
+  Users,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, KEYS } from '../utils/storage';
@@ -195,6 +196,15 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
                 {anpdNeedsSEI && (
                   <span className="font-mono text-[10px] bg-amber-500 text-white px-1.5 py-0.5">SEI</span>
                 )}
+              </NavLink>
+
+              <NavLink
+                to={`${basePath}/anpd/comunicacao-titulares`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
+              >
+                <MessageSquare size={14} />
+                <span className="flex-1 text-xs">Comunicação (Titulares)</span>
               </NavLink>
 
               <NavLink
