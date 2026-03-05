@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute, AdminRoute, OnboardingRoute } from './components/ProtectedRoute';
+import { ProtectedRoute, AdminRoute, OnboardingRoute, ChangePasswordRoute } from './components/ProtectedRoute';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,12 +10,14 @@ import Informacoes from './pages/Informacoes';
 import PMO from './pages/PMO';
 import WarRoom from './pages/WarRoom';
 import Admin from './pages/Admin';
+import AccessControl from './pages/AccessControl';
 import ANPD from './pages/ANPD';
 import ANPDComunicacaoTitulares from './pages/ANPDComunicacaoTitulares';
 import ANPDRegistroIncidente from './pages/ANPDRegistroIncidente';
 import Reunioes from './pages/Reunioes';
 import ReuniaoDetalhe from './pages/ReuniaoDetalhe';
 import MFAPage from './pages/MFAPage';
+import ChangePassword from './pages/ChangePassword';
 
 function AdminClientWrapper({ Page, pageProps = {} }) {
   const { clientId } = useParams();
@@ -86,6 +88,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/mfa" element={<MFAPage />} />
+          <Route path="/change-password" element={<ChangePasswordRoute><ChangePassword /></ChangePasswordRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Client routes */}
@@ -110,6 +113,7 @@ export default function App() {
 
           {/* Admin */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+          <Route path="/admin/acessos" element={<AdminRoute><AccessControl /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/dashboard" element={<AdminRoute><AdminClientWrapper Page={Dashboard} /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/informacoes" element={<AdminRoute><AdminClientWrapper Page={Informacoes} /></AdminRoute>} />
           <Route path="/admin/cliente/:clientId/perguntas" element={<AdminRoute><AdminClientWrapper Page={Perguntas} /></AdminRoute>} />

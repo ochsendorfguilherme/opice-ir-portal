@@ -19,9 +19,10 @@ import {
   FileText,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getStorage, KEYS } from '../utils/storage';
+import { getStorage, KEYS, createInvite } from '../utils/storage';
 import { useState, useEffect } from 'react';
 import OpiceLogo from './OpiceLogo';
+import InviteModal from './InviteModal';
 
 function StepIcon({ status }) {
   if (status === 'completed') return <CheckCircle size={12} className="text-green-400" />;
@@ -37,6 +38,11 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
   const [pmoAlerts, setPmoAlerts] = useState(0);
   const [activeMeeting, setActiveMeeting] = useState(false);
   const [anpdNeedsSEI, setAnpdNeedsSEI] = useState(false);
+
+  // Custom states for invites
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const effectiveClientId = clientId || user?.clientId;
   const basePath = isAdmin && clientId ? `/admin/cliente/${clientId}` : '';
@@ -90,6 +96,30 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
     navigate('/login');
   };
 
+  const handleInviteSubmit = async (formData) => {
+    setIsInviting(true);
+    // Simulate short network delay for better UX
+    await new Promise(r => setTimeout(r, 600));
+    try {
+      createInvite({
+        ...formData,
+        clientId: effectiveClientId,
+        createdBy: user.email
+      });
+      setShowInviteModal(false);
+
+      // We trigger a global notification or local alert for success
+      setToast({ type: 'success', message: 'Convite enviado para aprovação!' });
+      setTimeout(() => setToast(null), 3000);
+
+    } catch (err) {
+      setToast({ type: 'error', message: 'Erro ao enviar convite.' });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
@@ -130,6 +160,16 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
           <>
             {/* Dashboard Group */}
             <div className="mb-6">
+              {user?.role === 'client' && (
+                <div className="px-5 mb-4">
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="w-full flex items-center justify-center gap-2 bg-[#CAFF00] text-[#111111] font-dm font-bold text-sm py-2 hover:opacity-90 transition-all rounded-sm shadow-[0_0_15px_rgba(202,255,0,0.1)]"
+                  >
+                    <Users size={16} /> Chamar Convidado
+                  </button>
+                </div>
+              )}
               <NavLink
                 to={`${basePath}/dashboard`}
                 onClick={onClose}
@@ -232,6 +272,17 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
                 )}
               </NavLink>
 
+              {isAdmin && (
+                <NavLink
+                  to="/admin/acessos"
+                  onClick={onClose}
+                  className={({ isActive: active }) => `sidebar-link ${active || isActive('/admin/acessos') ? 'active' : ''}`}
+                >
+                  <Users size={16} />
+                  <span className="flex-1">Gestão de Acessos</span>
+                </NavLink>
+              )}
+
               <NavLink
                 to={`${basePath}/pmo/warroom`}
                 onClick={onClose}
@@ -273,6 +324,24 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
           Sair
         </button>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-none">
+          <div className={`px-5 py-3 shadow-2xl flex items-center gap-3 border ${toast.type === 'success' ? 'bg-[#CAFF00] border-[#CAFF00] text-[#111111]' : 'bg-red-600 border-red-600 text-white'}`}>
+            {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+            <span className="font-dm text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onInvite={handleInviteSubmit}
+        isLoading={isInviting}
+      />
     </aside>
   );
 }

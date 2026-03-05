@@ -105,8 +105,7 @@ function generateTemplate(f, nomeEmpresa, comunicacaoRef) {
     ? `\nPrazo de retenção estendido até: ${formatDate(f.data_retencao_estendida_ate)}\nJustificativa: ${f.justificativa_prazo_maior?.trim() || '[não informado]'}`
     : '';
 
-  return `REGISTRO DO INCIDENTE DE SEGURANÇA — ART. 10, §1º, LGPD
-Lei nº 13.709/2018 – Lei Geral de Proteção de Dados Pessoais
+  return `REGISTRO DO INCIDENTE DE SEGURANÇA — ART. 10º da Resolução CD/ANPD nº 15/2024
 ${nomeEmpresa || '[Organização]'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -354,7 +353,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             Registro do Incidente
           </h1>
           <p className="text-[#555555] font-dm text-sm mt-1">
-            Art. 10, §1º, Lei nº 13.709/2018 – LGPD · Retenção mínima: 5 anos (caput)
+            Art. 10º da Resolução CD/ANPD nº 15/2024 · Retenção mínima: 5 anos (caput)
           </p>
         </div>
 

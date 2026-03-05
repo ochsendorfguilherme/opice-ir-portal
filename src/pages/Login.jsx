@@ -155,6 +155,8 @@ export default function Login() {
       }
     } else if (authStep === 'MFA_REQUIRED') {
       navigate('/mfa');
+    } else if (authStep === 'FORCE_PASSWORD_CHANGE') {
+      navigate('/change-password');
     }
   }, [authStep, user, navigate]);
 

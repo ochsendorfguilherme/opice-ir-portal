@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
-import { businessDaysRemaining } from '../utils/businessDays';
+import { businessDaysRemaining, addBusinessDays } from '../utils/businessDays';
 import {
   Scale,
   Plus,
@@ -22,6 +22,7 @@ const TABS = [
   { id: 'andamentos', label: 'Andamentos' },
   { id: 'documentos', label: 'Documentos' },
   { id: 'prazos', label: 'Prazos' },
+  { id: 'comunicacao_titulares', label: 'Comunicação (Titulares)' },
 ];
 
 const STATUS_COMUNICACAO_OPTIONS = [
@@ -296,10 +297,10 @@ function TabProcesso({ data, onSave, isAdmin }) {
                   onClick={() => toggleStage(idx)}
                   title={`Marcar "${stage}"`}
                   className={`w-8 h-8 flex items-center justify-center font-mono text-xs font-bold transition-colors shrink-0 ${completed
-                      ? 'bg-[#111111] text-white'
-                      : idx === Math.min(...TIMELINE_STAGES.map((_, i) => (form.etapas.includes(i) ? 99 : i)).filter((i) => !form.etapas.includes(i)))
-                        ? 'bg-[#CAFF00] text-[#111111]'
-                        : 'bg-gray-100 text-[#555555]'
+                    ? 'bg-[#111111] text-white'
+                    : idx === Math.min(...TIMELINE_STAGES.map((_, i) => (form.etapas.includes(i) ? 99 : i)).filter((i) => !form.etapas.includes(i)))
+                      ? 'bg-[#CAFF00] text-[#111111]'
+                      : 'bg-gray-100 text-[#555555]'
                     }`}
                 >
                   {completed ? <Check size={14} /> : idx + 1}
@@ -900,6 +901,466 @@ function TabPrazos({ effectiveClientId, anpdData, onUpdatePrazos }) {
   );
 }
 
+// ─── Tab 5: Comunicação (Titulares) ──────────────────────────────────────────
+
+function TabComunicacaoTitulares({ data, onSave }) {
+  const [form, setForm] = useState({
+    naturezaIncidente: '',
+    categoriaDadosAfetados: '',
+    medidasTecnicasSeguranca: '',
+    riscosImpactos: '',
+    comunicacaoForaPrazo: false,
+    motivosDemora: '',
+    medidasMitigacao: '',
+    dataConhecimento: today(),
+    contatoInformacoes: { nome: '', contato: '' },
+    contatoEncarregado: { nome: '', contato: '' },
+    checklistLinguagemSimples: false,
+    formaComunicacao: 'Direta e individualizada',
+    meiosDiretos: [],
+    meiosDivulgacao: [],
+    periodoDivulgacaoMeses: 3,
+    declaracaoRealizada: false,
+    dataComunicacaoRealizada: '',
+    meiosUtilizadosResumo: '',
+    recomendacoesTitulares: '',
+    agentePequenoPorte: false,
+    observacoesAdicionais: '',
+    ...data,
+  });
+
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (data) setForm(f => ({ ...f, ...data }));
+  }, [data]);
+
+  const set = (field, value) => {
+    setForm(f => {
+      const newForm = { ...f, [field]: value };
+
+      // Auto-preencher resumo de meios utilizados se for edição de declaração
+      if (field === 'meiosDiretos' || field === 'meiosDivulgacao' || field === 'formaComunicacao') {
+        const meios = newForm.formaComunicacao === 'Direta e individualizada'
+          ? newForm.meiosDiretos.join(', ')
+          : newForm.meiosDivulgacao.join(', ');
+        newForm.meiosUtilizadosResumo = `Comunicação realizada via ${meios || '...'}`;
+      }
+
+      return newForm;
+    });
+  };
+
+  const handleSave = () => {
+    onSave(form);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  // Cálculo de prazo (3 ou 6 dias úteis)
+  const deadlineDays = form.agentePequenoPorte ? 6 : 3;
+  const deadline = form.dataConhecimento ? addBusinessDays(new Date(form.dataConhecimento), deadlineDays) : null;
+  const deadlineFmt = deadline ? deadline.toLocaleDateString('pt-BR') : '—';
+
+  // Template de texto (travado)
+  const generateTemplate = () => {
+    const {
+      naturezaIncidente, categoriaDadosAfetados, medidasTecnicasSeguranca,
+      riscosImpactos, medidasMitigacao, recomendacoesTitulares, observacoesAdicionais
+    } = form;
+
+    return `PREZADO TITULAR,
+
+Comunicamos a ocorrência de um incidente de segurança envolvendo seus dados pessoais.
+
+1. NATUREZA DO INCIDENTE E CATEGORIA DE DADOS:
+${naturezaIncidente || '[Descrição da natureza]'}
+Dados afetados: ${categoriaDadosAfetados || '[Categorias de dados]'}
+
+2. MEDIDAS TÉCNICAS E DE SEGURANÇA UTILIZADAS:
+${medidasTecnicasSeguranca || '[Descrição das medidas]'}
+
+3. RISCOS E POSSÍVEIS IMPACTOS:
+${riscosImpactos || '[Descrição de riscos e impactos]'}
+
+4. MEDIDAS ADOTADAS PARA REVERTER OU MITIGAR OS EFEITOS:
+${medidasMitigacao || '[Descrição das medidas de mitigação]'}
+
+${recomendacoesTitulares ? `5. RECOMENDAÇÕES AOS TITULARES:\n${recomendacoesTitulares}\n` : ''}
+${observacoesAdicionais ? `OBSERVAÇÕES ADICIONAIS:\n${observacoesAdicionais}\n` : ''}
+
+Para mais informações, entre em contato via: ${form.contatoInformacoes.nome} (${form.contatoInformacoes.contato}).
+${form.contatoEncarregado.nome ? `Encarregado pelo Tratamento de Dados (DPO): ${form.contatoEncarregado.nome} (${form.contatoEncarregado.contato}).` : ''}
+
+Atenciosamente,
+Equipe de Resposta a Incidentes`;
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Coluna Esquerda: Formulário */}
+      <div className="space-y-6">
+        <div className="bg-[#111111] p-6 space-y-5">
+          <h2 className="font-syne font-bold text-white text-base uppercase mb-2">Estrutura da Comunicação (Art. 9º)</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Data do Conhecimento *" dark>
+              <input
+                type="date"
+                value={form.dataConhecimento}
+                onChange={e => set('dataConhecimento', e.target.value)}
+                className={darkInputClass}
+              />
+            </Field>
+
+            <div className="flex flex-col justify-end">
+              <div className="bg-white/5 border border-white/10 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-mono text-[10px] text-gray-400 uppercase">Prazo Estimado</span>
+                  <span className={`font-mono text-[10px] px-1.5 py-0.5 ${form.agentePequenoPorte ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                    {form.agentePequenoPorte ? 'Agente Pequeno Porte' : 'Padrão'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#CAFF00] font-syne font-bold text-xl">{deadlineFmt}</span>
+                  <span className="text-gray-500 font-dm text-[10px]">({deadlineDays} dias úteis)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:col-span-2 flex items-center gap-2 mt-1">
+              <input
+                type="checkbox"
+                id="agentePequenoPorte"
+                checked={form.agentePequenoPorte}
+                onChange={e => set('agentePequenoPorte', e.target.checked)}
+                className="w-4 h-4 accent-[#CAFF00]"
+              />
+              <label htmlFor="agentePequenoPorte" className="font-dm text-xs text-gray-300 cursor-pointer">
+                Agente de Pequeno Porte (Dobra o prazo p/ 6 dias úteis)
+              </label>
+            </div>
+          </div>
+
+          <Field label="Natureza do incidente *" dark>
+            <textarea
+              value={form.naturezaIncidente}
+              onChange={e => set('naturezaIncidente', e.target.value)}
+              rows={3}
+              placeholder="Descreva o que ocorreu..."
+              className={darkInputClass}
+            />
+          </Field>
+
+          <Field label="Categoria de dados afetados *" dark>
+            <textarea
+              value={form.categoriaDadosAfetados}
+              onChange={e => set('categoriaDadosAfetados', e.target.value)}
+              rows={2}
+              placeholder="Ex: Nome, CPF, Email, Dados de Saúde..."
+              className={darkInputClass}
+            />
+          </Field>
+
+          <Field label="Medidas técnicas e de segurança *" dark>
+            <div className="space-y-1">
+              <textarea
+                value={form.medidasTecnicasSeguranca}
+                onChange={e => set('medidasTecnicasSeguranca', e.target.value)}
+                rows={3}
+                placeholder="Medidas pré-existentes e imediatas..."
+                className={darkInputClass}
+              />
+              <p className="font-dm text-[10px] text-amber-400 flex items-center gap-1">
+                <AlertTriangle size={10} /> Não inclua segredos comercial ou industrial
+              </p>
+            </div>
+          </Field>
+
+          <Field label="Riscos e possíveis impactos *" dark>
+            <textarea
+              value={form.riscosImpactos}
+              onChange={e => set('riscosImpactos', e.target.value)}
+              rows={3}
+              placeholder="Quais os danos potenciais ao titular?"
+              className={darkInputClass}
+            />
+          </Field>
+
+          {/* Comunicação fora do prazo */}
+          <div className="space-y-3 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-between">
+              <label className="font-mono text-xs font-medium uppercase text-[#CAFF00]">Comunicação fora do prazo?</label>
+              <button
+                onClick={() => set('comunicacaoForaPrazo', !form.comunicacaoForaPrazo)}
+                className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.comunicacaoForaPrazo ? 'bg-[#CAFF00]' : 'bg-gray-700'}`}
+              >
+                <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${form.comunicacaoForaPrazo ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            {form.comunicacaoForaPrazo && (
+              <Field label="Motivos da demora *" dark>
+                <textarea
+                  value={form.motivosDemora}
+                  onChange={e => set('motivosDemora', e.target.value)}
+                  rows={2}
+                  placeholder="Justifique o envio após o prazo legal..."
+                  className={darkInputClass}
+                />
+              </Field>
+            )}
+          </div>
+
+          <Field label="Medidas adotadas p/ mitigar efeitos *" dark>
+            <textarea
+              value={form.medidasMitigacao}
+              onChange={e => set('medidasMitigacao', e.target.value)}
+              rows={3}
+              placeholder="O que está sendo feito para corrigir?"
+              className={darkInputClass}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Contato p/ Informações *" dark>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={form.contatoInformacoes.nome}
+                  onChange={e => set('contatoInformacoes', { ...form.contatoInformacoes, nome: e.target.value })}
+                  placeholder="Nome/Setor"
+                  className={darkInputClass}
+                />
+                <input
+                  type="text"
+                  value={form.contatoInformacoes.contato}
+                  onChange={e => set('contatoInformacoes', { ...form.contatoInformacoes, contato: e.target.value })}
+                  placeholder="Email ou Telefone"
+                  className={darkInputClass}
+                />
+              </div>
+            </Field>
+            <Field label="Contato Encarregado (DPO)" dark>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={form.contatoEncarregado.nome}
+                  onChange={e => set('contatoEncarregado', { ...form.contatoEncarregado, nome: e.target.value })}
+                  placeholder="Nome do DPO"
+                  className={darkInputClass}
+                />
+                <input
+                  type="text"
+                  value={form.contatoEncarregado.contato}
+                  onChange={e => set('contatoEncarregado', { ...form.contatoEncarregado, contato: e.target.value })}
+                  placeholder="Email ou Telefone"
+                  className={darkInputClass}
+                />
+              </div>
+            </Field>
+          </div>
+
+          <Field label="Observações Adicionais (Max 500 chars)" dark>
+            <textarea
+              value={form.observacoesAdicionais}
+              onChange={e => set('observacoesAdicionais', e.target.value.slice(0, 500))}
+              rows={3}
+              placeholder="Complemento livre à comunicação..."
+              className={darkInputClass}
+            />
+            <p className="text-right font-mono text-[10px] text-gray-500 mt-1">
+              {form.observacoesAdicionais.length}/500
+            </p>
+          </Field>
+        </div>
+
+        {/* §§ Adicionais */}
+        <div className="border border-[#E0E0E0] p-6 space-y-6">
+          <h3 className="font-syne font-bold text-[#111111] text-sm uppercase">Configurações de Envio (§§ Art. 9º)</h3>
+
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-100 italic">
+              <input
+                type="checkbox"
+                id="linguagemSimples"
+                checked={form.checklistLinguagemSimples}
+                onChange={e => set('checklistLinguagemSimples', e.target.checked)}
+                className="mt-1 w-4 h-4 accent-[#111111]"
+              />
+              <label htmlFor="linguagemSimples" className="font-dm text-xs text-[#111111] cursor-pointer">
+                Declaro que a comunicação utiliza <strong>linguagem simples</strong> e de fácil entendimento aos titulares conforme § 1º do art. 9º.
+              </label>
+            </div>
+
+            <Field label="Forma de Comunicação">
+              <select
+                value={form.formaComunicacao}
+                onChange={e => set('formaComunicacao', e.target.value)}
+                className={inputClass}
+              >
+                <option value="Direta e individualizada">Direta e individualizada (§ 1º)</option>
+                <option value="Divulgação pública">Divulgação pública (Inviável individualizar - § 2º)</option>
+              </select>
+            </Field>
+
+            {form.formaComunicacao === 'Direta e individualizada' ? (
+              <div className="space-y-3">
+                <label className="block font-mono text-[10px] font-bold text-gray-400 uppercase">Meios Utilizados</label>
+                <div className="flex flex-wrap gap-4">
+                  {['E-mail', 'SMS', 'Mensagem (App)', 'Telefone', 'Carta', 'Outro'].map(m => (
+                    <label key={m} className="flex items-center gap-2 font-dm text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.meiosDiretos.includes(m)}
+                        onChange={e => {
+                          const newMeios = e.target.checked
+                            ? [...form.meiosDiretos, m]
+                            : form.meiosDiretos.filter(item => item !== m);
+                          set('meiosDiretos', newMeios);
+                        }}
+                        className="w-3.5 h-3.5 accent-[#111111]"
+                      />
+                      {m}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <label className="block font-mono text-[10px] font-bold text-gray-400 uppercase">Canais de Divulgação</label>
+                  <div className="flex flex-wrap gap-4">
+                    {['Site oficial', 'Mídias Sociais', 'App Próprio', 'Canais de Atendimento', 'Aviso em Loja', 'Outro'].map(m => (
+                      <label key={m} className="flex items-center gap-2 font-dm text-xs cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.meiosDivulgacao.includes(m)}
+                          onChange={e => {
+                            const newMeios = e.target.checked
+                              ? [...form.meiosDivulgacao, m]
+                              : form.meiosDivulgacao.filter(item => item !== m);
+                            set('meiosDivulgacao', newMeios);
+                          }}
+                          className="w-3.5 h-3.5 accent-[#111111]"
+                        />
+                        {m}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <Field label="Período de Divulgação (Meses - Mínimo 3)">
+                  <input
+                    type="number"
+                    min="3"
+                    value={form.periodoDivulgacaoMeses}
+                    onChange={e => set('periodoDivulgacaoMeses', Math.max(3, parseInt(e.target.value) || 3))}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-6 border-t border-[#E0E0E0] space-y-4">
+            <h4 className="font-mono text-[10px] font-bold text-gray-400 uppercase">Declaração de Comunicação Realizada (§ 4º)</h4>
+            <div className="flex items-center gap-10">
+              <label className="flex items-center gap-2 font-dm text-sm font-bold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.declaracaoRealizada}
+                  onChange={e => set('declaracaoRealizada', e.target.checked)}
+                  className="w-4 h-4 accent-[#111111]"
+                />
+                Comunicação já realizada
+              </label>
+              {form.declaracaoRealizada && (
+                <div className="flex-1">
+                  <input
+                    type="date"
+                    value={form.dataComunicacaoRealizada}
+                    onChange={e => set('dataComunicacaoRealizada', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              )}
+            </div>
+            {form.declaracaoRealizada && (
+              <Field label="Resumo dos Meios Utilizados">
+                <textarea
+                  value={form.meiosUtilizadosResumo}
+                  onChange={e => set('meiosUtilizadosResumo', e.target.value)}
+                  rows={2}
+                  className={`${inputClass} bg-gray-50`}
+                />
+              </Field>
+            )}
+          </div>
+
+          <Field label="Recomendações técnicas aos titulares (§ 5º)">
+            <textarea
+              value={form.recomendacoesTitulares}
+              onChange={e => set('recomendacoesTitulares', e.target.value)}
+              rows={3}
+              placeholder="Ex: Altere suas senhas, monitore extratos, ative MFA..."
+              className={inputClass}
+            />
+          </Field>
+        </div>
+      </div>
+
+      {/* Coluna Direita: Preview Sticky */}
+      <div className="relative">
+        <div className="sticky top-8 space-y-6">
+          <div className="bg-gray-100 p-8 border border-[#E0E0E0] min-h-[600px] flex flex-col">
+            <div className="flex items-center justify-between mb-8 border-b border-gray-300 pb-4">
+              <h3 className="font-syne font-extrabold text-[#111111] text-base uppercase">Pré-visualização do Texto</h3>
+              <div className="flex items-center gap-1.5 bg-[#111111] text-white px-2 py-0.5 rounded-sm">
+                <FileText size={10} />
+                <span className="font-mono text-[9px] uppercase tracking-wider">Template travado</span>
+              </div>
+            </div>
+
+            <div className="flex-1 font-dm text-sm text-[#333] whitespace-pre-wrap leading-relaxed">
+              {generateTemplate()}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-300 flex flex-wrap gap-3">
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 bg-[#111111] text-white font-dm font-medium px-6 py-3 text-sm hover:bg-[#333] transition-colors"
+              >
+                <Check size={16} />
+                {saved ? 'Salvo no Sistema' : 'Salvar Registro'}
+              </button>
+              <button
+                className="flex items-center gap-2 border border-[#111111] text-[#111111] font-dm font-medium px-6 py-3 text-sm hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  const blob = new Blob([generateTemplate()], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `comunicacao_titulares_${today()}.txt`;
+                  a.click();
+                }}
+              >
+                <Download size={16} />
+                Exportar (.txt)
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 p-4">
+            <p className="font-dm text-xs text-amber-800 flex gap-2">
+              <AlertTriangle size={16} className="shrink-0" />
+              O texto gerado acima é baseado no template regulatório padrão. A edição livre é restrita aos campos estruturados e ao campo de "Observações Adicionais" para garantir conformidade.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ANPD({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack }) {
@@ -916,6 +1377,7 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
       andamentos: [],
       documentos: [],
       prazos: {},
+      comunicacaoTitulares: {},
     });
 
   const [anpdData, setAnpdData] = useState(loadData);
@@ -954,9 +1416,13 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
     persist({ ...anpdData, documentos });
   };
 
-  // Prazos
   const handleUpdatePrazos = (prazos) => {
     persist({ ...anpdData, prazos });
+  };
+
+  // Comunicação Titulares
+  const handleSaveComunicacaoTitulares = (form) => {
+    persist({ ...anpdData, comunicacaoTitulares: form });
   };
 
   return (
@@ -984,8 +1450,8 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative ${activeTab === tab.id
-                  ? 'text-[#111111] border-b-2 border-[#111111] -mb-px'
-                  : 'text-[#555555] hover:text-[#111111]'
+                ? 'text-[#111111] border-b-2 border-[#111111] -mb-px'
+                : 'text-[#555555] hover:text-[#111111]'
                 }`}
             >
               {tab.label}
@@ -1020,6 +1486,12 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
             effectiveClientId={effectiveClientId}
             anpdData={anpdData}
             onUpdatePrazos={handleUpdatePrazos}
+          />
+        )}
+        {activeTab === 'comunicacao_titulares' && (
+          <TabComunicacaoTitulares
+            data={anpdData.comunicacaoTitulares || {}}
+            onSave={handleSaveComunicacaoTitulares}
           />
         )}
       </div>

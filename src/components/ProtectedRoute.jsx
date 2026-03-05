@@ -9,6 +9,7 @@ export function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (authStep === 'MFA_REQUIRED') return <Navigate to="/mfa" state={{ from: location }} replace />;
+  if (authStep === 'FORCE_PASSWORD_CHANGE') return <Navigate to="/change-password" state={{ from: location }} replace />;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
   return children;
@@ -19,9 +20,16 @@ export function AdminRoute({ children }) {
   const location = useLocation();
 
   if (authStep === 'MFA_REQUIRED') return <Navigate to="/mfa" state={{ from: location }} replace />;
+  if (authStep === 'FORCE_PASSWORD_CHANGE') return <Navigate to="/change-password" state={{ from: location }} replace />;
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== 'admin') return <Navigate to="/dashboard" replace />;
 
+  return children;
+}
+
+export function ChangePasswordRoute({ children }) {
+  const { authStep } = useAuth();
+  if (authStep !== 'FORCE_PASSWORD_CHANGE') return <Navigate to="/login" replace />;
   return children;
 }
 

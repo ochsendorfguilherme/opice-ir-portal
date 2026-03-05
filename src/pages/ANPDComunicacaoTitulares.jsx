@@ -106,14 +106,14 @@ function generateTemplate(f, nomeEmpresa) {
     : '';
 
   return `COMUNICAÇÃO DO INCIDENTE DE SEGURANÇA AOS TITULARES DE DADOS PESSOAIS
-Art. 9º, Lei nº 13.709/2018 – LGPD
+Art. 9º da Resolução CD/ANPD nº 15/2024
 Prazo regulatório: ${prazo} dias úteis${f.agente_pequeno_porte ? ' (prazo em dobro – agente de pequeno porte, §6º)' : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Prezado(a) Titular de Dados,
 
-Nos termos do Art. 9º da Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 – LGPD), comunicamos que identificamos, em ${formatDateLong(f.data_conhecimento)}, um incidente de segurança da informação que pode ter envolvido seus dados pessoais.
+Nos termos do Art. 9º da Resolução CD/ANPD nº 15/2024, comunicamos que identificamos, em ${formatDateLong(f.data_conhecimento)}, um incidente de segurança da informação que pode ter envolvido seus dados pessoais.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -373,7 +373,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             Comunicação aos Titulares
           </h1>
           <p className="text-[#555555] font-dm text-sm mt-1">
-            Art. 9º, Lei nº 13.709/2018 – LGPD · Template regulatório fixo
+            Art. 9º da Resolução CD/ANPD nº 15/2024 · Template regulatório fixo
           </p>
         </div>
 

@@ -1,0 +1,42 @@
+﻿
+C:\Users\Guilherme-PC\.gemini\antigravity\scratch\opice-ir-portal\src\pages\AccessControl.jsx
+   11:40  error  'generateId' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+   21:11  error  'navigate' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+   35:9   error  Error: Cannot access variable before it is declared
+
+`loadData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  33 |
+  34 |     useEffect(() => {
+> 35 |         loadData();
+     |         ^^^^^^^^ `loadData` accessed before it is declared
+  36 |     }, []);
+  37 |
+  38 |     const loadData = () => {
+
+  36 |     }, []);
+  37 |
+> 38 |     const loadData = () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^
+> 39 |         const loadedUsers = getStorage(KEYS.users(), []);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 40 |         const loadedClients = getStorage(KEYS.clients(), []);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 41 |         const loadedLogs = getStorage(KEYS.accessLog(), []);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 42 |         setUsers(loadedUsers);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 43 |         setClients(loadedClients);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 44 |         setAccessLogs(loadedLogs);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 45 |     };
+     | ^^^^^^^ `loadData` is declared here
+  46 |
+  47 |     const handleSaveUsers = (newUsers) => {
+  48 |         setUsers(newUsers);  react-hooks/immutability
+  114:63  error  'Users' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    no-undef
+  347:12  error  'showAddGuest' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+
+Ô£û 5 problems (5 errors, 0 warnings)
+

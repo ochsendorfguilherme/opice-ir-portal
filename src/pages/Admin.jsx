@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getStorage, setStorage, KEYS, generateId } from '../utils/storage';
+import { getStorage, setStorage, KEYS, generateId, fetchClients, softDeleteClient } from '../utils/storage';
 import { DEFAULT_ACTIVITIES } from '../data/activities';
 import { USERS } from '../data/users';
 import { useSLATimer } from '../hooks/useSLA';
@@ -10,12 +10,12 @@ import TLPBanner from '../components/TLPBanner';
 import OpiceLogo from '../components/OpiceLogo';
 import {
   Plus, X, Shield, Users, Activity, Clock, AlertTriangle, Zap,
-  LogOut, ArrowRight, Edit2, CheckCircle, AlertCircle
+  LogOut, ArrowRight, Edit2, CheckCircle, AlertCircle, Trash2
 } from 'lucide-react';
 
 const AGENTE_OPTS = ['Controlador', 'Operador', 'Ambos'];
 
-function ClientCard({ client, onAccess, onEdit }) {
+function ClientCard({ client, onAccess, onEdit, onDelete }) {
   const info = getStorage(KEYS.info(client.id), {});
   const acts = getStorage(KEYS.activities(client.id), []);
   const crisis = getStorage(KEYS.crisis(client.id, 'active'));
@@ -52,16 +52,25 @@ function ClientCard({ client, onAccess, onEdit }) {
         <div className="flex flex-col gap-2">
           <button
             onClick={() => onAccess(client)}
-            className="shrink-0 bg-[#111111] text-white font-mono text-xs px-4 py-2 hover:bg-[#333] transition-colors flex items-center gap-2 border border-black"
+            className="shrink-0 bg-[#111111] text-white font-mono text-xs px-4 py-2 hover:bg-[#333] transition-colors flex items-center justify-center gap-2 border border-black"
           >
             ACESSAR <ArrowRight size={12} />
           </button>
-          <button
-            onClick={() => onEdit(client)}
-            className="shrink-0 bg-white text-[#111111] font-mono text-[10px] px-4 py-1.5 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 border border-gray-200"
-          >
-            <Edit2 size={10} /> EDITAR
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onEdit(client)}
+              className="flex-1 bg-white text-[#111111] font-mono text-[10px] px-4 py-1.5 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 border border-gray-200"
+            >
+              <Edit2 size={10} /> EDITAR
+            </button>
+            <button
+              onClick={() => onDelete(client)}
+              className="shrink-0 bg-red-50 text-red-600 font-mono text-[10px] px-3 py-1.5 hover:bg-red-100 transition-colors flex items-center justify-center border border-red-200"
+              title="Excluir Cliente"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -141,6 +150,8 @@ export default function Admin() {
   const [clients, setClients] = useState([]);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [clientToDelete, setClientToDelete] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [toast, setToast] = useState(null);
 
   const [newForm, setNewForm] = useState({
@@ -159,17 +170,7 @@ export default function Admin() {
   }, [toast]);
 
   useEffect(() => {
-    // Load hardcoded clients + dynamic ones
-    const dynamicClients = getStorage(KEYS.clients(), []);
-    const hardcoded = USERS.filter(u => u.role === 'client').map(u => ({
-      id: u.clientId,
-      name: u.name,
-      email: u.email,
-    }));
-    // Merge
-    const allIds = new Set([...hardcoded.map(c => c.id), ...dynamicClients.map(c => c.id)]);
-    const merged = [...hardcoded, ...dynamicClients.filter(c => !hardcoded.some(h => h.id === c.id))];
-    setClients(merged);
+    setClients(fetchClients());
   }, []);
 
   const createClient = () => {
@@ -241,6 +242,19 @@ export default function Admin() {
     setEditingClient(null);
   };
 
+  const confirmDelete = () => {
+    if (deleteConfirmText !== clientToDelete.id && deleteConfirmText !== clientToDelete.name && deleteConfirmText !== clientToDelete.displayName) {
+      setToast({ type: 'error', message: 'Texto de confirmação incorreto.' });
+      return;
+    }
+
+    softDeleteClient(clientToDelete.id);
+    setClients(fetchClients());
+    setToast({ type: 'success', message: 'Cliente excluído com sucesso!' });
+    setClientToDelete(null);
+    setDeleteConfirmText('');
+  };
+
   const handleAccess = (client) => {
     navigate(`/admin/cliente/${client.id}/dashboard`);
   };
@@ -299,19 +313,29 @@ export default function Admin() {
         </h1>
         <div className="ml-auto flex items-center gap-3">
           <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-1.5 bg-[#CAFF00] text-[#111111] font-dm font-medium text-sm px-4 py-2 hover:bg-[#b8e600] transition-colors"
+            onClick={() => navigate('/admin/acessos')}
+            className="flex items-center gap-2 text-[#CAFF00] hover:bg-[#CAFF00]/10 px-4 py-2 rounded-sm transition-colors border border-[#CAFF00]/20 font-mono text-xs uppercase"
+            title="Gestão de Acessos"
           >
-            <Plus size={15} />
-            Novo Cliente
+            <Users size={16} />
+            <span className="hidden sm:inline">Acessos</span>
           </button>
-          <button
-            onClick={() => { logout(); navigate('/login'); }}
-            className="flex items-center gap-1.5 text-gray-400 hover:text-white font-dm text-sm transition-colors"
-          >
-            <LogOut size={15} />
-            Sair
-          </button>
+          <div className="flex items-center gap-3 border-l border-white/20 pl-4">
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-1.5 bg-[#CAFF00] text-[#111111] font-dm font-medium text-sm px-4 py-2 hover:bg-[#b8e600] transition-colors"
+            >
+              <Plus size={15} />
+              Novo Cliente
+            </button>
+            <button
+              onClick={() => { logout(); navigate('/login'); }}
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white font-dm text-sm transition-colors"
+            >
+              <LogOut size={15} />
+              Sair
+            </button>
+          </div>
         </div>
       </div>
 
@@ -359,7 +383,7 @@ export default function Admin() {
         <h2 className="font-syne font-bold text-[#111111] text-xl uppercase mb-4">Clientes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {sorted.map(client => (
-            <ClientCard key={client.id} client={client} onAccess={handleAccess} onEdit={handleEdit} />
+            <ClientCard key={client.id} client={client} onAccess={handleAccess} onEdit={handleEdit} onDelete={setClientToDelete} />
           ))}
         </div>
       </div>
@@ -482,6 +506,53 @@ export default function Admin() {
             <div className="px-5 pb-5 flex gap-3">
               <button onClick={() => setEditingClient(null)} className="flex-1 border border-[#E0E0E0] font-dm text-sm py-3 hover:bg-gray-50 transition-colors">Cancelar</button>
               <button onClick={saveEdit} className="flex-1 bg-[#111111] text-white font-dm text-sm py-3 hover:bg-[#333] transition-colors border border-black uppercase font-bold tracking-wider">Salvar Alterações</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Client Modal */}
+      {clientToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white border border-[#E0E0E0] w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-[#111111] px-5 py-4 flex items-center justify-between">
+              <h3 className="font-syne font-bold text-white uppercase flex items-center gap-2">
+                <Trash2 size={16} className="text-red-500" /> Excluir Cliente
+              </h3>
+              <button onClick={() => setClientToDelete(null)} className="text-gray-400 hover:text-white"><X size={18} /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="font-dm text-sm text-[#555555]">
+                Tem certeza que deseja excluir <strong>{clientToDelete.displayName || clientToDelete.name}</strong> ({clientToDelete.id})?
+              </p>
+              <div className="bg-amber-50 border border-amber-200 p-3 flex items-start gap-2 text-amber-800">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                <p className="font-mono text-[10px] uppercase leading-relaxed tracking-wider">
+                  Esta ação fará com que o cliente desapareça da visão geral e da gestão de acessos. Se houver incidentes, eles continuarão existindo no histórico lógico.
+                </p>
+              </div>
+              <div className="pt-2">
+                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-2 tracking-wider">
+                  Para confirmar, digite <strong>{clientToDelete.id}</strong> ou o nome exato do cliente:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  className={inputClass}
+                  placeholder={clientToDelete.id}
+                />
+              </div>
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button onClick={() => { setClientToDelete(null); setDeleteConfirmText(''); }} className="flex-1 border border-[#E0E0E0] font-dm text-sm py-3 hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button
+                onClick={confirmDelete}
+                disabled={!(deleteConfirmText === clientToDelete.id || deleteConfirmText === clientToDelete.name || deleteConfirmText === clientToDelete.displayName)}
+                className="flex-1 bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-dm text-sm py-3 hover:bg-red-700 transition-colors uppercase font-bold tracking-wider"
+              >
+                Confirmar Exclusão
+              </button>
             </div>
           </div>
         </div>
