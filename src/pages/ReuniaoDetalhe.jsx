@@ -2,7 +2,6 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
-  Check,
   CheckCircle2,
   ChevronLeft,
   ClipboardCheck,
@@ -99,6 +98,19 @@ function buildAtaSections(items = []) {
   };
 }
 
+
+function normalizeParticipantStatement(statement, participantes = [], index = 0) {
+  const fallbackParticipant = participantes.find((participant) => participant.id === statement?.participantId);
+  return {
+    id: statement?.id || `SPK_${index + 1}`,
+    participantId: statement?.participantId || fallbackParticipant?.id || '',
+    participantName: statement?.participantName || fallbackParticipant?.name || 'Participante',
+    participantEmail: statement?.participantEmail || fallbackParticipant?.email || '',
+    texto: statement?.texto || '',
+    timestamp: statement?.timestamp || '00:00',
+    createdAt: statement?.createdAt || new Date().toISOString(),
+  };
+}
 function getAtaStatus(ata) {
   const requests = Array.isArray(ata?.requests) ? ata.requests : [];
   const responded = requests.filter((request) => request.respondedAt);
@@ -140,6 +152,8 @@ function ensureMeetingShape(meeting) {
   return {
     ...meeting,
     participantes,
+    contexto: meeting?.contexto || '',
+    participantStatements: Array.isArray(meeting?.participantStatements) ? meeting.participantStatements.map((statement, index) => normalizeParticipantStatement(statement, participantes, index)) : [],
     ata: {
       texto: meeting?.ata?.texto || '',
       generatedAt: meeting?.ata?.generatedAt || null,
@@ -162,6 +176,8 @@ function buildAtaPayload({ meeting, endTimeIso, observacoesFinais, proximaReunia
     duracao: duration,
     participantes: meeting.participantes || [],
     pauta: meeting.pauta || 'Sem pauta detalhada.',
+    contexto: meeting.contexto || '',
+    falasParticipantes: meeting.participantStatements || [],
     observacoesFinais: observacoesFinais || meeting.observacoesFinais || '',
     proximaReuniao: proximaReuniao || meeting.proximaReuniao || { data: '', horario: '' },
   };
@@ -177,6 +193,20 @@ function buildAtaPayload({ meeting, endTimeIso, observacoesFinais, proximaReunia
     `Pauta: ${summary.pauta}`,
     '',
   ];
+
+  if (summary.contexto) {
+    lines.push('CONTEXTO');
+    lines.push(summary.contexto);
+    lines.push('');
+  }
+
+  if (summary.falasParticipantes.length > 0) {
+    lines.push('FALAS DOS PARTICIPANTES');
+    summary.falasParticipantes.forEach((statement, index) => {
+      lines.push(`${index + 1}. [${statement.timestamp}] ${statement.participantName}: ${statement.texto}`);
+    });
+    lines.push('');
+  }
   [
     ['Decisões', sections.decisoes],
     ['Tarefas', sections.tarefas],
@@ -478,15 +508,16 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
   const [pendencyTreatment, setPendencyTreatment] = useState('sem_prazo');
   const [pendencyDueDate, setPendencyDueDate] = useState('');
   const [editingItem, setEditingItem] = useState(null);
-  const [quickName, setQuickName] = useState('');
-  const [quickDesc, setQuickDesc] = useState('');
-  const [quickSaved, setQuickSaved] = useState(false);
+  const [contextText, setContextText] = useState(() => initialMeeting?.contexto || '');
+  const [selectedParticipantId, setSelectedParticipantId] = useState(() => initialMeeting?.participantes?.[0]?.id || '');
+  const [participantSpeech, setParticipantSpeech] = useState('');
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [highlightedItemId, setHighlightedItemId] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [approvalRequestId, setApprovalRequestId] = useState(() => initialMeeting?.ata?.requests?.find((request) => !request.respondedAt)?.id || initialMeeting?.ata?.requests?.[0]?.id || '');
   const [approvalNote, setApprovalNote] = useState('');
   const textareaRef = useRef(null);
+  const speechTextareaRef = useRef(null);
   const notFound = !initialMeeting;
 
   const resolvedClientId = useMemo(() => {
@@ -521,12 +552,11 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
 
   useEffect(() => {
     if (!meeting) return undefined;
-    const interval = setInterval(() => saveMeeting({ ...meeting, notasLivres: noteText }), 10000);
+    const interval = setInterval(() => saveMeeting({ ...meeting, notasLivres: noteText, contexto: contextText }), 10000);
     return () => clearInterval(interval);
-  }, [meeting, noteText, saveMeeting]);
+  }, [meeting, noteText, contextText, saveMeeting]);
 
   const ataStatus = useMemo(() => getAtaStatus(meeting?.ata), [meeting]);
-  const sections = useMemo(() => buildAtaSections(meeting?.items || []), [meeting]);
   const sortedItems = useMemo(() => [...(meeting?.items || [])].sort((left, right) => left.timestamp.localeCompare(right.timestamp)), [meeting]);
   const approvalSummary = useMemo(() => {
     const requests = meeting?.ata?.requests || [];
@@ -537,6 +567,8 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
     };
   }, [meeting]);
   const isPendingCategory = selectedCategory === 'Pendência';
+  const participantStatements = useMemo(() => [...(meeting?.participantStatements || [])].sort((left, right) => new Date(left.createdAt) - new Date(right.createdAt)), [meeting]);
+  const selectedParticipant = useMemo(() => (meeting?.participantes || []).find((participant) => participant.id === selectedParticipantId) || meeting?.participantes?.[0] || null, [meeting, selectedParticipantId]);
   const canSaveMeetingItem = Boolean(
     noteText.trim()
       && (!isPendingCategory || (pendencyTreatment && (pendencyTreatment !== 'definir_prazo' || pendencyDueDate))),
@@ -572,15 +604,27 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
     textareaRef.current?.focus();
   }
 
-  function handleQuickTask() {
-    if (!quickDesc.trim() || !meeting) return;
-    const newItem = { id: `ITEM_${Math.random().toString(36).slice(2, 8).toUpperCase()}`, timestamp: fmtItemTs(elapsedSeconds), categoria: 'Tarefa', texto: quickDesc.trim(), responsavel: quickName.trim() || null };
-    const updated = { ...meeting, items: [...(meeting.items || []), newItem] };
-    updateMeeting(updated, 'Tarefa rápida registrada.');
-    setQuickName('');
-    setQuickDesc('');
-    setQuickSaved(true);
-    setTimeout(() => setQuickSaved(false), 1800);
+
+  function handleSaveContext() {
+    if (!meeting) return;
+    updateMeeting({ ...meeting, contexto: contextText }, 'Contexto atualizado.');
+  }
+
+  function handleAddParticipantStatement() {
+    if (!meeting || !selectedParticipant || !participantSpeech.trim()) return;
+    const statement = normalizeParticipantStatement({
+      id: `SPK_${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+      participantId: selectedParticipant.id,
+      participantName: selectedParticipant.name,
+      participantEmail: selectedParticipant.email,
+      texto: participantSpeech.trim(),
+      timestamp: fmtItemTs(elapsedSeconds),
+      createdAt: new Date().toISOString(),
+    }, meeting.participantes, (meeting.participantStatements || []).length);
+    const updated = { ...meeting, participantStatements: [...(meeting.participantStatements || []), statement], contexto: contextText };
+    updateMeeting(updated, `Fala registrada para ${selectedParticipant.name}.`);
+    setParticipantSpeech('');
+    speechTextareaRef.current?.focus();
   }
 
   function handleSaveEditedPendency(nextItem) {
@@ -629,7 +673,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
     const clientInfo = getStorage(KEYS.info(resolvedClientId), {});
     const mail = buildApprovalMail({ meeting: updated, ata, fallbackEmail: clientInfo.emailContato || clientInfo.email || '' });
     if (!mail.target) {
-      setFeedback({ type: 'warning', message: 'Nenhum destinat?rio de e-mail foi encontrado para reenviar a ata.' });
+      setFeedback({ type: 'warning', message: 'Nenhum destinatário de e-mail foi encontrado para reenviar a ata.' });
       return;
     }
     window.location.href = `mailto:${mail.target}?subject=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}`;
@@ -802,7 +846,118 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
             </div>
           </section>
 
-          <section className="app-panel rounded-[30px] p-5 shadow-[0_16px_34px_rgba(21,38,43,0.06)]"><div className="flex flex-col gap-4 border-b border-[rgba(21,38,43,0.08)] pb-4 md:flex-row md:items-end md:justify-between"><div><p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Ação rápida</p><h2 className="mt-2 font-syne text-xl font-extrabold uppercase text-[var(--ink)]">Registrar tarefa</h2></div><div className="flex flex-wrap gap-2">{Object.entries(sections).map(([key, items]) => <ApprovalChip key={key} label={key} count={items.length} tone="border-[rgba(21,38,43,0.08)] bg-white text-[var(--ink-soft)]" />)}</div></div><div className="mt-4 grid gap-3 md:grid-cols-[0.34fr_1fr_auto]"><input type="text" value={quickName} onChange={(event) => setQuickName(event.target.value)} placeholder="Responsável" className="rounded-[18px] border border-[rgba(21,38,43,0.12)] bg-white px-4 py-3 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.28)]" /><input type="text" value={quickDesc} onChange={(event) => setQuickDesc(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') handleQuickTask(); }} placeholder="Descreva a tarefa de forma objetiva." className="rounded-[18px] border border-[rgba(21,38,43,0.12)] bg-white px-4 py-3 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.28)]" /><button onClick={handleQuickTask} disabled={!quickDesc.trim()} className="btn-primary rounded-full px-5 py-3 font-mono text-xs uppercase disabled:cursor-not-allowed disabled:opacity-40">{quickSaved ? <span className="inline-flex items-center gap-2"><Check size={14} />Salvo</span> : <span className="inline-flex items-center gap-2"><Plus size={14} />Registrar</span>}</button></div></section>
+          <section className="app-panel rounded-[30px] p-5 shadow-[0_16px_34px_rgba(21,38,43,0.06)]">
+            <div className="flex flex-col gap-4 border-b border-[rgba(21,38,43,0.08)] pb-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Contexto e participantes</p>
+                <h2 className="mt-2 font-syne text-2xl font-extrabold uppercase text-[var(--ink)]">Registro guiado da conversa</h2>
+                <p className="mt-2 max-w-2xl font-dm text-sm leading-relaxed text-[var(--ink-soft)]">{"Selecione um participante, registre a fala atual e alterne livremente ao longo da reunião. O bloco de contexto guarda o cenário geral sem atribuição individual."}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <ApprovalChip label="Contexto" count={contextText.trim() ? 1 : 0} tone="border-[rgba(21,38,43,0.08)] bg-white text-[var(--ink-soft)]" />
+                <ApprovalChip label="Falas" count={participantStatements.length} tone="border-[rgba(21,38,43,0.08)] bg-white text-[var(--ink-soft)]" />
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="space-y-5">
+                <div className="rounded-[26px] border border-[rgba(21,38,43,0.08)] bg-[rgba(23,48,56,0.04)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Contexto</p>
+                      <h3 className="mt-2 font-syne text-xl font-bold text-[var(--ink)]">{"Panorama da reunião"}</h3>
+                    </div>
+                    <button onClick={handleSaveContext} className="btn-outline rounded-full px-4 py-2 font-mono text-[11px] uppercase">Salvar contexto</button>
+                  </div>
+                  <textarea
+                    value={contextText}
+                    onChange={(event) => setContextText(event.target.value)}
+                    rows={5}
+                    placeholder={"Contexto do incidente, situação atual, alinhamento geral e sinais importantes do momento."}
+                    className="mt-4 w-full resize-none rounded-[22px] border border-[rgba(21,38,43,0.12)] bg-white px-4 py-3 font-dm text-sm leading-relaxed text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.28)]"
+                  />
+                </div>
+
+                <div className="rounded-[26px] border border-[rgba(21,38,43,0.08)] bg-[rgba(23,48,56,0.04)] p-4">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Participantes</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {meeting.participantes.length === 0 ? (
+                      <div className="rounded-[20px] border border-dashed border-[rgba(21,38,43,0.14)] px-4 py-4 font-dm text-sm text-[var(--ink-soft)]">Cadastre participantes para registrar as falas.</div>
+                    ) : (
+                      meeting.participantes.map((participant) => {
+                        const isActive = selectedParticipant?.id === participant.id;
+                        return (
+                          <button
+                            key={participant.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedParticipantId(participant.id);
+                              setTimeout(() => speechTextareaRef.current?.focus(), 0);
+                            }}
+                            className={`rounded-[20px] border px-4 py-3 text-left transition-all ${isActive ? "border-[rgba(183,236,35,0.36)] bg-[rgba(214,255,99,0.18)] shadow-[0_14px_30px_rgba(183,236,35,0.14)]" : "border-[rgba(21,38,43,0.08)] bg-white hover:border-[rgba(21,38,43,0.18)]"}`}
+                          >
+                            <div className="font-dm text-sm font-semibold text-[var(--ink)]">{participant.name}</div>
+                            <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-soft)]">{participant.email || "Sem e-mail"}</div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="mt-5 rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Participante ativo</p>
+                        <h3 className="mt-2 font-syne text-xl font-bold text-[var(--ink)]">{selectedParticipant?.name || "Selecione um participante"}</h3>
+                      </div>
+                      {selectedParticipant && <span className="rounded-full border border-[rgba(21,38,43,0.08)] bg-[rgba(23,48,56,0.04)] px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">{selectedParticipant.email || "Sem e-mail"}</span>}
+                    </div>
+                    <textarea
+                      ref={speechTextareaRef}
+                      value={participantSpeech}
+                      onChange={(event) => setParticipantSpeech(event.target.value)}
+                      rows={4}
+                      disabled={!selectedParticipant}
+                      placeholder={selectedParticipant ? `Registre o que ${selectedParticipant.name} está falando.` : "Selecione um participante para registrar a fala."}
+                      className="mt-4 w-full resize-none rounded-[22px] border border-[rgba(21,38,43,0.12)] bg-[rgba(23,48,56,0.02)] px-4 py-3 font-dm text-sm leading-relaxed text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                    <div className="mt-4 flex justify-end">
+                      <button onClick={handleAddParticipantStatement} disabled={!selectedParticipant || !participantSpeech.trim()} className="btn-primary rounded-full px-5 py-2.5 font-mono text-xs uppercase disabled:cursor-not-allowed disabled:opacity-40"><span className="inline-flex items-center gap-2"><Plus size={14} />Adicionar fala</span></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[26px] border border-[rgba(21,38,43,0.08)] bg-white p-5">
+                <div className="flex items-center justify-between gap-3 border-b border-[rgba(21,38,43,0.08)] pb-3">
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Falas registradas</p>
+                    <h3 className="mt-2 font-syne text-xl font-bold text-[var(--ink)]">Linha de falas por participante</h3>
+                  </div>
+                  <span className="rounded-full border border-[rgba(21,38,43,0.08)] bg-[rgba(23,48,56,0.04)] px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">{participantStatements.length}</span>
+                </div>
+                <div className="mt-4 max-h-[540px] space-y-3 overflow-auto pr-1">
+                  {participantStatements.length === 0 ? (
+                    <div className="rounded-[22px] border border-dashed border-[rgba(21,38,43,0.14)] px-4 py-8 text-center font-dm text-sm text-[var(--ink-soft)]">{"Nenhuma fala registrada ainda. Use os participantes à esquerda para capturar a conversa."}</div>
+                  ) : (
+                    participantStatements.map((statement) => (
+                      <article key={statement.id} className="rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-[rgba(23,48,56,0.03)] px-4 py-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#173038] font-mono text-[11px] font-bold uppercase text-[var(--accent)]">{(statement.participantName || "?").charAt(0)}</span>
+                          <div>
+                            <p className="font-dm text-sm font-semibold text-[var(--ink)]">{statement.participantName}</p>
+                            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">{statement.timestamp}</p>
+                          </div>
+                        </div>
+                        <p className="mt-3 font-dm text-sm leading-relaxed text-[var(--ink)]">{statement.texto}</p>
+                      </article>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
         </main>
       </div>
 
@@ -813,9 +968,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
           onSave={handleSaveEditedPendency}
         />
       )}
-      {showCloseModal && <CloseModal meeting={{ ...meeting, notasLivres: noteText }} clientId={resolvedClientId} onClose={() => setShowCloseModal(false)} onConfirm={handleCloseConfirm} />}
+      {showCloseModal && <CloseModal meeting={{ ...meeting, notasLivres: noteText, contexto: contextText, participantStatements }} clientId={resolvedClientId} onClose={() => setShowCloseModal(false)} onConfirm={handleCloseConfirm} />}
     </Layout>
   );
 }
-
-

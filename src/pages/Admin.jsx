@@ -5,6 +5,7 @@ import { getStorage, setStorage, KEYS, generateId, fetchClients, softDeleteClien
 import { DEFAULT_ACTIVITIES } from '../data/activities';
 import { USERS } from '../data/users';
 import { useSLATimer } from '../hooks/useSLA';
+import { withPasswordHash } from '../utils/authSecurity';
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
 import TLPBanner from '../components/TLPBanner';
 import OpiceLogo from '../components/OpiceLogo';
@@ -39,7 +40,7 @@ function classifyClient(client, currentTime) {
   return 'stable';
 }
 
-function ClientCard({ client, level, onAccess, onEdit, onDelete }) {
+function ClientCard({ client, level, onAccess, onEdit, onDelete, currentTime }) {
   const info = getStorage(KEYS.info(client.id), {});
   const acts = getStorage(KEYS.activities(client.id), []);
   const crisis = getStorage(KEYS.crisis(client.id, 'active'));
@@ -53,7 +54,7 @@ function ClientCard({ client, level, onAccess, onEdit, onDelete }) {
 
   const sla = useSLATimer(info.dataConhecimento || null);
   const slaAlert = info.dataConhecimento
-    ? (Date.now() - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60) >= 36
+    ? (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60) >= 36
     : false;
   const anpd = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), 3) : null;
 
@@ -189,7 +190,7 @@ export default function Admin() {
   const { logout, logAction, user: currentUser } = useAuth();
   const navigate = useNavigate();
 
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState(() => fetchClients());
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [clientToDelete, setClientToDelete] = useState(null);
@@ -219,11 +220,7 @@ export default function Admin() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  useEffect(() => {
-    setClients(fetchClients());
-  }, []);
-
-  const createClient = () => {
+  const createClient = async () => {
     const clientName = newForm.name.trim();
     const clientEmail = newForm.email.trim().toLowerCase();
     const displayName = (newForm.displayName || newForm.name).trim();
@@ -243,16 +240,15 @@ export default function Admin() {
 
     const id = `client_dyn_${generateId('').toLowerCase()}`;
     const newClient = { id, name: clientName, email: clientEmail, displayName };
-    const newClientUser = {
+    const newClientUser = await withPasswordHash({
       id,
       email: clientEmail,
-      password: initialPassword,
       role: 'client',
       name: displayName,
       clientId: id,
       status: 'Ativo',
       forcePasswordChange: true,
-    };
+    }, initialPassword);
 
     setStorage(KEYS.info(id), {
       nomeCliente: displayName,
@@ -385,7 +381,7 @@ export default function Admin() {
     navigate(`/admin/cliente/${client.id}/dashboard`);
   };
 
-  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
     return () => clearInterval(timer);
@@ -596,6 +592,7 @@ export default function Admin() {
                     onAccess={handleAccess}
                     onEdit={handleEdit}
                     onDelete={setClientToDelete}
+                    currentTime={currentTime}
                   />
                 ))}
               </div>

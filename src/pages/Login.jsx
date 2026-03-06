@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AlertCircle, ArrowRight, Lock, ShieldCheck } from 'lucide-react';
@@ -6,7 +6,7 @@ import { getStorage, KEYS } from '../utils/storage';
 import OpiceLogo from '../components/OpiceLogo';
 
 export default function Login() {
-  const { user, login, authStep } = useAuth();
+  const { user, login, authStep, authReady, demoAuthEnabled } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!authReady) return;
     if (authStep === 'AUTHENTICATED') {
       if (user.role === 'admin') {
         navigate('/admin/modulos');
@@ -27,14 +28,14 @@ export default function Login() {
     } else if (authStep === 'FORCE_PASSWORD_CHANGE') {
       navigate('/change-password');
     }
-  }, [authStep, user, navigate]);
+  }, [authReady, authStep, user, navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const result = login(email.trim(), password);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const result = await login(email.trim(), password);
     setLoading(false);
     if (result.success) {
       if (result.needsMFA) navigate('/mfa');
@@ -44,7 +45,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.14),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece7dc_100%)] text-[var(--ink)] lg:grid lg:grid-cols-[1.05fr_0.95fr]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.14),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece7dc_100%)] text-[var(--ink)] lg:grid lg:grid-cols-[1.08fr_0.92fr]">
       <section className="relative overflow-hidden bg-[linear-gradient(160deg,rgba(23,48,56,0.98)_0%,rgba(15,33,40,0.98)_100%)] px-8 py-10 text-white lg:flex lg:min-h-screen lg:flex-col lg:justify-between lg:px-12 lg:py-12">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.14),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(248,211,131,0.12),transparent_22%)]" />
         <div className="relative z-10 flex items-start justify-between">
@@ -92,13 +93,11 @@ export default function Login() {
 
       <section className="flex items-center justify-center px-6 py-10 lg:px-12">
         <div className="w-full max-w-[30rem]">
-          <div className="app-panel rounded-[32px] p-7 shadow-[0_28px_64px_rgba(21,38,43,0.12)] md:p-9">
+          <div className="page-hero-card shadow-[0_28px_64px_rgba(21,38,43,0.12)]">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div>
                 <p className="section-kicker">Acesso ao portal</p>
-                <h2 className="mt-3 font-syne text-3xl font-extrabold uppercase tracking-[-0.04em] text-[var(--ink)] md:text-4xl">
-                  Entrar
-                </h2>
+                <h2 className="mt-3 font-syne text-3xl font-extrabold uppercase tracking-[-0.04em] text-[var(--ink)] md:text-4xl">Entrar</h2>
                 <p className="mt-3 max-w-sm font-dm text-sm leading-6 text-[var(--ink-soft)]">
                   Use suas credenciais para continuar no ambiente de resposta ao incidente.
                 </p>
@@ -108,16 +107,22 @@ export default function Login() {
               </div>
             </div>
 
+            {!demoAuthEnabled && (
+              <div className="mb-5 rounded-[20px] border border-amber-200 bg-amber-50/95 px-4 py-3 text-sm text-amber-800">
+                A autenticação local de demonstração está desabilitada neste ambiente. Para acesso seguro, conecte um provedor de identidade real ou habilite <code className="font-mono text-xs">VITE_ENABLE_DEMO_AUTH=true</code> apenas em demonstrações controladas.
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Email</label>
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                   placeholder="seu@email.com.br"
-                  className="w-full rounded-[20px] border border-[rgba(21,38,43,0.1)] bg-white px-4 py-3.5 font-dm text-sm text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] focus:border-[rgba(183,236,35,0.42)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,255,99,0.12)]"
+                  className="field-control font-dm"
                   autoComplete="email"
                 />
               </div>
@@ -127,10 +132,10 @@ export default function Login() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   required
                   placeholder=""
-                  className="w-full rounded-[20px] border border-[rgba(21,38,43,0.1)] bg-white px-4 py-3.5 font-sans text-sm text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] focus:border-[rgba(183,236,35,0.42)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,255,99,0.12)]"
+                  className="field-control font-sans"
                   autoComplete="current-password"
                 />
               </div>
@@ -151,7 +156,7 @@ export default function Login() {
               </button>
             </form>
 
-            <div className="mt-8 rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white/55 p-4">
+            <div className="toolbar-strip mt-8">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Suporte</p>
               <p className="mt-2 font-dm text-sm leading-6 text-[var(--ink-soft)]">Problemas de acesso? Contate o time Opice Blum para validação do usuário e do cliente vinculado.</p>
             </div>

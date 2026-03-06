@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
@@ -21,20 +21,16 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
   const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     nomeCliente: '',
     dataIncidente: '',
     dataConhecimento: '',
     agente: 'Controlador',
     codigoCliente: '',
     contexto: '',
-  });
+    ...(getStorage(KEYS.info(effectiveClientId)) || {}),
+  }));
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    const stored = getStorage(KEYS.info(effectiveClientId));
-    if (stored) setForm(prev => ({ ...prev, ...stored }));
-  }, [effectiveClientId]);
 
   const isComplete = () => {
     return (

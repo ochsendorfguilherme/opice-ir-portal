@@ -1,18 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
-import { getStorage, setStorage, KEYS } from '../utils/storage';
+import { getStorage, setStorage, KEYS, generateId } from '../utils/storage';
 import { QUESTION_SECTIONS } from '../data/questions';
 import { ChevronDown, ChevronUp, FileDown, Check, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 function AutoSaveTextarea({ value, onChange, placeholder }) {
-  const [localVal, setLocalVal] = useState(value || '');
+  const [localVal, setLocalVal] = useState(() => value || '');
   const [saved, setSaved] = useState(false);
   const timer = useRef(null);
-
-  useEffect(() => { setLocalVal(value || ''); }, [value]);
 
   const handleChange = (e) => {
     const v = e.target.value;
@@ -56,7 +54,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
   const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
 
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState(() => getStorage(KEYS.answers(effectiveClientId), {}));
   const [open, setOpen] = useState({ 1: true, 2: false, 3: false, 4: false, 5: false });
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [sentToTimeline, setSentToTimeline] = useState({});
@@ -64,10 +62,6 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
     PDF_SECTIONS.reduce((acc, s) => ({ ...acc, [s.id]: s.default }), {})
   );
 
-  useEffect(() => {
-    const stored = getStorage(KEYS.answers(effectiveClientId), {});
-    setAnswers(stored);
-  }, [effectiveClientId]);
 
   const handleAnswer = (sectionId, qIdx, value) => {
     const updated = {
@@ -98,7 +92,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
     const timeline = pmoData.timeline || [];
     const newEvent = {
-      id: Date.now(),
+      id: generateId('TIMELINE_'),
       datetime: new Date().toISOString().slice(0, 16),
       fase: 'Análise',
       evento: `Coleta de informações concluída — ${sec.title}. Respondido por: ${user?.email || '—'}`,
@@ -601,6 +595,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                           {q}
                         </label>
                         <AutoSaveTextarea
+                          key={`${sec.id}-${qi}`}
                           value={answers[sec.id]?.[qi] || ''}
                           onChange={v => handleAnswer(sec.id, qi, v)}
                           placeholder="Digite sua resposta..."

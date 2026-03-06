@@ -147,29 +147,20 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
   const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
 
-  const [activities, setActivities] = useState([]);
-  const [info, setInfo] = useState({});
-  const [crisis, setCrisis] = useState(null);
-  const [showWelcome, setShowWelcome] = useState(false);
-
-  useEffect(() => {
+  const [activities] = useState(() => {
     const stored = getStorage(KEYS.activities(effectiveClientId));
-    if (!stored) {
-      setStorage(KEYS.activities(effectiveClientId), DEFAULT_ACTIVITIES);
-      setActivities(DEFAULT_ACTIVITIES);
-    } else {
-      setActivities(stored);
-    }
-
-    setInfo(getStorage(KEYS.info(effectiveClientId), {}));
-
+    if (stored) return stored;
+    setStorage(KEYS.activities(effectiveClientId), DEFAULT_ACTIVITIES);
+    return DEFAULT_ACTIVITIES;
+  });
+  const [info] = useState(() => getStorage(KEYS.info(effectiveClientId), {}));
+  const [crisis] = useState(() => {
     const currentCrisis = getStorage(KEYS.crisis(effectiveClientId, 'active'));
-    setCrisis(currentCrisis?.crisisActive === true && currentCrisis?.crisisStatus !== 'closed' ? currentCrisis : null);
-
-    if (user?.role === 'client' && !getStorage(KEYS.welcomeShown(effectiveClientId))) {
-      setShowWelcome(true);
-    }
-  }, [effectiveClientId, user?.role]);
+    return currentCrisis?.crisisActive === true && currentCrisis?.crisisStatus !== 'closed' ? currentCrisis : null;
+  });
+  const [showWelcome, setShowWelcome] = useState(() => (
+    user?.role === 'client' && !getStorage(KEYS.welcomeShown(effectiveClientId))
+  ));
 
   const sla = useSLATimer(info.dataConhecimento || null);
 

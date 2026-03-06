@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
@@ -219,11 +219,31 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
   const effectiveClientId = propClientId || user?.clientId;
   const storageKey = KEYS.anpd(effectiveClientId);
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const initialState = (() => {
+    if (!effectiveClientId) {
+      return { form: { ...EMPTY_FORM }, nomeEmpresa: '', comunicacaoRef: null };
+    }
+    const anpdData = getStorage(storageKey, {});
+    const registro = anpdData.registroIncidenteArt10 || {};
+    const info = getStorage(KEYS.info(effectiveClientId), {});
+    const comunicacao = anpdData.comunicacaoTitulares || null;
+    return {
+      form: {
+        ...EMPTY_FORM,
+        data_conhecimento: info.dataConhecimento || '',
+        categoria_dados_afetados: registro.categoria_dados_afetados ? registro.categoria_dados_afetados : (comunicacao?.categoria_dados_afetados || ''),
+        ...registro,
+      },
+      nomeEmpresa: info.nomeCliente || '',
+      comunicacaoRef: comunicacao?.updated_at ? comunicacao : null,
+    };
+  })();
+
+  const [form, setForm] = useState(() => initialState.form);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState({});
-  const [nomeEmpresa, setNomeEmpresa] = useState('');
-  const [comunicacaoRef, setComunicacaoRef] = useState(null);
+  const [nomeEmpresa] = useState(() => initialState.nomeEmpresa);
+  const [comunicacaoRef] = useState(() => initialState.comunicacaoRef);
   const [sections, setSections] = useState({
     retencao: true,
     incisoI: true,
@@ -235,25 +255,6 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
     incisoVII: false,
     anotacoes: false,
   });
-
-  useEffect(() => {
-    if (!effectiveClientId) return;
-    const anpdData = getStorage(storageKey, {});
-    const registro = anpdData.registroIncidenteArt10 || {};
-    const info = getStorage(KEYS.info(effectiveClientId), {});
-    setNomeEmpresa(info.nomeCliente || '');
-
-    const comunicacao = anpdData.comunicacaoTitulares || null;
-    if (comunicacao?.updated_at) setComunicacaoRef(comunicacao);
-
-    setForm({
-      ...EMPTY_FORM,
-      data_conhecimento: info.dataConhecimento || '',
-      // pré-preenche categoria se tiver na comunicação e ainda não foi salvo o registro
-      categoria_dados_afetados: registro.categoria_dados_afetados ? registro.categoria_dados_afetados : (comunicacao?.categoria_dados_afetados || ''),
-      ...registro,
-    });
-  }, [effectiveClientId]);
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 

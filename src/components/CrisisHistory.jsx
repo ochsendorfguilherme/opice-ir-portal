@@ -1,138 +1,129 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Check, ChevronDown, ChevronUp, Copy, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import { getAllCrises } from '../utils/crisisHistory';
-import { Copy, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 function CopyBtn({ text }) {
-  const [c, setC] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text || '');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
   return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setC(true); setTimeout(() => setC(false), 2000); }}
-      className="flex items-center gap-1 text-xs font-mono text-[var(--ink-soft)] hover:text-gray-600 transition-colors"
-    >
-      {c ? <Check size={11} className="text-green-500" /> : <Copy size={11} />}
-      {c ? 'Copiado' : 'Copiar'}
+    <button type="button" onClick={handleCopy} className="inline-flex items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]">
+      {copied ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
+      {copied ? 'Copiado' : 'Copiar'}
     </button>
   );
 }
 
-function CrisisDetailModal({ crise, onClose }) {
+function CrisisDetailModal({ crisis, onClose }) {
+  const membersPresent = (crisis.members || []).filter((member) => member.present).length;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-      <div className="bg-white border border-[rgba(21,38,43,0.12)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="bg-[#173038] px-5 py-3 flex items-center justify-between sticky top-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#15262b]/52 backdrop-blur-sm" />
+      <div className="relative w-full max-w-2xl rounded-[30px] border border-[rgba(21,38,43,0.12)] bg-white p-6 shadow-[0_24px_56px_rgba(21,38,43,0.18)] md:p-8">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[var(--accent)] font-mono text-xs">DETALHES DA CRISE</div>
-            <div className="text-[#fffdf8] font-dm text-sm">{crise.crisisId}</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Histórico de crise</div>
+            <h3 className="mt-3 font-syne text-2xl font-bold text-[var(--ink)]">{crisis.crisisId}</h3>
           </div>
-          <button onClick={onClose} className="text-[var(--ink-soft)] hover:text-[#fffdf8] p-1"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="rounded-full border border-[rgba(21,38,43,0.12)] bg-white p-3 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"><X size={18} /></button>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              ['Status', crise.crisisStatus === 'closed' ? '✓ Encerrada' : '⚡ Ativa'],
-              ['Crisis ID', crise.crisisId],
-              ['Declarada em', crise.crisisTimestamp ? new Date(crise.crisisTimestamp).toLocaleString('pt-BR') : '—'],
-              ['Encerrada em', crise.crisisClosedAt ? new Date(crise.crisisClosedAt).toLocaleString('pt-BR') : '—'],
-              ['Duração', crise.crisisDuration || '—'],
-              ['Membros presentes', `${(crise.crisisMembers || []).filter(m => m.present).length}/5`],
-            ].map(([l, v]) => (
-              <div key={l} className="border border-[#F0F0F0] p-3">
-                <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">{l}</div>
-                <div className="font-dm text-sm text-[var(--ink)]">{v}</div>
-              </div>
-            ))}
-          </div>
-          {crise.crisisResummo && (
-            <div className="border border-[rgba(21,38,43,0.12)] p-3">
-              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Resumo da Resolução</div>
-              <p className="font-dm text-sm text-[var(--ink)]">{crise.crisisResummo}</p>
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          {[
+            ['Status', crisis.crisisStatus === 'closed' ? 'Encerrada' : 'Ativa'],
+            ['Declarada em', crisis.crisisTimestamp ? new Date(crisis.crisisTimestamp).toLocaleString('pt-BR') : '—'],
+            ['Encerrada em', crisis.crisisClosedAt ? new Date(crisis.crisisClosedAt).toLocaleString('pt-BR') : '—'],
+            ['Duração', crisis.crisisDuration || '—'],
+            ['Membros presentes', `${membersPresent}/5`],
+            ['Hash final', crisis.crisisCloseHash || '—'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-[rgba(245,247,248,0.85)] p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-soft)]">{label}</div>
+              <div className="mt-2 text-sm leading-6 text-[var(--ink)] break-all">{value}</div>
             </div>
-          )}
-          <div className="bg-white/72 border border-[rgba(21,38,43,0.12)] p-3">
-            <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Hash SHA-256 de Auditoria</div>
-            <div className="font-mono text-xs text-[#333] break-all">{crise.crisisHash}</div>
-            <div className="mt-1"><CopyBtn text={crise.crisisHash || ''} /></div>
+          ))}
+        </div>
+        {crisis.crisisResummo && (
+          <div className="mt-4 rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-[rgba(245,247,248,0.85)] p-4">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-soft)]">Resumo do encerramento</div>
+            <p className="mt-2 text-sm leading-7 text-[var(--ink)]">{crisis.crisisResummo}</p>
           </div>
+        )}
+        <div className="mt-4 rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-[rgba(245,247,248,0.85)] p-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-soft)]">Hash de auditoria</div>
+          <div className="mt-2 break-all font-mono text-xs text-[var(--ink-soft)]">{crisis.crisisHash}</div>
+          <div className="mt-3"><CopyBtn text={crisis.crisisHash || ''} /></div>
         </div>
       </div>
     </div>
   );
 }
 
-function CrisisCard({ crise }) {
-  const [showDetail, setShowDetail] = useState(false);
-  const shortHash = crise.crisisHash ? `${crise.crisisHash.slice(0, 16)}...` : '—';
-  const duration = crise.crisisDuration || '—';
-
+function CrisisCard({ crisis }) {
+  const [open, setOpen] = useState(false);
+  const shortHash = crisis.crisisHash ? `${crisis.crisisHash.slice(0, 18)}...` : '—';
   return (
     <>
-      <div className="border border-[rgba(21,38,43,0.12)] p-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="font-mono text-xs text-[var(--ink-soft)]">{crise.crisisId}</span>
-          <span className={`font-mono text-xs px-2 py-0.5 ${crise.crisisStatus === 'closed' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-            {crise.crisisStatus === 'closed' ? '✓ Encerrada' : '⚡ Ativa'}
+      <div className="rounded-[28px] border border-[rgba(21,38,43,0.08)] bg-white/82 p-5 shadow-[0_14px_30px_rgba(21,38,43,0.06)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-soft)]">{crisis.crisisId}</div>
+            <div className="mt-2 font-syne text-xl font-bold text-[var(--ink)]">{crisis.crisisStatus === 'closed' ? 'Crise encerrada' : 'Crise ativa'}</div>
+          </div>
+          <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${crisis.crisisStatus === 'closed' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+            {crisis.crisisStatus === 'closed' ? 'Encerrada' : 'Ativa'}
           </span>
         </div>
-        <div className="space-y-1.5 mb-3">
-          <div className="flex gap-3 text-xs">
-            <span className="font-mono text-[var(--ink-soft)] w-24 shrink-0">Declarada</span>
-            <span className="font-dm text-[var(--ink)]">{crise.crisisTimestamp ? new Date(crise.crisisTimestamp).toLocaleString('pt-BR') : '—'}</span>
-          </div>
-          {crise.crisisClosedAt && (
-            <div className="flex gap-3 text-xs">
-              <span className="font-mono text-[var(--ink-soft)] w-24 shrink-0">Encerrada</span>
-              <span className="font-dm text-[var(--ink)]">{new Date(crise.crisisClosedAt).toLocaleString('pt-BR')}</span>
-            </div>
-          )}
-          <div className="flex gap-3 text-xs">
-            <span className="font-mono text-[var(--ink-soft)] w-24 shrink-0">Duração</span>
-            <span className="font-dm text-[var(--ink)]">{duration}</span>
-          </div>
+        <div className="mt-4 space-y-2 text-sm text-[var(--ink-soft)]">
+          <div><strong className="text-[var(--ink)]">Declarada:</strong> {crisis.crisisTimestamp ? new Date(crisis.crisisTimestamp).toLocaleString('pt-BR') : '—'}</div>
+          <div><strong className="text-[var(--ink)]">Duração:</strong> {crisis.crisisDuration || '—'}</div>
+          <div><strong className="text-[var(--ink)]">Hash:</strong> <span className="font-mono text-xs">{shortHash}</span></div>
         </div>
-        <div className="flex items-center gap-2 bg-white/72 px-3 py-2 mb-3">
-          <span className="font-mono text-xs text-[var(--ink-soft)] break-all flex-1">{shortHash}</span>
-          <CopyBtn text={crise.crisisHash || ''} />
+        <div className="mt-4 flex flex-wrap gap-2">
+          <CopyBtn text={crisis.crisisHash || ''} />
+          <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-blue-700 transition-colors hover:text-blue-800">
+            Abrir detalhes
+          </button>
         </div>
-        <button
-          onClick={() => setShowDetail(true)}
-          className="w-full text-left font-mono text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-        >
-          Ver Detalhes Completos →
-        </button>
       </div>
-      {showDetail && <CrisisDetailModal crise={crise} onClose={() => setShowDetail(false)} />}
+      {open && <CrisisDetailModal crisis={crisis} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
 export function CrisisHistory({ clientId }) {
   const [expanded, setExpanded] = useState(true);
-  const crises = getAllCrises(clientId);
-  const encerradas = crises.filter(c => c.crisisStatus === 'closed');
+  const crises = useMemo(() => getAllCrises(clientId), [clientId]);
+  const closedCrises = crises.filter((crisis) => crisis.crisisStatus === 'closed');
 
   return (
-    <div className="mt-8 border border-[rgba(21,38,43,0.12)]">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-3 bg-[#173038] text-[#fffdf8] hover:bg-[#222] transition-colors"
-      >
-        <span className="font-mono text-xs uppercase tracking-widest">Histórico de Crises Anteriores</span>
-        <div className="flex items-center gap-2">
-          {encerradas.length > 0 && (
-            <span className="font-mono text-xs bg-[var(--accent)] text-[var(--ink)] px-2 py-0.5">{encerradas.length}</span>
-          )}
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+    <div className="app-panel rounded-[34px] p-6 shadow-[0_24px_48px_rgba(21,38,43,0.08)] md:p-7">
+      <button type="button" onClick={() => setExpanded((prev) => !prev)} className="flex w-full items-center justify-between gap-4 rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-[linear-gradient(135deg,rgba(22,50,57,0.98),rgba(22,64,71,0.94))] px-5 py-4 text-left text-white shadow-[0_18px_32px_rgba(21,38,43,0.08)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-white/8 text-[var(--accent)]">{closedCrises.length > 0 ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}</div>
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--accent)]">Histórico</div>
+            <div className="mt-1 font-syne text-2xl font-bold">Crises anteriores</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em]">{closedCrises.length} registradas</span>
+          {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </div>
       </button>
       {expanded && (
-        <div className="p-4">
-          {encerradas.length === 0 ? (
-            <div className="py-6 text-center text-[var(--ink-soft)] font-dm text-sm">
-              Nenhuma crise encerrada registrada.
-            </div>
+        <div className="mt-5">
+          {closedCrises.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-[rgba(21,38,43,0.16)] bg-white/72 px-5 py-10 text-center text-sm text-[var(--ink-soft)]">Nenhuma crise encerrada registrada para este cliente.</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {encerradas.map(c => <CrisisCard key={c.crisisId} crise={c} />)}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {closedCrises.map((crisis) => <CrisisCard key={crisis.crisisId} crisis={crisis} />)}
             </div>
           )}
         </div>

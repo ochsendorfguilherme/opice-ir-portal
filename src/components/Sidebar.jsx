@@ -112,7 +112,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
         createdBy: user.email,
       });
       setShowInviteModal(false);
-      setToast({ type: 'success', message: 'Convite enviado para aprovação!' });
+      setToast({ type: 'success', message: 'Convite enviado para aprova\u00e7\u00e3o!' });
       setTimeout(() => setToast(null), 3000);
     } catch {
       setToast({ type: 'error', message: 'Erro ao enviar convite.' });
@@ -125,7 +125,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
-    <aside className="app-panel-dark fixed bottom-4 left-4 top-4 z-30 flex w-[16.5rem] flex-col overflow-hidden rounded-[32px]">
+    <aside className="app-panel-dark fixed bottom-4 left-4 top-4 z-30 flex w-[16.5rem] flex-col overflow-hidden rounded-[34px] shadow-[0_28px_72px_rgba(15,33,40,0.24)]">
       <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.12),transparent_36%)] px-5 pb-5 pt-6">
         <div className="flex items-center justify-between">
           <OpiceLogo />
@@ -160,13 +160,16 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
                 onClick={() => navigate('/admin/modulos')}
                 className="mt-4 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition-colors hover:bg-white/6 hover:text-white"
               >
-                Voltar aos m?dulos
+                {'Voltar aos m\u00f3dulos'}
               </button>
             )}
           </div>
         ) : (
           <>
             <div className="mb-6">
+              <div className="px-5 pb-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">Visão geral</p>
+              </div>
               {user?.role === 'client' && (
                 <div className="mb-4 px-5">
                   <button
@@ -189,9 +192,12 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
             </div>
 
             <div className="mb-6 space-y-1">
+              <div className="px-5 pb-2 pt-1">
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">Entrada do caso</p>
+              </div>
               <NavLink to={`${basePath}/informacoes`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}>
                 <Info size={16} />
-                <span className="flex-1">Informações do incidente</span>
+                <span className="flex-1">{"Informa\u00e7\u00f5es do incidente"}</span>
                 <StepIcon status={onboarding.info} />
               </NavLink>
 
@@ -209,10 +215,13 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
             </div>
 
             <div className="space-y-1">
+              <div className="px-5 pb-2 pt-1">
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">Operação e governança</p>
+              </div>
               <NavLink to={`${basePath}/reunioes`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/reunioes`) ? 'active' : ''}`}>
                 <BookOpen size={16} />
-                <span className="flex-1">Reuniões</span>
-                {activeMeeting && <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" title="Reunião em andamento" />}
+                <span className="flex-1">{"Reuni\u00f5es"}</span>
+                {activeMeeting && <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" title={"Reuni\u00e3o em andamento"} />}
               </NavLink>
 
               <NavLink to={`${basePath}/anpd`} end onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/anpd`) ? 'active' : ''}`}>
@@ -223,7 +232,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
               <NavLink to={`${basePath}/anpd/comunicacao-titulares`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
                 <MessageSquare size={14} />
-                <span className="flex-1 text-xs">Comunicação Titulares</span>
+                <span className="flex-1 text-xs">{"Comunica\u00e7\u00e3o Titulares"}</span>
               </NavLink>
 
               <NavLink to={`${basePath}/anpd/registro-incidente`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
@@ -233,7 +242,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
               <NavLink to={`${basePath}/anpd/formulario-cis`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
                 <ClipboardCheck size={14} />
-                <span className="flex-1 text-xs">Formulário CIS</span>
+                <span className="flex-1 text-xs">{"Formul\u00e1rio CIS"}</span>
               </NavLink>
 
               <NavLink to={`${basePath}/pmo`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}>
@@ -278,7 +287,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm text-[#fffdf8]">{user?.email}</div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/48">{user?.role}</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/48">{user?.role === 'admin' ? 'Admin' : user?.role === 'client' ? 'Cliente' : user?.role || 'Usuário'}</div>
           </div>
         </div>
         <button

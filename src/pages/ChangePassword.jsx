@@ -13,12 +13,12 @@ export default function ChangePassword() {
   const [loading, setLoading] = useState(false);
 
   if (!user || !user.forcePasswordChange) {
-    navigate(user.role === 'admin' ? '/admin/modulos' : '/dashboard', { replace: true });
+    navigate(user?.role === 'admin' ? '/admin/modulos' : '/dashboard', { replace: true });
     return null;
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
 
     if (password.length < 8) {
@@ -37,15 +37,15 @@ export default function ChangePassword() {
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const success = changePassword(password);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const success = await changePassword(password);
     setLoading(false);
 
     if (success) navigate(user.role === 'admin' ? '/admin/modulos' : '/dashboard', { replace: true });
     else setError('Ocorreu um erro ao alterar a senha. Tente novamente.');
   };
 
-  const inputClass = `w-full rounded-[20px] border px-4 py-3.5 font-dm text-sm text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] focus:outline-none ${error ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100' : 'border-[rgba(21,38,43,0.1)] bg-white focus:border-[rgba(183,236,35,0.42)] focus:ring-4 focus:ring-[rgba(214,255,99,0.12)]'}`;
+  const inputClass = `field-control font-dm ${error ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100' : ''}`;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.12),transparent_28%),linear-gradient(180deg,#f7f5ef_0%,#ece7dc_100%)] text-[var(--ink)] lg:grid lg:grid-cols-[1.02fr_0.98fr]">
@@ -80,7 +80,7 @@ export default function ChangePassword() {
 
       <section className="flex items-center justify-center px-6 py-10 lg:px-12">
         <div className="w-full max-w-[30rem]">
-          <div className="app-panel rounded-[32px] p-7 shadow-[0_28px_64px_rgba(21,38,43,0.12)] md:p-9">
+          <div className="page-hero-card shadow-[0_28px_64px_rgba(21,38,43,0.12)]">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div>
                 <p className="section-kicker">Senha definitiva</p>
@@ -95,13 +95,13 @@ export default function ChangePassword() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Nova senha</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="********" className={`${inputClass} font-sans`} />
+                <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required placeholder="********" className={`${inputClass} font-sans`} />
                 <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--ink-soft)]">Mínimo 8 caracteres, com letras maiúsculas, minúsculas e números.</p>
               </div>
 
               <div>
                 <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Confirmar nova senha</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="********" className={`${inputClass} font-sans`} />
+                <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required placeholder="********" className={`${inputClass} font-sans`} />
               </div>
 
               {error && (

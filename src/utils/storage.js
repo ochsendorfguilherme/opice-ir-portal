@@ -22,6 +22,7 @@ export const KEYS = {
   welcomeShown: (clientId) => `opice_ir_welcome_shown_${clientId}`,
   deletedClients: () => `opice_ir_deleted_clients`,
   invites: () => `opice_ir_invites`,
+  supportTickets: () => `opice_ir_support_tickets`,
 };
 
 export function getStorage(key, fallback = null) {

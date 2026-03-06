@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
@@ -209,7 +209,7 @@ function Toggle({ checked, onChange, label }) {
   );
 }
 
-function CheckboxGroup({ options, selected, onChange, outroKey, outroVal, onOutroChange }) {
+function CheckboxGroup({ options, selected, onChange, outroVal, onOutroChange }) {
   const toggle = (opt) => {
     const next = selected.includes(opt) ? selected.filter(o => o !== opt) : [...selected, opt];
     onChange(next);
@@ -250,28 +250,30 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
 
   const storageKey = KEYS.anpd(effectiveClientId);
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const initialState = (() => {
+    if (!effectiveClientId) {
+      return { form: { ...EMPTY_FORM }, nomeEmpresa: '' };
+    }
+    const anpdData = getStorage(storageKey, {});
+    const savedData = anpdData.comunicacaoTitulares || {};
+    const info = getStorage(KEYS.info(effectiveClientId), {});
+    return {
+      form: {
+        ...EMPTY_FORM,
+        data_conhecimento: info.dataConhecimento || '',
+        ...savedData,
+        meios_diretos: Array.isArray(savedData.meios_diretos) ? savedData.meios_diretos : [],
+        meios_divulgacao: Array.isArray(savedData.meios_divulgacao) ? savedData.meios_divulgacao : [],
+      },
+      nomeEmpresa: info.nomeCliente || '',
+    };
+  })();
+
+  const [form, setForm] = useState(() => initialState.form);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState({});
   const [sections, setSections] = useState({ identificacao: true, incisoI: true, incisoII: false, incisoIII: false, incisoIV: false, incisoV: false, contatos: false, paragrafos: false, declaracao: false, recomendacoes: false });
-  const [nomeEmpresa, setNomeEmpresa] = useState('');
-
-  // Load data
-  useEffect(() => {
-    if (!effectiveClientId) return;
-    const anpdData = getStorage(storageKey, {});
-    const saved = anpdData.comunicacaoTitulares || {};
-    const info = getStorage(KEYS.info(effectiveClientId), {});
-    setNomeEmpresa(info.nomeCliente || '');
-    setForm({
-      ...EMPTY_FORM,
-      data_conhecimento: info.dataConhecimento || '',
-      ...saved,
-      // garantir que arrays sejam sempre arrays mesmo com dados corrompidos
-      meios_diretos: Array.isArray(saved.meios_diretos) ? saved.meios_diretos : [],
-      meios_divulgacao: Array.isArray(saved.meios_divulgacao) ? saved.meios_divulgacao : [],
-    });
-  }, [effectiveClientId]);
+  const [nomeEmpresa] = useState(() => initialState.nomeEmpresa);
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 

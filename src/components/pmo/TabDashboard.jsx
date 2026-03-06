@@ -82,7 +82,7 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
 
   const completionStages = [
     { label: 'Informações', done: !!info.nomeCliente },
-    { label: 'Resumo C-Level', done: isBriefingFilled },
+    { label: 'Resumo executivo', done: isBriefingFilled },
     { label: 'Timeline', done: timeline.length > 0 },
     { label: 'Ações', done: actions.length > 0 },
     { label: 'Comms', done: comms.length > 0 },
@@ -97,7 +97,7 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
   const quickActions = [
     {
       label: 'Atualizar resumo executivo',
-      helper: isBriefingFilled ? 'Revisar briefing antes de nova rodada de reporte.' : 'Ainda faltam campos do briefing C-Level.',
+      helper: isBriefingFilled ? 'Revisar briefing antes de nova rodada de reporte.' : 'Ainda faltam campos do briefing executivo.',
       tab: 'clevel',
       tone: isBriefingFilled ? 'neutral' : 'warning',
     },
@@ -191,7 +191,7 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
               </div>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
-              <div className="flex items-center gap-2 text-[var(--accent)]"><BriefcaseBusiness size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.24em]">Resumo C-Level</span></div>
+              <div className="flex items-center gap-2 text-[var(--accent)]"><BriefcaseBusiness size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.24em]">Resumo executivo</span></div>
               <div className="mt-3 font-syne text-3xl font-bold text-white">{completion.done}/{completion.total}</div>
               <p className="mt-2 text-sm text-[#c6d0d4]">Blocos essenciais já preenchidos para conduzir reporte.</p>
             </div>
@@ -244,7 +244,7 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
                 onClick={() => onNavigateTab?.('clevel')}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white transition-all hover:bg-white/14"
               >
-                {'Abrir Resumo C-Level'}
+                {'Abrir briefing'}
                 <ArrowRight size={13} />
               </button>
             </div>
@@ -255,11 +255,11 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
                   value={executiveSummary}
                   onChange={(event) => save({ executiveSummary: event.target.value })}
                   rows={6}
-                  placeholder={'Descreva, em linguagem executiva, o que aconteceu, o impacto atual e o foco das proximas acoes.'}
+                  placeholder={'Descreva, em linguagem executiva, o que aconteceu, o impacto atual e o foco das próximas ações.'}
                   className="w-full rounded-[24px] border border-white/10 bg-[#102a31] px-4 py-4 text-sm leading-7 text-white placeholder:text-[#8ea1a8] focus:border-[rgba(214,255,99,0.45)] focus:outline-none"
                 />
                 <p className="mt-3 text-xs leading-5 text-[#9fb1b7]">
-                  {'Este resumo fica salvo no PMO e pode ser reaproveitado como base para reportes rapidos.'}
+                  {'Este resumo fica salvo no PMO e pode ser reaproveitado como base para reportes rápidos.'}
                 </p>
               </div>
 
@@ -267,13 +267,13 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
                 <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
                   <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--accent)]">{'Leitura sugerida'}</div>
                   <p className="mt-3 text-sm leading-6 text-[#d7e0e3]">
-                    {'Estruture em tres partes: evento, impacto atual e proxima decisao necessaria.'}
+                    {'Estruture em três partes: evento, impacto atual e próxima decisão necessária.'}
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
                   <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--accent)]">{'Uso recomendado'}</div>
                   <p className="mt-3 text-sm leading-6 text-[#d7e0e3]">
-                    {'Ideal para update de diretoria, kick-off de war room e alinhamento rapido com juridico ou lideranca.'}
+                    {'Ideal para update de diretoria, kick-off de war room e alinhamento rápido com jurídico ou liderança.'}
                   </p>
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className={`font-mono text-[11px] uppercase tracking-[0.24em] ${isBriefingFilled ? 'text-[var(--accent)]' : 'text-amber-700'}`}>Narrativa executiva</div>
-              <h3 className={`mt-3 font-syne text-2xl font-bold ${isBriefingFilled ? 'text-white' : 'text-amber-900'}`}>Resumo C-Level</h3>
+              <h3 className={`mt-3 font-syne text-2xl font-bold ${isBriefingFilled ? 'text-white' : 'text-amber-900'}`}>Resumo executivo</h3>
             </div>
             <button
               onClick={() => onNavigateTab?.('clevel')}

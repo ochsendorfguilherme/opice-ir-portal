@@ -114,7 +114,7 @@ export default function MFAPage() {
 
       <section className="flex items-center justify-center px-6 py-10 lg:px-12">
         <div className="w-full max-w-[32rem]">
-          <div className="app-panel rounded-[32px] p-7 shadow-[0_28px_64px_rgba(21,38,43,0.12)] md:p-9">
+          <div className="page-hero-card shadow-[0_28px_64px_rgba(21,38,43,0.12)]">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div>
                 <p className="section-kicker">Código temporário</p>
@@ -177,7 +177,7 @@ export default function MFAPage() {
               </button>
             </form>
 
-            <div className="mt-8 rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white/55 p-4">
+            <div className="toolbar-strip mt-8">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Ambiente de teste</p>
               <p className="mt-2 font-dm text-sm leading-6 text-[var(--ink-soft)]">Neste ambiente, qualquer sequência numérica com 6 dígitos é aceita para seguir.</p>
             </div>

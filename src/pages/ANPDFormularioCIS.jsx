@@ -594,7 +594,7 @@ export default function ANPDFormularioCIS({ clientId: propClientId, isAdmin = fa
 
     drawHeader();
     drawSummaryCards();
-    writeParagraph(`Exportação: ${mode === 'preview' ? 'Pr?-visualização' : mode === 'revisao' ? 'Revis?o' : 'Protocolo'} - Gerado em ${formatDateTimeUTC()}`, false, 8.5, [98, 108, 116]);
+    writeParagraph(`Exportação: ${mode === 'preview' ? 'Pré-visualização' : mode === 'revisao' ? 'Revisão' : 'Protocolo'} - Gerado em ${formatDateTimeUTC()}`, false, 8.5, [98, 108, 116]);
 
     writeSection('1. DADOS DO CONTROLADOR', [
       `Razão social / Nome: ${snapshot.controllerName || '(não preenchido)'}`,
@@ -700,17 +700,17 @@ export default function ANPDFormularioCIS({ clientId: propClientId, isAdmin = fa
       drawContinuationHeader();
     }
 
-    writeSection('13. DECLARA??O FINAL', [
-      'Declaro, sob as penas da lei, serem verdadeiras as informa??es prestadas acima.',
-      `Nome do declarante: ${snapshot.declarationName || '(n?o preenchido)'}`,
-      `Cargo / Fun??o: ${snapshot.declarationRole || '(n?o preenchido)'}`,
+    writeSection('13. DECLARAÇÃO FINAL', [
+      'Declaro, sob as penas da lei, serem verdadeiras as informações prestadas acima.',
+      `Nome do declarante: ${snapshot.declarationName || '(não preenchido)'}`,
+      `Cargo / Função: ${snapshot.declarationRole || '(não preenchido)'}`,
       `Data da declaração: ${formatDateBR(snapshot.declarationDate)}`,
       'Checklist final:',
-      `${renderSymbol(snapshot.reviewChecklist.checkedInfo)} Conferi todas as informa??es preenchidas`,
-      `${renderSymbol(snapshot.reviewChecklist.checkedController)} Os dados do controlador est?o corretos`,
-      `${renderSymbol(snapshot.reviewChecklist.checkedDates)} As datas de ocorr?ncia e ci?ncia est?o corretas`,
-      `${renderSymbol(snapshot.reviewChecklist.checkedData)} Os tipos de dados violados est?o completos`,
-      `${renderSymbol(snapshot.reviewChecklist.checkedSecurity)} As medidas de seguran?a est?o descritas adequadamente`,
+      `${renderSymbol(snapshot.reviewChecklist.checkedInfo)} Conferi todas as informações preenchidas`,
+      `${renderSymbol(snapshot.reviewChecklist.checkedController)} Os dados do controlador estão corretos`,
+      `${renderSymbol(snapshot.reviewChecklist.checkedDates)} As datas de ocorrência e ciência estão corretas`,
+      `${renderSymbol(snapshot.reviewChecklist.checkedData)} Os tipos de dados violados estão completos`,
+      `${renderSymbol(snapshot.reviewChecklist.checkedSecurity)} As medidas de segurança estão descritas adequadamente`,
       'Assinatura do declarante:',
       '____________________________________________________________',
       'Local e data:',

@@ -417,10 +417,18 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const effectiveClientId = propClientId || user?.clientId;
   const effectiveIsAdmin = isAdmin || user?.role === 'admin';
 
-  const [activities, setActivities] = useState([]);
-  const [info, setInfo] = useState({});
-  const [slaConfig, setSlaConfig] = useState({});
-  const [crisis, setCrisis] = useState(null);
+  const [activities, setActivities] = useState(() => {
+    const stored = getStorage(KEYS.activities(effectiveClientId));
+    if (stored) return stored;
+    setStorage(KEYS.activities(effectiveClientId), DEFAULT_ACTIVITIES);
+    return DEFAULT_ACTIVITIES;
+  });
+  const [info] = useState(() => getStorage(KEYS.info(effectiveClientId), {}));
+  const [slaConfig] = useState(() => getStorage(KEYS.slaConfig(effectiveClientId), {}));
+  const [crisis] = useState(() => {
+    const current = getStorage(KEYS.crisis(effectiveClientId, 'active'));
+    return current?.crisisActive === true && current?.crisisStatus !== 'closed' ? current : null;
+  });
   const [view, setView] = useState(defaultView);
   const [colFilters, setColFilters] = useState({});
   const [activeFilterCol, setActiveFilterCol] = useState(null);
@@ -428,28 +436,15 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const [flashRow, setFlashRow] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
-  const [pmoActions, setPmoActions] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [comms, setComms] = useState([]);
-
-  useEffect(() => {
-    const stored = getStorage(KEYS.activities(effectiveClientId));
-    if (!stored) {
-      setStorage(KEYS.activities(effectiveClientId), DEFAULT_ACTIVITIES);
-      setActivities(DEFAULT_ACTIVITIES);
-    } else {
-      setActivities(stored);
-    }
-    setInfo(getStorage(KEYS.info(effectiveClientId), {}));
-    setSlaConfig(getStorage(KEYS.slaConfig(effectiveClientId), {}));
-    const c = getStorage(KEYS.crisis(effectiveClientId, 'active'));
-    setCrisis(c?.crisisActive === true && c?.crisisStatus !== 'closed' ? c : null);
-
-    // Load PMO actions and comms (INT-3, INT-9)
+  const [pmoActions] = useState(() => {
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-    setPmoActions(pmoData.actions || []);
-    setComms(pmoData.commsLog || []);
-  }, [effectiveClientId]);
+    return pmoData.actions || [];
+  });
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [comms] = useState(() => {
+    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+    return pmoData.commsLog || [];
+  });
 
   const updateStatus = (id, newStatus) => {
     const updated = activities.map(a => a.id === id ? { ...a, status: newStatus } : a);

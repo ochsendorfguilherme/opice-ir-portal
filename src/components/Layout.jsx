@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, Bell, X, CheckCheck, LayoutGrid, ArrowLeft, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TLPBanner from './TLPBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
+import { isValidInternalPath } from '../utils/authSecurity';
 
 const NOTIF_STYLE = {
   critical: { dot: 'bg-[#d45a58]', tone: 'bg-red-50 text-red-700' },
@@ -19,27 +20,26 @@ function formatTimeAgo(iso) {
   const m = Math.floor(diff / 60000);
   const h = Math.floor(m / 60);
   const d = Math.floor(h / 24);
-  if (d > 0) return `${d}d atrás`;
-  if (h > 0) return `${h}h atrás`;
-  if (m > 0) return `${m}m atrás`;
+  if (d > 0) return `${d}d atr\u00e1s`;
+  if (h > 0) return `${h}h atr\u00e1s`;
+  if (m > 0) return `${m}m atr\u00e1s`;
   return 'agora';
 }
 
-function NotificationBell({ effectiveClientId }) {
+function NotificationBell({ effectiveClientId, adminPathPrefix = '', navigateTo }) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState(() => (effectiveClientId ? getStorage(KEYS.notifications(effectiveClientId), []) : []));
   const ref = useRef(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     if (!effectiveClientId) return;
     setNotifications(getStorage(KEYS.notifications(effectiveClientId), []));
-  };
+  }, [effectiveClientId]);
 
   useEffect(() => {
-    load();
     const iv = setInterval(load, 15000);
     return () => clearInterval(iv);
-  }, [effectiveClientId]);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -51,6 +51,12 @@ function NotificationBell({ effectiveClientId }) {
   }, [open]);
 
   const unread = notifications.filter(n => !n.read).length;
+
+  const resolveLink = (link) => {
+    if (!isValidInternalPath(link)) return null;
+    if (adminPathPrefix && link.startsWith('/') && !link.startsWith('/admin/')) return `${adminPathPrefix}${link}`;
+    return link;
+  };
 
   const markRead = (id) => {
     const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
@@ -69,7 +75,7 @@ function NotificationBell({ effectiveClientId }) {
       <button
         onClick={() => { setOpen(v => !v); load(); }}
         className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 text-[#173038] shadow-[0_12px_24px_rgba(21,38,43,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white"
-        title="Notificações"
+        title={"Notifica\u00e7\u00f5es"}
       >
         <Bell size={18} />
         {unread > 0 && (
@@ -82,7 +88,7 @@ function NotificationBell({ effectiveClientId }) {
       {open && (
         <div className="app-panel absolute right-0 top-full z-50 mt-3 w-[22rem] overflow-hidden rounded-[28px]">
           <div className="app-panel-dark flex items-center justify-between px-4 py-3">
-            <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[rgba(255,253,248,0.72)]">Notificações</span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[rgba(255,253,248,0.72)]">{"Notifica\u00e7\u00f5es"}</span>
             <div className="flex items-center gap-2">
               {unread > 0 && (
                 <button onClick={markAllRead} className="flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#d6ff63] transition-colors hover:bg-white/5">
@@ -99,7 +105,7 @@ function NotificationBell({ effectiveClientId }) {
             {notifications.length === 0 ? (
               <div className="px-5 py-10 text-center">
                 <Bell size={26} className="mx-auto mb-3 text-[#7f8b8f]" />
-                <p className="font-dm text-sm text-[#68767b]">Nenhuma notificação</p>
+                <p className="font-dm text-sm text-[#68767b]">{"Nenhuma notifica\u00e7\u00e3o"}</p>
               </div>
             ) : notifications.map(n => {
               const style = NOTIF_STYLE[n.type] || NOTIF_STYLE.info;
@@ -109,7 +115,8 @@ function NotificationBell({ effectiveClientId }) {
                   className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-white/65 ${!n.read ? 'bg-[#d6ff63]/10' : 'bg-transparent'}`}
                   onClick={() => {
                     markRead(n.id);
-                    if (n.link) window.location.href = n.link;
+                    const target = resolveLink(n.link);
+                    if (target && navigateTo) navigateTo(target);
                   }}
                 >
                   <span className={`mt-1 h-2.5 w-2.5 rounded-full ${style.dot}`} />
@@ -128,7 +135,7 @@ function NotificationBell({ effectiveClientId }) {
 
           {notifications.length > 0 && (
             <div className="border-t border-[rgba(21,38,43,0.08)] bg-white/65 px-4 py-2.5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#68767b]">{notifications.length} itens • {unread} não lidas</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#68767b]">{notifications.length} itens {"\u2022"} {unread} {"n\u00e3o lidas"}</span>
             </div>
           )}
         </div>
@@ -144,8 +151,8 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
   const effectiveClientId = propClientId || user?.clientId;
 
   return (
-    <div className="relative flex min-h-screen bg-transparent text-[#15262b]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.12),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(23,48,56,0.08),transparent_30%)]" />
+    <div className="relative flex min-h-screen overflow-x-hidden bg-transparent text-[#15262b]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.14),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(23,48,56,0.08),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_32%)]" />
 
       <div className="hidden md:block">
         <Sidebar clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} />
@@ -161,8 +168,9 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
       )}
 
       <div className="relative flex min-h-screen flex-1 flex-col md:ml-72">
-        <div className="sticky top-3 z-20 px-4 pt-3">
-          <div className="mx-auto flex w-full max-w-[1700px] items-center gap-4 rounded-[30px] border border-[rgba(21,38,43,0.1)] bg-[rgba(255,251,244,0.62)] px-4 py-3 shadow-[0_18px_42px_rgba(21,38,43,0.1)] backdrop-blur-[18px]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[240px] bg-[radial-gradient(circle_at_top_center,rgba(214,255,99,0.16),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.22),transparent_100%)]" />
+        <div className="sticky top-3 z-20 px-3 pt-3 md:px-5">
+          <div className="shell-topbar mx-auto flex w-full max-w-[1760px] items-center gap-4 rounded-[30px] border border-[rgba(21,38,43,0.08)] px-4 py-3 shadow-[0_18px_36px_rgba(21,38,43,0.08)] md:px-5">
             <div className="min-w-0 flex-1">
               <TLPBanner />
             </div>
@@ -194,13 +202,13 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
                   </button>
                 </>
               )}
-              <NotificationBell effectiveClientId={effectiveClientId} />
+              <NotificationBell key={effectiveClientId || 'desktop'} effectiveClientId={effectiveClientId} adminPathPrefix={user?.role === 'admin' && effectiveClientId ? `/admin/cliente/${effectiveClientId}` : ''} navigateTo={navigate} />
             </div>
           </div>
         </div>
 
-        <div className="shell-mobilebar md:hidden">
-          <div className="flex items-center px-4 py-3">
+        <div className="shell-mobilebar px-3 pt-2 md:hidden">
+          <div className="mx-auto flex w-full max-w-[1760px] items-center rounded-[26px] border border-[rgba(21,38,43,0.08)] bg-[rgba(255,251,244,0.82)] px-4 py-3 shadow-[0_14px_30px_rgba(21,38,43,0.08)]">
             <button onClick={() => setSidebarOpen(true)} className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 p-2 text-[#173038] shadow-[0_10px_22px_rgba(21,38,43,0.08)]">
               <Menu size={20} />
             </button>
@@ -209,13 +217,13 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
               <span className="font-syne text-lg font-bold text-[#15262b]">Opice IR</span>
             </div>
             <div className="ml-auto">
-              <NotificationBell effectiveClientId={effectiveClientId} />
+              <NotificationBell key={`${effectiveClientId || 'mobile'}-mobile`} effectiveClientId={effectiveClientId} adminPathPrefix={user?.role === 'admin' && effectiveClientId ? `/admin/cliente/${effectiveClientId}` : ''} navigateTo={navigate} />
             </div>
           </div>
         </div>
 
-        <main className="relative flex-1 overflow-auto px-0 pb-8 pt-2 md:px-2">
-          {children}
+        <main className="relative flex-1 overflow-auto overflow-x-hidden px-3 pb-28 pt-4 md:px-5 md:pb-16">
+          <div className="mx-auto w-full max-w-[1760px]">{children}</div>
         </main>
       </div>
     </div>
