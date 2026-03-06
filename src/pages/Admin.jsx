@@ -375,7 +375,7 @@ export default function Admin() {
     setStorage(KEYS.invites(), updatedInvites);
 
     setClients(fetchClients());
-    logAction('REVOGADO', clientToDelete, currentUser, `Cliente ${clientId} excluido logicamente e acessos vinculados foram revogados.`);
+    logAction('REVOGADO', clientToDelete, currentUser, `Cliente ${clientId} excluído logicamente e acessos vinculados foram revogados.`);
     setToast({ type: 'success', message: 'Cliente excluído com acessos revogados.' });
     setClientToDelete(null);
     setDeleteConfirmText('');
@@ -450,7 +450,7 @@ export default function Admin() {
     if (hours >= 48) {
       return [{
         id: client.id,
-        title: `${client.displayName || client.name} com SLA critico`,
+        title: `${client.displayName || client.name} com SLA crítico`,
         meta: `${Math.round(hours)}h desde o conhecimento`,
         tone: 'border-amber-200 bg-amber-50/85 text-amber-800',
       }];
@@ -463,21 +463,21 @@ export default function Admin() {
 
   const sectionMeta = {
     critical: {
-      kicker: 'Fila critica',
+      kicker: 'Fila crítica',
       title: 'Crise e risco imediato',
-      description: 'Clientes com WarRoom ativa, ANPD vencido ou SLA ja em zona critica.',
+      description: 'Clientes com WarRoom ativa, ANPD vencido ou SLA já em zona crítica.',
       badge: 'bg-red-100 text-red-700',
     },
     attention: {
-      kicker: 'Observacao',
+      kicker: 'Observação',
       title: 'Atenção nas próximas horas',
       description: 'Clientes que estão se aproximando de pressão regulatória ou operacional.',
       badge: 'bg-amber-100 text-amber-700',
     },
     stable: {
-      kicker: 'Operacao regular',
-      title: 'Carteira estavel',
-      description: 'Clientes sem sinais imediatos de escalacao na leitura atual.',
+      kicker: 'Operação regular',
+      title: 'Carteira estável',
+      description: 'Clientes sem sinais imediatos de escalada na leitura atual.',
       badge: 'bg-emerald-100 text-emerald-700',
     },
   };
@@ -492,14 +492,14 @@ export default function Admin() {
             <OpiceLogo />
             <div>
               <p className="section-kicker">Admin command center</p>
-              <h1 className="text-3xl font-bold text-[var(--ink)] md:text-4xl">Gestao de Incidentes</h1>
+              <h1 className="text-3xl font-bold text-[var(--ink)] md:text-4xl">Gestão de Incidentes</h1>
             </div>
             <span className="soft-ribbon rounded-full px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em]">Admin</span>
             <div className="ml-auto flex flex-wrap items-center gap-3">
               <button
                 onClick={() => navigate('/admin/acessos')}
                 className="btn-outline flex items-center gap-2 rounded-full text-xs uppercase tracking-[0.16em]"
-                title="Gestao de acessos"
+                title="Gestão de acessos"
               >
                 <Users size={15} /> Acessos
               </button>
@@ -565,7 +565,7 @@ export default function Admin() {
           <section className="app-panel mb-8 rounded-[30px] border border-emerald-200 bg-emerald-50/78 px-5 py-4">
             <div className="flex items-center gap-3 text-emerald-800">
               <CheckCircle size={18} />
-              <span className="text-sm font-semibold">Nenhum cliente exige intervencao imediata neste recorte.</span>
+              <span className="text-sm font-semibold">Nenhum cliente exige intervenção imediata neste recorte.</span>
             </div>
           </section>
         )}
@@ -641,7 +641,7 @@ export default function Admin() {
               <div>
                 <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Senha inicial</label>
                 <input type="password" value={newForm.password} onChange={(e) => setNewForm((form) => ({ ...form, password: e.target.value }))} className={inputClass} />
-                <p className="mt-2 text-xs text-[var(--ink-soft)]">Se ficar vazio, sera usada a senha padrao `Opice@2025`.</p>
+                <p className="mt-2 text-xs text-[var(--ink-soft)]">Se ficar vazio, será usada a senha padrão `Opice@2025`.</p>
               </div>
               <div>
                 <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Código do cliente</label>
@@ -704,7 +704,7 @@ export default function Admin() {
             </div>
             <div className="flex gap-3 px-6 pb-6">
               <button onClick={() => setEditingClient(null)} className="btn-outline flex-1 rounded-full">Cancelar</button>
-              <button onClick={saveEdit} className="btn-primary flex-1 rounded-full">Salvar alteracoes</button>
+              <button onClick={saveEdit} className="btn-primary flex-1 rounded-full">Salvar alterações</button>
             </div>
           </div>
         </div>
@@ -715,7 +715,7 @@ export default function Admin() {
           <div className="app-panel w-full max-w-xl overflow-hidden rounded-[32px] border border-red-200">
             <div className="flex items-center justify-between border-b border-red-200 bg-red-50/90 px-6 py-4">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-red-700">Acao sensivel</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-red-700">Ação sensível</p>
                 <h3 className="mt-1 flex items-center gap-2 text-xl font-bold text-red-800"><Trash2 size={16} /> Excluir cliente</h3>
               </div>
               <button onClick={() => setClientToDelete(null)} className="rounded-full bg-white/70 p-2 text-red-700 transition-colors hover:bg-white">
@@ -731,7 +731,7 @@ export default function Admin() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle size={18} className="mt-0.5 shrink-0" />
                   <p className="text-sm leading-6">
-                    Os dados do incidente permanecem no historico logico, mas o cliente deixa de aparecer na carteira ativa e em gestao de acessos.
+                    Os dados do incidente permanecem no histórico lógico, mas o cliente deixa de aparecer na carteira ativa e em gestão de acessos.
                   </p>
                 </div>
               </div>
