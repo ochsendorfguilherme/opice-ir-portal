@@ -167,23 +167,23 @@ function SectionHeader({ title, subtitle, icon: Icon, open, onToggle }) {
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-5 py-4 bg-[#111111] hover:bg-[#1a1a1a] transition-colors"
+      className="w-full flex items-center justify-between px-5 py-4 bg-[#173038] hover:bg-[#1a1a1a] transition-colors"
     >
       <div className="flex items-center gap-2.5">
-        {Icon && <Icon size={15} className="text-[#CAFF00]" />}
+        {Icon && <Icon size={15} className="text-[var(--accent)]" />}
         <div className="text-left">
-          <div className="font-syne font-bold text-white text-sm uppercase">{title}</div>
-          {subtitle && <div className="font-mono text-[10px] text-gray-400 mt-0.5">{subtitle}</div>}
+          <div className="font-syne font-bold text-[#fffdf8] text-sm uppercase">{title}</div>
+          {subtitle && <div className="font-mono text-[10px] text-[var(--ink-soft)] mt-0.5">{subtitle}</div>}
         </div>
       </div>
-      {open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+      {open ? <ChevronUp size={14} className="text-[var(--ink-soft)]" /> : <ChevronDown size={14} className="text-[var(--ink-soft)]" />}
     </button>
   );
 }
 
 function FieldLabel({ children, required, hint }) {
   return (
-    <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">
+    <label className="block font-mono text-xs font-medium uppercase text-[var(--ink)] mb-1.5">
       {children}
       {required && <span className="text-red-500 ml-0.5">*</span>}
       {hint && <span className="ml-2 font-mono text-[10px] text-[#888888] normal-case">{hint}</span>}
@@ -191,7 +191,7 @@ function FieldLabel({ children, required, hint }) {
   );
 }
 
-const inputClass = 'w-full border border-[#E0E0E0] px-4 py-2.5 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors bg-white';
+const inputClass = 'w-full border border-[rgba(21,38,43,0.12)] px-4 py-2.5 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors bg-white';
 const taClass = `${inputClass} resize-none`;
 
 function Toggle({ checked, onChange, label }) {
@@ -200,11 +200,11 @@ function Toggle({ checked, onChange, label }) {
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${checked ? 'bg-[#111111]' : 'bg-gray-300'}`}
+        className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${checked ? 'bg-[#173038]' : 'bg-gray-300'}`}
       >
         <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
       </button>
-      <span className="font-dm text-sm text-[#111111]">{label}</span>
+      <span className="font-dm text-sm text-[var(--ink)]">{label}</span>
     </label>
   );
 }
@@ -223,9 +223,9 @@ function CheckboxGroup({ options, selected, onChange, outroKey, outroVal, onOutr
               type="checkbox"
               checked={selected.includes(opt)}
               onChange={() => toggle(opt)}
-              className="w-4 h-4 accent-[#111111]"
+              className="w-4 h-4 accent-[#173038]"
             />
-            <span className="font-dm text-sm text-[#111111]">{opt}</span>
+            <span className="font-dm text-sm text-[var(--ink)]">{opt}</span>
           </label>
           {opt === 'Outro' && selected.includes('Outro') && (
             <input
@@ -367,25 +367,25 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-xs text-[#888888] uppercase">ANPD</span>
             <span className="font-mono text-xs text-[#888888]">/</span>
-            <span className="font-mono text-xs text-[#111111] uppercase font-bold">Comunicação do Incidente (Titulares)</span>
+            <span className="font-mono text-xs text-[var(--ink)] uppercase font-bold">Comunicação do Incidente (Titulares)</span>
           </div>
-          <h1 className="font-syne font-extrabold text-[#111111] text-3xl uppercase">
+          <h1 className="font-syne font-extrabold text-[var(--ink)] text-3xl uppercase">
             Comunicação aos Titulares
           </h1>
-          <p className="text-[#555555] font-dm text-sm mt-1">
+          <p className="text-[var(--ink-soft)] font-dm text-sm mt-1">
             Art. 9º da Resolução CD/ANPD nº 15/2024 · Template regulatório fixo
           </p>
         </div>
 
         {/* Deadline banner */}
-        <div className={`flex items-center gap-3 px-4 py-3 mb-6 border ${deadlineOverdue ? 'border-red-300 bg-red-50' : deadlineDate ? 'border-amber-200 bg-amber-50' : 'border-[#E0E0E0] bg-[#F9F9F9]'}`}>
+        <div className={`flex items-center gap-3 px-4 py-3 mb-6 border ${deadlineOverdue ? 'border-red-300 bg-red-50' : deadlineDate ? 'border-amber-200 bg-amber-50' : 'border-[rgba(21,38,43,0.12)] bg-[#F9F9F9]'}`}>
           <Clock size={15} className={deadlineOverdue ? 'text-red-600' : 'text-amber-600'} />
           <div className="font-mono text-xs">
-            <span className="text-[#555555]">Prazo regulatório: </span>
-            <span className="font-bold text-[#111111]">{prazo} dias úteis{form.agente_pequeno_porte ? ' (prazo em dobro – §6º)' : ''}</span>
+            <span className="text-[var(--ink-soft)]">Prazo regulatório: </span>
+            <span className="font-bold text-[var(--ink)]">{prazo} dias úteis{form.agente_pequeno_porte ? ' (prazo em dobro – §6º)' : ''}</span>
             {deadlineDate && (
               <>
-                <span className="text-[#555555] mx-2">·</span>
+                <span className="text-[var(--ink-soft)] mx-2">·</span>
                 <span className={`font-bold ${deadlineOverdue ? 'text-red-600' : 'text-amber-700'}`}>
                   Data limite estimada: {deadlineStr}{deadlineOverdue ? ' — VENCIDO' : ''}
                 </span>
@@ -402,7 +402,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
           <div className="flex-1 min-w-0 space-y-4">
 
             {/* Seção: Configurações do prazo */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="Identificação e Configurações do Prazo"
                 subtitle="Art. 9º, VI · §6º"
@@ -439,7 +439,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção I */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="I — Natureza do Incidente e Dados Afetados"
                 subtitle="Art. 9º, inciso I"
@@ -475,7 +475,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção II */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="II — Medidas Técnicas e de Segurança"
                 subtitle="Art. 9º, inciso II"
@@ -502,7 +502,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção III */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="III — Riscos e Possíveis Impactos"
                 subtitle="Art. 9º, inciso III"
@@ -551,7 +551,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             )}
 
             {/* Seção V — Mitigação */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title={`${form.comunicacao_fora_do_prazo ? 'V' : 'IV'} — Medidas de Mitigação`}
                 subtitle="Art. 9º, inciso V"
@@ -574,7 +574,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção VII — Contatos */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="VII — Contatos para Informações"
                 subtitle="Art. 9º, inciso VII"
@@ -608,8 +608,8 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[#E0E0E0]">
-                    <p className="font-mono text-xs text-[#555555] uppercase mb-3">Encarregado de Dados — DPO (opcional)</p>
+                  <div className="pt-3 border-t border-[rgba(21,38,43,0.12)]">
+                    <p className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-3">Encarregado de Dados — DPO (opcional)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <FieldLabel>Nome do DPO</FieldLabel>
@@ -639,7 +639,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção — Parágrafos §1º/§2º */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="Forma e Meios de Comunicação"
                 subtitle="§1º e §2º do Art. 9º · Linguagem simples"
@@ -649,15 +649,15 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
               {sections.paragrafos && (
                 <div className="p-5 space-y-5">
                   {/* §1º linguagem simples */}
-                  <div className={`flex items-start gap-3 p-3 border ${errors.linguagem_simples ? 'border-red-300 bg-red-50' : 'border-[#E0E0E0]'}`}>
+                  <div className={`flex items-start gap-3 p-3 border ${errors.linguagem_simples ? 'border-red-300 bg-red-50' : 'border-[rgba(21,38,43,0.12)]'}`}>
                     <input
                       type="checkbox"
                       id="linguagem_simples"
                       checked={form.linguagem_simples}
                       onChange={e => set('linguagem_simples', e.target.checked)}
-                      className="w-4 h-4 accent-[#111111] mt-0.5 shrink-0"
+                      className="w-4 h-4 accent-[#173038] mt-0.5 shrink-0"
                     />
-                    <label htmlFor="linguagem_simples" className="font-dm text-sm text-[#111111] cursor-pointer">
+                    <label htmlFor="linguagem_simples" className="font-dm text-sm text-[var(--ink)] cursor-pointer">
                       <span className="font-bold">§1º — Confirmo</span> que o texto desta comunicação foi redigido em linguagem simples e de fácil compreensão pelos titulares.
                       <span className="font-mono text-xs text-red-500 ml-1">*</span>
                     </label>
@@ -720,7 +720,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção — §4º Declaração */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="Declaração de Comunicação Realizada"
                 subtitle="§4º do Art. 9º · Em até 3 dias úteis após o término do prazo do caput"
@@ -734,9 +734,9 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
                       type="checkbox"
                       checked={form.declaracao_realizada}
                       onChange={e => set('declaracao_realizada', e.target.checked)}
-                      className="w-4 h-4 accent-[#111111] mt-0.5 shrink-0"
+                      className="w-4 h-4 accent-[#173038] mt-0.5 shrink-0"
                     />
-                    <span className="font-dm text-sm text-[#111111]">
+                    <span className="font-dm text-sm text-[var(--ink)]">
                       §4º — Declaramos que a comunicação aos titulares foi efetivamente realizada e registramos os dados abaixo.
                     </span>
                   </label>
@@ -768,7 +768,7 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
             </div>
 
             {/* Seção — §5º Recomendações e Observações */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="Recomendações e Observações Adicionais"
                 subtitle="§5º recomendações · Observações limitadas a 500 caracteres"
@@ -811,15 +811,15 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
               <button
                 type="button"
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-[#111111] text-white font-mono text-xs px-5 py-3 hover:bg-[#333] transition-colors"
+                className="flex items-center gap-2 bg-[#173038] text-[#fffdf8] font-mono text-xs px-5 py-3 hover:bg-[#0f2128] transition-colors"
               >
-                {saved ? <CheckCircle size={14} className="text-[#CAFF00]" /> : <Save size={14} />}
+                {saved ? <CheckCircle size={14} className="text-[var(--accent)]" /> : <Save size={14} />}
                 {saved ? 'Salvo!' : 'Salvar'}
               </button>
               <button
                 type="button"
                 onClick={handlePrint}
-                className="flex items-center gap-2 border border-[#111111] text-[#111111] font-mono text-xs px-5 py-3 hover:bg-[#F5F5F5] transition-colors"
+                className="flex items-center gap-2 border border-[rgba(21,38,43,0.16)] text-[var(--ink)] font-mono text-xs px-5 py-3 hover:bg-[#F5F5F5] transition-colors"
               >
                 <Printer size={14} />
                 Exportar / Imprimir PDF
@@ -844,13 +844,13 @@ export default function ANPDComunicacaoTitulares({ clientId: propClientId, isAdm
           {/* ── PREVIEW ── */}
           <div className="xl:w-[420px] shrink-0">
             <div className="xl:sticky xl:top-6">
-              <div className="border border-[#E0E0E0] bg-white">
-                <div className="bg-[#111111] px-4 py-3 flex items-center justify-between">
-                  <span className="font-syne font-bold text-white text-xs uppercase">Pré-visualização do Documento</span>
-                  <span className="font-mono text-[10px] text-[#CAFF00] uppercase">Template travado</span>
+              <div className="border border-[rgba(21,38,43,0.12)] bg-white">
+                <div className="bg-[#173038] px-4 py-3 flex items-center justify-between">
+                  <span className="font-syne font-bold text-[#fffdf8] text-xs uppercase">Pré-visualização do Documento</span>
+                  <span className="font-mono text-[10px] text-[var(--accent)] uppercase">Template travado</span>
                 </div>
                 <div className="p-4 max-h-[70vh] overflow-y-auto">
-                  <pre className="font-mono text-[10px] text-[#111111] whitespace-pre-wrap leading-relaxed">{preview}</pre>
+                  <pre className="font-mono text-[10px] text-[var(--ink)] whitespace-pre-wrap leading-relaxed">{preview}</pre>
                 </div>
               </div>
               {form.updated_at && (

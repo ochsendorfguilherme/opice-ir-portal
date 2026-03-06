@@ -60,9 +60,9 @@ function genItemId() {
 
 const CATEGORY_STYLES = {
   Decisão: 'bg-blue-100 text-blue-800 border-blue-200',
-  Tarefa: 'bg-[#CAFF00] text-[#111111] border-[#b0e000]',
+  Tarefa: 'bg-[var(--accent)] text-[var(--ink)] border-[#b0e000]',
   Pendência: 'bg-amber-100 text-amber-800 border-amber-200',
-  Observação: 'bg-[#E0E0E0] text-[#111111] border-[#ccc]',
+  Observação: 'bg-[#E0E0E0] text-[var(--ink)] border-[#ccc]',
 };
 
 const CATEGORY_EMOJI = {
@@ -79,7 +79,7 @@ function ToolbarBtn({ label, emoji, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1 font-mono text-xs uppercase px-3 py-1.5 border border-[#E0E0E0] text-[#111111] bg-white hover:bg-[#111111] hover:text-[#CAFF00] hover:border-[#111111] transition-colors"
+      className="inline-flex items-center gap-1 rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-3 py-2 font-mono text-[10px] uppercase text-[var(--ink-soft)] hover:border-[rgba(183,236,35,0.34)] hover:bg-[rgba(214,255,99,0.12)] hover:text-[#6e8617] transition-colors"
     >
       <span>{emoji}</span>
       {label}
@@ -103,7 +103,7 @@ function buildAta({ meeting, endTimeIso, observacoesFinais, proximaReuniao }) {
   const dur = diffMinutes(meeting.criadaEm, endTimeIso);
   const endHM = endTimeIso
     ? new Date(endTimeIso).toTimeString().slice(0, 5)
-    : '??:??';
+    : '?:?';
 
   const sep1 = '══════════════════════════════════════';
   const sep2 = '──────────────────────────────────────';
@@ -221,6 +221,14 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
     doc.save(`ATA_${clientName}_${dateStr}.pdf`);
   }
 
+  function handleEmailAta() {
+    const info = getStorage(KEYS.info(effectiveClientId), {});
+    const target = info.emailContato || info.email || '';
+    const subject = encodeURIComponent('Ata de reuniao | ' + (meeting.nomeCliente || 'Cliente') + ' | ' + fmtDate(meeting.data));
+    const body = encodeURIComponent(ataText || buildAta({ meeting, endTimeIso, observacoesFinais, proximaReuniao }));
+    window.location.href = 'mailto:' + target + '?subject=' + subject + '&body=' + body;
+  }
+
   function handleRegistrarPMO() {
     // Update PMO timeline + actions
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
@@ -281,11 +289,11 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
     >
       <div className="bg-white w-full max-w-2xl mx-4 shadow-2xl flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="bg-[#111111] px-6 py-4 flex items-center justify-between">
-          <h2 className="font-syne font-extrabold text-[#CAFF00] text-lg uppercase">
+        <div className="soft-ribbon px-6 py-4 flex items-center justify-between rounded-t-[28px]">
+          <h2 className="font-syne font-extrabold text-[var(--accent)] text-lg uppercase">
             {step === 1 ? 'Encerrar Reunião' : 'Ata de Reunião'}
           </h2>
-          <button onClick={onClose} className="text-[#E0E0E0] hover:text-white">
+          <button onClick={onClose} className="text-[#E0E0E0] hover:text-[#fffdf8]">
             <X size={18} />
           </button>
         </div>
@@ -296,28 +304,28 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
             <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
               {/* Time summary */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="border border-[#E0E0E0] p-3">
-                  <div className="font-mono text-xs text-[#555555] uppercase mb-1">Início</div>
-                  <div className="font-mono text-sm font-bold text-[#111111]">{meeting.horarioInicio}</div>
+                <div className="border border-[rgba(21,38,43,0.12)] p-3">
+                  <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Início</div>
+                  <div className="font-mono text-sm font-bold text-[var(--ink)]">{meeting.horarioInicio}</div>
                 </div>
-                <div className="border border-[#E0E0E0] p-3">
-                  <div className="font-mono text-xs text-[#555555] uppercase mb-1">Fim</div>
-                  <div className="font-mono text-sm font-bold text-[#111111]">{endHM}</div>
+                <div className="border border-[rgba(21,38,43,0.12)] p-3">
+                  <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Fim</div>
+                  <div className="font-mono text-sm font-bold text-[var(--ink)]">{endHM}</div>
                 </div>
-                <div className="border border-[#CAFF00] bg-[#CAFF00] p-3">
-                  <div className="font-mono text-xs text-[#111111] uppercase mb-1">Duração</div>
-                  <div className="font-mono text-sm font-bold text-[#111111]">{dur}</div>
+                <div className="border border-[var(--accent)] bg-[var(--accent)] p-3">
+                  <div className="font-mono text-xs text-[var(--ink)] uppercase mb-1">Duração</div>
+                  <div className="font-mono text-sm font-bold text-[var(--ink)]">{dur}</div>
                 </div>
               </div>
 
               {/* Participants */}
               <div>
-                <div className="font-mono text-xs uppercase text-[#555555] mb-2 flex items-center gap-2">
+                <div className="font-mono text-xs uppercase text-[var(--ink-soft)] mb-2 flex items-center gap-2">
                   <Users size={12} /> Participantes ({(meeting.participantes || []).length})
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {(meeting.participantes || []).map((p, i) => (
-                    <span key={i} className="font-mono text-xs px-2 py-0.5 bg-[#E0E0E0] text-[#111111]">{p}</span>
+                    <span key={i} className="font-mono text-xs px-2 py-0.5 bg-[#E0E0E0] text-[var(--ink)]">{p}</span>
                   ))}
                   {(meeting.participantes || []).length === 0 && (
                     <span className="font-dm text-xs text-[#999]">Nenhum participante registrado</span>
@@ -334,16 +342,16 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
               ].map(({ label, items, cat }) =>
                 items.length > 0 ? (
                   <div key={cat}>
-                    <div className="font-mono text-xs uppercase text-[#555555] mb-2">
+                    <div className="font-mono text-xs uppercase text-[var(--ink-soft)] mb-2">
                       {CATEGORY_EMOJI[cat]} {label} ({items.length})
                     </div>
                     <div className="space-y-1.5">
                       {items.map(item => (
-                        <div key={item.id} className="flex gap-2 items-start border border-[#E0E0E0] px-3 py-2">
+                        <div key={item.id} className="flex gap-2 items-start border border-[rgba(21,38,43,0.12)] px-3 py-2">
                           <span className="font-mono text-xs text-[#999] mt-0.5 shrink-0">[{item.timestamp}]</span>
-                          <span className="font-dm text-xs text-[#111111] flex-1">{item.texto}</span>
+                          <span className="font-dm text-xs text-[var(--ink)] flex-1">{item.texto}</span>
                           {item.responsavel && (
-                            <span className="font-mono text-xs text-[#555555] shrink-0">— {item.responsavel}</span>
+                            <span className="font-mono text-xs text-[var(--ink-soft)] shrink-0">— {item.responsavel}</span>
                           )}
                         </div>
                       ))}
@@ -354,7 +362,7 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
 
               {/* Próxima reunião */}
               <div>
-                <label className="block font-mono text-xs uppercase text-[#111111] mb-2">
+                <label className="block font-mono text-xs uppercase text-[var(--ink)] mb-2">
                   Próxima Reunião (opcional)
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -362,20 +370,20 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
                     type="date"
                     value={proximaReuniao.data}
                     onChange={e => setProximaReuniao(prev => ({ ...prev, data: e.target.value }))}
-                    className="border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] outline-none focus:border-[#111111]"
+                    className="border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.16)]"
                   />
                   <input
                     type="time"
                     value={proximaReuniao.horario}
                     onChange={e => setProximaReuniao(prev => ({ ...prev, horario: e.target.value }))}
-                    className="border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] outline-none focus:border-[#111111]"
+                    className="border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.16)]"
                   />
                 </div>
               </div>
 
               {/* Observações finais */}
               <div>
-                <label className="block font-mono text-xs uppercase text-[#111111] mb-2">
+                <label className="block font-mono text-xs uppercase text-[var(--ink)] mb-2">
                   Observações Finais
                 </label>
                 <textarea
@@ -383,21 +391,21 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
                   onChange={e => setObservacoesFinais(e.target.value)}
                   rows={3}
                   placeholder="Adicione observações gerais sobre a reunião..."
-                  className="w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] outline-none focus:border-[#111111] resize-none"
+                  className="w-full border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.16)] resize-none"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-[#E0E0E0] flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-[rgba(21,38,43,0.12)] flex justify-end gap-3">
               <button
                 onClick={onClose}
-                className="font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] text-[#555555] hover:border-[#111111] hover:text-[#111111] transition-colors"
+                className="font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] hover:border-[rgba(21,38,43,0.16)] hover:text-[var(--ink)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleGerarAta}
-                className="font-mono text-xs uppercase px-5 py-2 bg-[#111111] text-[#CAFF00] hover:bg-[#333] transition-colors"
+                className="font-mono text-xs uppercase px-5 py-2 bg-[#173038] text-[var(--accent)] hover:bg-[#0f2128] transition-colors"
               >
                 Gerar Ata →
               </button>
@@ -410,37 +418,37 @@ function CloseModal({ meeting, effectiveClientId, onClose, onFinalize }) {
           <>
             <div className="overflow-y-auto flex-1 px-6 py-5">
               <div className="flex items-center gap-2 mb-3">
-                <FileText size={14} className="text-[#555555]" />
-                <span className="font-mono text-xs text-[#555555] uppercase">Preview da Ata</span>
+                <FileText size={14} className="text-[var(--ink-soft)]" />
+                <span className="font-mono text-xs text-[var(--ink-soft)] uppercase">Preview da Ata</span>
               </div>
-              <pre className="bg-[#111111] text-[#CAFF00] font-mono text-xs p-5 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+              <pre className="bg-[#173038] text-[var(--accent)] font-mono text-xs p-5 whitespace-pre-wrap leading-relaxed overflow-x-auto">
                 {ataText}
               </pre>
             </div>
 
-            <div className="px-6 py-4 border-t border-[#E0E0E0] flex flex-wrap gap-3 justify-between items-center">
+            <div className="px-6 py-4 border-t border-[rgba(21,38,43,0.12)] flex flex-wrap gap-3 justify-between items-center">
               <button
                 onClick={() => setStep(1)}
-                className="font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] text-[#555555] hover:border-[#111111] hover:text-[#111111] transition-colors flex items-center gap-1.5"
+                className="font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] hover:border-[rgba(21,38,43,0.16)] hover:text-[var(--ink)] transition-colors flex items-center gap-1.5"
               >
                 <ChevronLeft size={12} /> Voltar
               </button>
               <div className="flex gap-3 flex-wrap">
                 <button
                   onClick={handleDownloadPDF}
-                  className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[#111111] text-[#111111] hover:bg-[#111111] hover:text-[#CAFF00] transition-colors"
+                  className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.16)] text-[var(--ink)] hover:bg-[#173038] hover:text-[var(--accent)] transition-colors"
                 >
                   <Download size={13} /> Download PDF
                 </button>
                 <button
                   onClick={handleRegistrarPMO}
-                  className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-[#111111] text-[#CAFF00] hover:bg-[#333] transition-colors"
+                  className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-[#173038] text-[var(--accent)] hover:bg-[#0f2128] transition-colors"
                 >
                   <Check size={13} /> Registrar no PMO
                 </button>
                 <button
                   onClick={handleFechar}
-                  className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] text-[#555555] hover:border-[#111111] hover:text-[#111111] transition-colors"
+                  className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] hover:border-[rgba(21,38,43,0.16)] hover:text-[var(--ink)] transition-colors"
                 >
                   <X size={13} /> Fechar
                 </button>
@@ -683,8 +691,8 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
     return (
       <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
         <div className="p-10 text-center">
-          <p className="font-dm text-[#555555]">Reunião não encontrada.</p>
-          <button onClick={() => navigate('/reunioes')} className="mt-4 font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] hover:border-[#111111] transition-colors">
+          <p className="font-dm text-[var(--ink-soft)]">Reunião não encontrada.</p>
+          <button onClick={() => navigate('/reunioes')} className="mt-4 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] hover:border-[rgba(21,38,43,0.16)] transition-colors">
             ← Voltar
           </button>
         </div>
@@ -695,7 +703,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
   if (!meeting) {
     return (
       <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-        <div className="p-10 text-center font-mono text-xs text-[#555555]">Carregando...</div>
+        <div className="p-10 text-center font-mono text-xs text-[var(--ink-soft)]">Carregando...</div>
       </Layout>
     );
   }
@@ -708,7 +716,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
       <div className="px-6 md:px-10 pt-6">
         <button
           onClick={() => navigate('/reunioes')}
-          className="flex items-center gap-1.5 font-mono text-xs uppercase text-[#555555] hover:text-[#111111] transition-colors"
+          className="flex items-center gap-1.5 font-mono text-xs uppercase rounded-full text-[var(--ink-soft)] hover:bg-white hover:text-[var(--ink)] transition-colors"
         >
           <ChevronLeft size={14} /> Reuniões
         </button>
@@ -721,11 +729,11 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
         <div className="lg:w-[35%] lg:pr-6 flex flex-col gap-4 mb-6 lg:mb-0">
 
           {/* Control panel card */}
-          <div className="bg-[#111111] p-5 flex flex-col gap-4">
+          <div className="bg-[#173038] p-5 flex flex-col gap-4">
             {/* Title */}
             <div>
-              <span className="font-mono text-xs text-[#CAFF00]/70 uppercase">{meeting.id}</span>
-              <h2 className="font-syne font-extrabold text-white text-xl uppercase leading-tight mt-0.5">
+              <span className="font-mono text-xs text-[var(--accent)]/70 uppercase">{meeting.id}</span>
+              <h2 className="font-syne font-extrabold text-[#fffdf8] text-xl uppercase leading-tight mt-0.5">
                 {meeting.titulo}
               </h2>
               {meeting.nomeCliente && (
@@ -734,12 +742,12 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
             </div>
 
             {/* Live timer */}
-            <div className="border border-[#CAFF00]/30 px-4 py-3">
+            <div className="border border-[var(--accent)]/30 px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
-                <Clock size={12} className="text-[#CAFF00]/70" />
-                <span className="font-mono text-xs text-[#CAFF00]/70 uppercase">Duração</span>
+                <Clock size={12} className="text-[var(--accent)]/70" />
+                <span className="font-mono text-xs text-[var(--accent)]/70 uppercase">Duração</span>
               </div>
-              <div className="font-mono text-3xl font-bold text-[#CAFF00] tracking-widest">
+              <div className="font-mono text-3xl font-bold text-[var(--accent)] tracking-widest">
                 {fmtElapsed(elapsedSeconds)}
               </div>
             </div>
@@ -761,8 +769,8 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
             {(meeting.participantes || []).length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
-                  <Users size={11} className="text-[#CAFF00]/70" />
-                  <span className="font-mono text-xs text-[#CAFF00]/70 uppercase">Participantes</span>
+                  <Users size={11} className="text-[var(--accent)]/70" />
+                  <span className="font-mono text-xs text-[var(--accent)]/70 uppercase">Participantes</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {meeting.participantes.map((p, i) => (
@@ -781,7 +789,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
             {/* Pauta */}
             {meeting.pauta && (
               <div>
-                <div className="font-mono text-xs text-[#CAFF00]/70 uppercase mb-1">Pauta</div>
+                <div className="font-mono text-xs text-[var(--accent)]/70 uppercase mb-1">Pauta</div>
                 <p className="font-dm text-xs text-[#E0E0E0] leading-relaxed">{meeting.pauta}</p>
               </div>
             )}
@@ -790,7 +798,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
             {meeting.status === 'Em andamento' && (
               <button
                 onClick={() => setShowCloseModal(true)}
-                className="flex items-center justify-center gap-2 font-mono text-xs uppercase px-4 py-2.5 bg-white text-[#111111] border border-white hover:bg-[#E0E0E0] transition-colors mt-2"
+                className="flex items-center justify-center gap-2 font-mono text-xs uppercase px-4 py-2.5 bg-white text-[var(--ink)] border border-white hover:bg-[#E0E0E0] transition-colors mt-2"
               >
                 <StopCircle size={14} /> Encerrar Reunião
               </button>
@@ -798,10 +806,10 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
           </div>
 
           {/* Items registered */}
-          <div className="border border-[#E0E0E0] bg-white flex flex-col">
-            <div className="px-4 py-3 border-b border-[#E0E0E0] flex items-center justify-between">
-              <span className="font-mono text-xs uppercase text-[#111111]">Itens Registrados</span>
-              <span className="font-mono text-xs text-[#555555]">{sortedItems.length}</span>
+          <div className="border border-[rgba(21,38,43,0.12)] bg-white flex flex-col">
+            <div className="px-4 py-3 border-b border-[rgba(21,38,43,0.12)] flex items-center justify-between">
+              <span className="font-mono text-xs uppercase text-[var(--ink)]">Itens Registrados</span>
+              <span className="font-mono text-xs text-[var(--ink-soft)]">{sortedItems.length}</span>
             </div>
             <div className="divide-y divide-[#E0E0E0] max-h-[360px] overflow-y-auto">
               {sortedItems.length === 0 ? (
@@ -817,12 +825,12 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
                       setHighlightedItemId(item.id);
                       setTimeout(() => setHighlightedItemId(null), 2500);
                     }}
-                    className={`w-full text-left px-4 py-3 flex items-start gap-2 hover:bg-[#f5f5f5] transition-colors ${highlightedItemId === item.id ? 'bg-[#CAFF00]/20' : ''
+                    className={`w-full text-left px-4 py-3 flex items-start gap-2 hover:bg-[#f5f5f5] transition-colors ${highlightedItemId === item.id ? 'bg-[var(--accent)]/20' : ''
                       }`}
                   >
                     <CategoryBadge cat={item.categoria} />
-                    <span className="font-mono text-xs text-[#555555] shrink-0">{item.timestamp}</span>
-                    <span className="font-dm text-xs text-[#111111] flex-1 line-clamp-2">{item.texto}</span>
+                    <span className="font-mono text-xs text-[var(--ink-soft)] shrink-0">{item.timestamp}</span>
+                    <span className="font-dm text-xs text-[var(--ink)] flex-1 line-clamp-2">{item.texto}</span>
                   </button>
                 ))
               )}
@@ -832,15 +840,15 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
 
         {/* ─── RIGHT COLUMN (65%) ────────────────────────────────────────────── */}
         <div className="lg:w-[65%] flex flex-col gap-4">
-          <div className="border border-[#E0E0E0] bg-white flex flex-col">
+          <div className="border border-[rgba(21,38,43,0.12)] bg-white flex flex-col">
             {/* Header */}
-            <div className="px-5 py-3 border-b border-[#E0E0E0]">
-              <h3 className="font-syne font-extrabold text-[#111111] text-sm uppercase">Bloco de Notas</h3>
-              <p className="font-dm text-xs text-[#555555] mt-0.5">Auto-salvo a cada 10 segundos</p>
+            <div className="px-5 py-3 border-b border-[rgba(21,38,43,0.12)]">
+              <h3 className="font-syne font-extrabold text-[var(--ink)] text-sm uppercase">Bloco de Notas</h3>
+              <p className="font-dm text-xs text-[var(--ink-soft)] mt-0.5">Auto-salvo a cada 10 segundos</p>
             </div>
 
             {/* Toolbar */}
-            <div className="px-5 py-3 border-b border-[#E0E0E0] flex flex-wrap gap-2">
+            <div className="soft-ribbon rounded-t-[24px] px-5 py-3 flex flex-wrap gap-2">
               <ToolbarBtn emoji="📌" label="Decisão" onClick={() => insertPrefix('📌 DECISÃO: ')} />
               <ToolbarBtn emoji="✅" label="Tarefa" onClick={() => insertPrefix('✅ TAREFA: ')} />
               <ToolbarBtn emoji="⚠" label="Pendência" onClick={() => insertPrefix('⚠ PENDÊNCIA: ')} />
@@ -854,16 +862,16 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
                 value={notepadText}
                 onChange={e => setNotepadText(e.target.value)}
                 placeholder="Digite livremente... Use os botões acima para categorizar cada item."
-                className="w-full min-h-[400px] font-dm text-sm text-[#111111] bg-transparent outline-none resize-y leading-relaxed placeholder:text-[#bbb]"
+                className="w-full min-h-[400px] rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/70 p-4 font-dm text-sm text-[var(--ink)] outline-none resize-y leading-relaxed placeholder:text-[var(--ink-soft)]"
               />
             </div>
 
             {/* Add Item button */}
-            <div className="px-5 py-3 border-t border-[#E0E0E0]">
+            <div className="px-5 py-3 border-t border-[rgba(21,38,43,0.12)]">
               <button
                 onClick={handleAddItem}
                 disabled={!notepadText.trim()}
-                className="flex items-center gap-2 font-mono text-xs uppercase px-5 py-2.5 bg-[#111111] text-[#CAFF00] hover:bg-[#333] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 font-mono text-xs uppercase disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus size={13} /> Adicionar Item
               </button>
@@ -871,8 +879,8 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
           </div>
 
           {/* Quick Task */}
-          <div className="border border-[#E0E0E0] bg-white px-5 py-4">
-            <div className="font-mono text-xs uppercase text-[#111111] mb-3 flex items-center gap-2">
+          <div className="app-panel rounded-[28px] px-5 py-4 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+            <div className="font-mono text-xs uppercase text-[var(--ink)] mb-3 flex items-center gap-2">
               ✅ Registrar Tarefa Rápida
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -881,7 +889,7 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
                 value={quickName}
                 onChange={e => setQuickName(e.target.value)}
                 placeholder="Ação para: (nome)"
-                className="border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] outline-none focus:border-[#111111] sm:w-40 transition-colors"
+                className="border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.16)] sm:w-40 transition-colors"
               />
               <input
                 type="text"
@@ -889,15 +897,15 @@ export default function ReuniaoDetalhe({ clientId: propClientId, meetingId: prop
                 onChange={e => setQuickDesc(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleQuickTask(); }}
                 placeholder="Descrição da tarefa..."
-                className="flex-1 border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] outline-none focus:border-[#111111] transition-colors"
+                className="flex-1 border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors"
               />
               <button
                 onClick={handleQuickTask}
                 disabled={!quickDesc.trim()}
-                className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-[#111111] text-[#CAFF00] hover:bg-[#333] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-xs uppercase disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {quickSaved ? <Check size={13} /> : <Plus size={13} />}
-                {quickSaved ? 'Salvo!' : 'Registrar Tarefa'}
+                {quickSaved ? 'Salvo' : 'Registrar tarefa'}
               </button>
             </div>
           </div>

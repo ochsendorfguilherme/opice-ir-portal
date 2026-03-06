@@ -1,4 +1,4 @@
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+﻿import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart2,
   ClipboardList,
@@ -8,7 +8,6 @@ import {
   Scale,
   Briefcase,
   Siren,
-  AlertOctagon,
   LogOut,
   Lock,
   CheckCircle,
@@ -25,9 +24,9 @@ import OpiceLogo from './OpiceLogo';
 import InviteModal from './InviteModal';
 
 function StepIcon({ status }) {
-  if (status === 'completed') return <CheckCircle size={12} className="text-green-400" />;
-  if (status === 'ongoing') return <AlertTriangle size={12} className="text-amber-400" />;
-  return <Lock size={12} className="text-gray-600" />;
+  if (status === 'completed') return <CheckCircle size={12} className="text-emerald-300" />;
+  if (status === 'ongoing') return <AlertTriangle size={12} className="text-amber-300" />;
+  return <Lock size={12} className="text-white/28" />;
 }
 
 export default function Sidebar({ clientId, isAdmin = false, adminClientName = null, onClose }) {
@@ -38,8 +37,6 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
   const [pmoAlerts, setPmoAlerts] = useState(0);
   const [activeMeeting, setActiveMeeting] = useState(false);
   const [anpdNeedsSEI, setAnpdNeedsSEI] = useState(false);
-
-  // Custom states for invites
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [toast, setToast] = useState(null);
@@ -49,24 +46,23 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
   useEffect(() => {
     if (!effectiveClientId) return;
+
     const crisis = getStorage(KEYS.crisis(effectiveClientId, 'active'));
     setCrisisActive(crisis?.crisisActive === true && crisis?.crisisStatus !== 'closed');
 
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
     const actions = pmoData.actions || [];
     const now = new Date();
-    const alerts = actions.filter(a => {
-      const blocked = a.status === 'Bloqueado';
-      const overdue = a.prazo && new Date(a.prazo) < now && a.status !== 'Feito';
+    const alerts = actions.filter((action) => {
+      const blocked = action.status === 'Bloqueado';
+      const overdue = action.prazo && new Date(action.prazo) < now && action.status !== 'Feito';
       return blocked || overdue;
     }).length;
     setPmoAlerts(alerts);
 
-    // Check for active meetings
     const meetings = getStorage(KEYS.meetings(effectiveClientId), []);
-    setActiveMeeting(meetings.some(m => m.status === 'Em andamento'));
+    setActiveMeeting(meetings.some((meeting) => meeting.status === 'Em andamento'));
 
-    // Check for ANPD process without SEI number
     const anpdData = getStorage(KEYS.anpd(effectiveClientId), {});
     const processo = anpdData.processo || {};
     const hasAnpdData = Object.keys(processo).length > 0;
@@ -75,13 +71,20 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
   const getOnboardingStatus = () => {
     if (!effectiveClientId) return { info: 'completed', perguntas: 'completed', jornada: 'completed' };
+
     const info = getStorage(KEYS.info(effectiveClientId));
     const answers = getStorage(KEYS.answers(effectiveClientId), {});
-    const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;
-    const sectionsDone = [1, 2, 3, 4, 5].filter(sid => {
-      const sAnswers = answers[sid] || {};
-      return Object.values(sAnswers).some(v => v?.trim());
+    const hasInfo = info?.nomeCliente
+      && info?.dataIncidente
+      && info?.dataConhecimento
+      && info?.codigoCliente
+      && info?.contexto?.length >= 30;
+
+    const sectionsDone = [1, 2, 3, 4, 5].filter((sectionId) => {
+      const sectionAnswers = answers[sectionId] || {};
+      return Object.values(sectionAnswers).some((value) => value?.trim());
     }).length;
+
     return {
       info: hasInfo ? 'completed' : 'ongoing',
       perguntas: !hasInfo ? 'locked' : sectionsDone >= 1 ? (sectionsDone >= 5 ? 'completed' : 'ongoing') : 'ongoing',
@@ -89,7 +92,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
     };
   };
 
-  const onb = isAdmin ? { info: 'completed', perguntas: 'completed', jornada: 'completed' } : getOnboardingStatus();
+  const onboarding = isAdmin ? { info: 'completed', perguntas: 'completed', jornada: 'completed' } : getOnboardingStatus();
 
   const handleLogout = () => {
     logout();
@@ -98,21 +101,18 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
   const handleInviteSubmit = async (formData) => {
     setIsInviting(true);
-    // Simulate short network delay for better UX
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
     try {
       createInvite({
         ...formData,
         clientId: effectiveClientId,
-        createdBy: user.email
+        createdBy: user.email,
       });
       setShowInviteModal(false);
-
-      // We trigger a global notification or local alert for success
       setToast({ type: 'success', message: 'Convite enviado para aprovação!' });
       setTimeout(() => setToast(null), 3000);
-
-    } catch (err) {
+    } catch {
       setToast({ type: 'error', message: 'Erro ao enviar convite.' });
       setTimeout(() => setToast(null), 3000);
     } finally {
@@ -120,56 +120,54 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
     }
   };
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
-    <aside className="w-64 min-h-screen bg-[#111111] flex flex-col fixed left-0 top-0 bottom-0 z-30">
-      {/* Header */}
-      <div className="px-5 py-5 border-b border-white/10">
+    <aside className="app-panel-dark fixed bottom-4 left-4 top-4 z-30 flex w-[16.5rem] flex-col overflow-hidden rounded-[32px]">
+      <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.12),transparent_36%)] px-5 pb-5 pt-6">
         <div className="flex items-center justify-between">
           <OpiceLogo />
           {onClose && (
-            <button onClick={onClose} className="text-gray-400 hover:text-white p-1">
+            <button onClick={onClose} className="rounded-full bg-white/5 p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white">
               <X size={18} />
             </button>
           )}
         </div>
+
         {isAdmin && (
-          <div className="mt-2">
-            <span className="bg-[#CAFF00] text-[#111111] font-mono text-xs font-medium px-2 py-0.5">
+          <div className="mt-3">
+            <span className="rounded-full bg-[#d6ff63] px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#15262b]">
               {adminClientName ? `ADMIN VIEW: ${adminClientName}` : 'PAINEL ADMIN'}
             </span>
           </div>
         )}
-        <div className="mt-2 flex items-center gap-1.5">
-          <Lock size={9} className="text-[#F59E0B]" />
-          <span className="font-mono text-[10px] text-[#F59E0B]">TLP:AMBER+STRICT</span>
+
+        <div className="mt-4 flex items-center gap-2 rounded-full bg-white/6 px-3 py-2">
+          <Lock size={10} className="text-[#f8d383]" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#f8d383]">TLP:AMBER+STRICT</span>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-3 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto py-3">
         {!effectiveClientId && isAdmin ? (
-          <div className="h-full flex flex-col items-center justify-center px-6 text-center">
-            <Users size={40} className="text-gray-600 mb-4 opacity-50" />
-            <p className="font-dm text-sm text-gray-400">
-              Selecione um cliente no Painel Admin para navegar
-            </p>
+          <div className="flex h-full flex-col items-center justify-center px-7 text-center">
+            <Users size={42} className="mb-4 text-white/30" />
+            <p className="text-sm text-white/60">Selecione um cliente no painel admin para navegar.</p>
           </div>
         ) : (
           <>
-            {/* Dashboard Group */}
             <div className="mb-6">
               {user?.role === 'client' && (
-                <div className="px-5 mb-4">
+                <div className="mb-4 px-5">
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="w-full flex items-center justify-center gap-2 bg-[#CAFF00] text-[#111111] font-dm font-bold text-sm py-2 hover:opacity-90 transition-all rounded-sm shadow-[0_0_15px_rgba(202,255,0,0.1)]"
+                    className="flex w-full items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(135deg,#ecffb0_0%,#d6ff63_48%,#b7ec23_100%)] py-3 text-sm font-bold text-[#15262b] shadow-[0_16px_34px_rgba(190,234,62,0.24)] transition-all hover:-translate-y-0.5"
                   >
-                    <Users size={16} /> Chamar Convidado
+                    <Users size={16} /> Chamar convidado
                   </button>
                 </div>
               )}
+
               <NavLink
                 to={`${basePath}/dashboard`}
                 onClick={onClose}
@@ -180,122 +178,75 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
               </NavLink>
             </div>
 
-            {/* Incident Info Group */}
-            <div className="space-y-1 mb-6">
-              <NavLink
-                to={`${basePath}/informacoes`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
-              >
+            <div className="mb-6 space-y-1">
+              <NavLink to={`${basePath}/informacoes`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}>
                 <Info size={16} />
-                <span className="flex-1">Informações do Incidente</span>
-                <StepIcon status={onb.info} />
+                <span className="flex-1">Informações do incidente</span>
+                <StepIcon status={onboarding.info} />
               </NavLink>
 
-              <NavLink
-                to={`${basePath}/perguntas`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/perguntas`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active ? 'active' : ''}`}>
                 <HelpCircle size={16} />
                 <span className="flex-1">Perguntas</span>
-                <StepIcon status={onb.perguntas} />
+                <StepIcon status={onboarding.perguntas} />
               </NavLink>
 
-              <NavLink
-                to={`${basePath}/jornada`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/jornada`) ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/jornada`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/jornada`) ? 'active' : ''}`}>
                 <ClipboardList size={16} />
-                <span className="flex-1">Jornada do Incidente</span>
-                <StepIcon status={onb.jornada} />
+                <span className="flex-1">Jornada do incidente</span>
+                <StepIcon status={onboarding.jornada} />
               </NavLink>
             </div>
 
-            {/* Management Group */}
             <div className="space-y-1">
-              <NavLink
-                to={`${basePath}/reunioes`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/reunioes`) ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/reunioes`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/reunioes`) ? 'active' : ''}`}>
                 <BookOpen size={16} />
                 <span className="flex-1">Reuniões</span>
-                {activeMeeting && (
-                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Reunião em andamento" />
-                )}
+                {activeMeeting && <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" title="Reunião em andamento" />}
               </NavLink>
 
-              <NavLink
-                to={`${basePath}/anpd`}
-                end
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/anpd`) ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/anpd`} end onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/anpd`) ? 'active' : ''}`}>
                 <Scale size={16} />
                 <span className="flex-1">ANPD</span>
-                {anpdNeedsSEI && (
-                  <span className="font-mono text-[10px] bg-amber-500 text-white px-1.5 py-0.5">SEI</span>
-                )}
+                {anpdNeedsSEI && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#15262b]">SEI</span>}
               </NavLink>
 
-              <NavLink
-                to={`${basePath}/anpd/comunicacao-titulares`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/anpd/comunicacao-titulares`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
                 <MessageSquare size={14} />
-                <span className="flex-1 text-xs">Comunicação (Titulares)</span>
+                <span className="flex-1 text-xs">Comunicação (titulares)</span>
               </NavLink>
 
-              <NavLink
-                to={`${basePath}/anpd/registro-incidente`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/anpd/registro-incidente`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
                 <FileText size={14} />
-                <span className="flex-1 text-xs">Registro (Art. 10)</span>
+                <span className="flex-1 text-xs">Registro (art. 10)</span>
               </NavLink>
 
-              <NavLink
-                to={`${basePath}/pmo`}
-                onClick={onClose}
-                className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}
-              >
+              <NavLink to={`${basePath}/pmo`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}>
                 <Briefcase size={16} />
                 <span className="flex-1">PMO</span>
                 {pmoAlerts > 0 && (
-                  <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 min-w-[20px] text-center animate-pulse-red">
+                  <span className="min-w-[20px] rounded-full bg-red-600 px-1.5 py-0.5 text-center font-mono text-xs text-white animate-pulse-red">
                     {pmoAlerts}
                   </span>
                 )}
               </NavLink>
 
               {isAdmin && (
-                <NavLink
-                  to="/admin/acessos"
-                  onClick={onClose}
-                  className={({ isActive: active }) => `sidebar-link ${active || isActive('/admin/acessos') ? 'active' : ''}`}
-                >
+                <NavLink to="/admin/acessos" onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive('/admin/acessos') ? 'active' : ''}`}>
                   <Users size={16} />
-                  <span className="flex-1">Gestão de Acessos</span>
+                  <span className="flex-1">Gestão de acessos</span>
                 </NavLink>
               )}
 
               <NavLink
                 to={`${basePath}/pmo/warroom`}
                 onClick={onClose}
-                className={({ isActive: active }) =>
-                  `sidebar-link pl-10 ${active ? 'active' : ''} ${crisisActive ? 'animate-pulse text-[#DC2626]' : 'text-[#DC2626]'}`
-                }
+                className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''} text-[#ff8d8b]`}
               >
-                <Siren size={14} color="#DC2626" />
+                <Siren size={14} />
                 <span className="flex-1 text-xs font-bold">
-                  WarRoom
-                  {crisisActive && (
-                    <span className="ml-1 font-mono text-[10px]">⚡ ATIVA</span>
-                  )}
+                  War Room
+                  {crisisActive && <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.16em]">ativa</span>}
                 </span>
               </NavLink>
             </div>
@@ -303,39 +254,34 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-white/10 px-5 py-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-7 h-7 bg-[#CAFF00] flex items-center justify-center">
-            <span className="font-syne font-bold text-[#111111] text-xs">
-              {user?.name?.[0]?.toUpperCase() || 'U'}
-            </span>
+      <div className="border-t border-white/10 bg-black/10 px-5 py-5 backdrop-blur-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d6ff63] shadow-[0_10px_20px_rgba(190,234,62,0.2)]">
+            <span className="font-syne text-xs font-bold text-[#111111]">{user?.name?.[0]?.toUpperCase() || 'U'}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-white text-xs font-dm truncate">{user?.email}</div>
-            <div className="text-gray-500 text-[10px] font-mono uppercase">{user?.role}</div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm text-[#fffdf8]">{user?.email}</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/48">{user?.role}</div>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 text-gray-400 hover:text-white text-xs font-dm py-1.5 transition-colors"
+          className="flex w-full items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-xs font-semibold text-white/72 transition-colors hover:bg-white/6 hover:text-white"
         >
           <LogOut size={13} />
           Sair
         </button>
       </div>
 
-      {/* Toast */}
       {toast && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-none">
-          <div className={`px-5 py-3 shadow-2xl flex items-center gap-3 border ${toast.type === 'success' ? 'bg-[#CAFF00] border-[#CAFF00] text-[#111111]' : 'bg-red-600 border-red-600 text-white'}`}>
+        <div className="pointer-events-none fixed left-1/2 top-8 z-[100] -translate-x-1/2 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className={`flex items-center gap-3 rounded-full border px-5 py-3 shadow-[0_18px_36px_rgba(21,38,43,0.18)] ${toast.type === 'success' ? 'bg-[linear-gradient(135deg,#ecffb0_0%,#d6ff63_48%,#b7ec23_100%)] border-[#d6ff63] text-[#15262b]' : 'bg-[#d45a58] border-[#d45a58] text-white'}`}>
             {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
-            <span className="font-dm text-sm font-medium">{toast.message}</span>
+            <span className="text-sm font-medium">{toast.message}</span>
           </div>
         </div>
       )}
 
-      {/* Invite Modal */}
       <InviteModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Menu, Bell, X, CheckCheck, LayoutGrid, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -6,12 +6,12 @@ import TLPBanner from './TLPBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
 
-const NOTIF_ICON = {
-  critical: '🔴',
-  warning: '⚠️',
-  crisis: '⚡',
-  done: '✅',
-  info: '💡',
+const NOTIF_STYLE = {
+  critical: { dot: 'bg-[#d45a58]', tone: 'bg-red-50 text-red-700' },
+  warning: { dot: 'bg-[#d59b32]', tone: 'bg-amber-50 text-amber-700' },
+  crisis: { dot: 'bg-[#173038]', tone: 'bg-[#173038]/10 text-[#173038]' },
+  done: { dot: 'bg-[#299166]', tone: 'bg-emerald-50 text-emerald-700' },
+  info: { dot: 'bg-[#6f7f86]', tone: 'bg-slate-100 text-slate-700' },
 };
 
 function formatTimeAgo(iso) {
@@ -43,7 +43,9 @@ function NotificationBell({ effectiveClientId }) {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
@@ -66,60 +68,67 @@ function NotificationBell({ effectiveClientId }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => { setOpen(v => !v); load(); }}
-        className="relative p-1.5 text-gray-500 hover:text-[#111111] transition-colors"
+        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 text-[#173038] shadow-[0_12px_24px_rgba(21,38,43,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white"
         title="Notificações"
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-600 text-white font-mono text-[10px] rounded-full flex items-center justify-center px-0.5 leading-none">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#d45a58] px-1.5 font-mono text-[10px] font-semibold leading-none text-white">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-[#E0E0E0] shadow-xl z-50">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-[#111111]">
-            <span className="font-mono text-xs text-white uppercase tracking-widest">Notificações</span>
+        <div className="app-panel absolute right-0 top-full z-50 mt-3 w-[22rem] overflow-hidden rounded-[28px]">
+          <div className="app-panel-dark flex items-center justify-between px-4 py-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[rgba(255,253,248,0.72)]">Notificações</span>
             <div className="flex items-center gap-2">
               {unread > 0 && (
-                <button onClick={markAllRead} className="flex items-center gap-1 font-mono text-xs text-gray-400 hover:text-[#CAFF00] transition-colors" title="Marcar todas como lidas">
+                <button onClick={markAllRead} className="flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#d6ff63] transition-colors hover:bg-white/5">
                   <CheckCheck size={12} /> Lidas
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-white p-0.5">
+              <button onClick={() => setOpen(false)} className="rounded-full bg-white/5 p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white">
                 <X size={14} />
               </button>
             </div>
           </div>
 
-          {/* Feed */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-[#F0F0F0]">
+          <div className="max-h-96 divide-y divide-[rgba(21,38,43,0.08)] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <Bell size={24} className="text-gray-200 mx-auto mb-2" />
-                <p className="font-dm text-sm text-gray-400">Nenhuma notificação</p>
+              <div className="px-5 py-10 text-center">
+                <Bell size={26} className="mx-auto mb-3 text-[#7f8b8f]" />
+                <p className="font-dm text-sm text-[#68767b]">Nenhuma notificação</p>
               </div>
-            ) : notifications.map(n => (
-              <div
-                key={n.id}
-                className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${!n.read ? 'bg-blue-50/40' : ''}`}
-                onClick={() => { markRead(n.id); if (n.link) window.location.href = n.link; }}
-              >
-                <span className="text-base shrink-0 mt-0.5">{NOTIF_ICON[n.type] || '💡'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-dm text-xs text-[#111111] ${!n.read ? 'font-medium' : ''}`}>{n.message}</p>
-                  <p className="font-mono text-xs text-gray-400 mt-0.5">{formatTimeAgo(n.timestamp)}</p>
-                </div>
-                {!n.read && <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1.5" />}
-              </div>
-            ))}
+            ) : notifications.map(n => {
+              const style = NOTIF_STYLE[n.type] || NOTIF_STYLE.info;
+              return (
+                <button
+                  key={n.id}
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-white/65 ${!n.read ? 'bg-[#d6ff63]/10' : 'bg-transparent'}`}
+                  onClick={() => {
+                    markRead(n.id);
+                    if (n.link) window.location.href = n.link;
+                  }}
+                >
+                  <span className={`mt-1 h-2.5 w-2.5 rounded-full ${style.dot}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-dm text-sm text-[#15262b]">{n.message}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${style.tone}`}>{n.type || 'info'}</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#7a8589]">{formatTimeAgo(n.timestamp)}</span>
+                    </div>
+                  </div>
+                  {!n.read && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[#d6ff63]" />}
+                </button>
+              );
+            })}
           </div>
 
           {notifications.length > 0 && (
-            <div className="px-4 py-2 border-t border-[#E0E0E0] bg-gray-50">
-              <span className="font-mono text-xs text-gray-400">{notifications.length} notificações · {unread} não lidas</span>
+            <div className="border-t border-[rgba(21,38,43,0.08)] bg-white/65 px-4 py-2.5">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#68767b]">{notifications.length} itens • {unread} não lidas</span>
             </div>
           )}
         </div>
@@ -135,67 +144,68 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
   const effectiveClientId = propClientId || user?.clientId;
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Desktop Sidebar */}
+    <div className="relative flex min-h-screen bg-transparent text-[#15262b]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.12),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(23,48,56,0.08),transparent_30%)]" />
+
       <div className="hidden md:block">
         <Sidebar clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} />
       </div>
 
-      {/* Mobile Sidebar Drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute inset-0 bg-[#15262b]/45 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0">
             <Sidebar clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}
 
-      {/* Main */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
-        {/* TLP Banner + Bell */}
-        <div className="flex items-stretch border-b border-[#E0E0E0]">
-          <div className="flex-1">
-            <TLPBanner />
-          </div>
-          <div className="flex items-center px-3 bg-[#111111] gap-2">
-            {user?.role === 'admin' && (
-              <div className="flex mr-2">
-                {isAdmin && adminClientName ? (
+      <div className="relative flex min-h-screen flex-1 flex-col md:ml-72">
+        <div className="shell-topbar sticky top-0 z-20">
+          <div className="flex items-stretch border-b border-[rgba(21,38,43,0.08)]">
+            <div className="flex-1">
+              <TLPBanner />
+            </div>
+            <div className="flex items-center gap-3 px-4">
+              {user?.role === 'admin' && (
+                isAdmin && adminClientName ? (
                   <button
                     onClick={onAdminBack}
-                    className="flex items-center gap-2 bg-[#111111] text-[#CAFF00] border border-[#CAFF00] px-3 py-1.5 h-[36px] font-dm text-xs hover:bg-[#CAFF00] hover:text-[#111111] transition-colors"
+                    className="flex h-11 items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/75 px-4 font-dm text-xs font-semibold uppercase tracking-[0.16em] text-[#173038] shadow-[0_12px_24px_rgba(21,38,43,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white"
                   >
-                    <ArrowLeft size={16} /> Voltar ao Admin
+                    <ArrowLeft size={15} /> Voltar ao Admin
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate('/admin')}
-                    className="w-9 h-9 bg-[#CAFF00] text-[#111111] flex items-center justify-center hover:bg-white border-2 border-transparent hover:border-[#111111] transition-all"
-                    title="Painel Admin — Todos os Clientes"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#173038] text-[#fffdf8] shadow-[0_12px_28px_rgba(15,33,40,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#0f2128]"
+                    title="Painel Admin"
                   >
                     <LayoutGrid size={18} />
                   </button>
-                )}
-              </div>
-            )}
-            <NotificationBell effectiveClientId={effectiveClientId} />
+                )
+              )}
+              <NotificationBell effectiveClientId={effectiveClientId} />
+            </div>
           </div>
         </div>
 
-
-        {/* Mobile header */}
-        <div className="md:hidden flex items-center px-4 py-3 border-b border-gray-200">
-          <button onClick={() => setSidebarOpen(true)} className="p-1 text-gray-600">
-            <Menu size={22} />
-          </button>
-          <span className="ml-3 font-syne font-bold text-[#111111]">OPICE IR</span>
-          <div className="ml-auto">
-            <NotificationBell effectiveClientId={effectiveClientId} />
+        <div className="shell-mobilebar md:hidden">
+          <div className="flex items-center px-4 py-3">
+            <button onClick={() => setSidebarOpen(true)} className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 p-2 text-[#173038] shadow-[0_10px_22px_rgba(21,38,43,0.08)]">
+              <Menu size={20} />
+            </button>
+            <div className="ml-3">
+              <p className="section-kicker">Console de incidente</p>
+              <span className="font-syne text-lg font-bold text-[#15262b]">Opice IR</span>
+            </div>
+            <div className="ml-auto">
+              <NotificationBell effectiveClientId={effectiveClientId} />
+            </div>
           </div>
         </div>
 
-        <main className="flex-1 overflow-auto">
+        <main className="relative flex-1 overflow-auto px-0 pb-8 pt-2 md:px-2">
           {children}
         </main>
       </div>

@@ -16,29 +16,29 @@ function SemaphoreCard({ title, base, diffHours, totalHours, activities, linked 
   const pct = totalHours ? diffHours / totalHours : 1;
   let statusColor, statusLabel, borderClass;
   if (diffHours < 0) {
-    statusColor = 'bg-gray-800 text-white'; statusLabel = '⛔ VENCIDO'; borderClass = 'border-gray-700';
+    statusColor = 'bg-[#173038] text-[#fffdf8]'; statusLabel = '⛔ VENCIDO'; borderClass = 'border-[rgba(21,38,43,0.16)]';
   } else if (pct < 0.25) {
-    statusColor = 'bg-red-600 text-white animate-pulse-red'; statusLabel = '🔴 CRÍTICO'; borderClass = 'border-red-400';
+    statusColor = 'bg-red-600 text-[#fffdf8] animate-pulse-red'; statusLabel = '🔴 CRÍTICO'; borderClass = 'border-red-400';
   } else if (pct < 0.5) {
     statusColor = 'bg-amber-500 text-black animate-pulse-amber'; statusLabel = '🟡 ATENÇÃO'; borderClass = 'border-amber-400';
   } else {
-    statusColor = 'bg-green-600 text-white'; statusLabel = '🟢 OK'; borderClass = 'border-green-300';
+    statusColor = 'bg-green-600 text-[#fffdf8]'; statusLabel = '🟢 OK'; borderClass = 'border-green-300';
   }
 
   return (
     <div className={`border ${borderClass} p-5`}>
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-syne font-bold text-[#111111] text-sm uppercase">{title}</h4>
+        <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase">{title}</h4>
         <span className={`font-mono text-xs px-2 py-0.5 ${statusColor}`}>{statusLabel}</span>
       </div>
-      <p className="font-mono text-xs text-[#555555] mb-3">{base}</p>
+      <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">{base}</p>
       <div className={`font-mono text-3xl font-bold ${diffHours < 0 ? 'text-gray-800' : pct < 0.25 ? 'text-red-600' : pct < 0.5 ? 'text-amber-600' : 'text-green-700'}`}>
         {formatCountdown(diffHours)}
       </div>
       {linked && (
         <div className="mt-2 flex flex-wrap gap-1">
           {linked.map(id => (
-            <span key={id} className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5">#{id}</span>
+            <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>
           ))}
         </div>
       )}
@@ -87,7 +87,7 @@ export default function TabSLA({ effectiveClientId }) {
   // Prazo 4 — customSLADays dias úteis da dataRef
   const prazo4 = dataRef ? businessDaysRemaining(dataRef, customSLADays) : null;
 
-  const inputClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111]";
+  const inputClass = "border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)]";
 
   const addCustom = () => {
     if (!customForm.nome || !customForm.dataInicio) return;
@@ -110,35 +110,35 @@ export default function TabSLA({ effectiveClientId }) {
     <div className="space-y-8">
       {/* Seção 1 — Config Global */}
       <div>
-        <h3 className="font-syne font-bold text-[#111111] uppercase text-base mb-4 pb-2 border-b border-[#E0E0E0]">
+        <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-base mb-4 pb-2 border-b border-[rgba(21,38,43,0.12)]">
           Configuração Global de SLA
         </h3>
-        <div className="bg-[#111111] p-6">
+        <div className="app-panel rounded-[28px] p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block font-mono text-xs text-gray-400 uppercase mb-2">Limiar Aviso (horas)</label>
+              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Limiar Aviso (horas)</label>
               <input
                 type="number"
                 value={config.warnThreshold}
                 onChange={e => setConfig(c => ({ ...c, warnThreshold: +e.target.value }))}
-                className="w-full bg-gray-800 text-white border border-gray-600 px-3 py-2 font-mono text-sm focus:outline-none"
+                className="w-full bg-[#173038] text-[#fffdf8] border border-[rgba(21,38,43,0.16)] px-3 py-2 font-mono text-sm focus:outline-none"
               />
             </div>
             <div>
-              <label className="block font-mono text-xs text-gray-400 uppercase mb-2">Limiar Crítico (horas)</label>
+              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Limiar Crítico (horas)</label>
               <input
                 type="number"
                 value={config.critThreshold}
                 onChange={e => setConfig(c => ({ ...c, critThreshold: +e.target.value }))}
-                className="w-full bg-gray-800 text-white border border-gray-600 px-3 py-2 font-mono text-sm focus:outline-none"
+                className="w-full bg-[#173038] text-[#fffdf8] border border-[rgba(21,38,43,0.16)] px-3 py-2 font-mono text-sm focus:outline-none"
               />
             </div>
             <div>
-              <label className="block font-mono text-xs text-gray-400 uppercase mb-2">Data/Hora Conhecimento (UTC)</label>
+              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Data/Hora Conhecimento (UTC)</label>
               <input
                 type="datetime-local"
                 value={info.dataConhecimento || ''}
-                className="w-full bg-gray-800 text-gray-400 border border-gray-600 px-3 py-2 font-mono text-sm focus:outline-none cursor-not-allowed"
+                className="w-full bg-[#173038] text-[var(--ink-soft)] border border-[rgba(21,38,43,0.16)] px-3 py-2 font-mono text-sm focus:outline-none cursor-not-allowed"
                 disabled
                 title="Edite em Informações do Incidente"
               />
@@ -146,7 +146,7 @@ export default function TabSLA({ effectiveClientId }) {
           </div>
           <button
             onClick={() => saveConfig(config)}
-            className="mt-4 bg-[#CAFF00] text-[#111111] font-dm font-medium px-6 py-2 text-sm hover:bg-[#b8e600] transition-colors"
+            className="mt-4 bg-[var(--accent)] text-[var(--ink)] font-dm font-medium px-6 py-2 text-sm hover:bg-[var(--accent-deep)] transition-colors"
           >
             Salvar Configurações
           </button>
@@ -155,7 +155,7 @@ export default function TabSLA({ effectiveClientId }) {
 
       {/* Seção 2 — Prazos Regulatórios ANPD */}
       <div>
-        <h3 className="font-syne font-bold text-[#111111] uppercase text-base mb-4 pb-2 border-b border-[#E0E0E0]">
+        <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-base mb-4 pb-2 border-b border-[rgba(21,38,43,0.12)]">
           Prazos Regulatórios (ANPD)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,11 +169,11 @@ export default function TabSLA({ effectiveClientId }) {
             />
           )}
 
-          <div className="border border-[#E0E0E0] p-5">
-            <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-1">Prazo 2 — Comunicação Complementar</h4>
-            <p className="font-mono text-xs text-[#555555] mb-3">Art. 6º § 3º · 20 dias úteis da comunicação preliminar</p>
+          <div className="border border-[rgba(21,38,43,0.12)] p-5">
+            <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-1">Prazo 2 — Comunicação Complementar</h4>
+            <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">Art. 6º § 3º · 20 dias úteis da comunicação preliminar</p>
             <div className="mb-3">
-              <label className="block font-mono text-xs text-[#555555] uppercase mb-1">Data Comunicação Preliminar</label>
+              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Data Comunicação Preliminar</label>
               <input
                 type="datetime-local"
                 value={prelDate}
@@ -182,18 +182,18 @@ export default function TabSLA({ effectiveClientId }) {
               />
             </div>
             {prazo2 && (
-              <div className="font-mono text-2xl font-bold text-[#111111]">{formatCountdown(prazo2.diffHours)}</div>
+              <div className="font-mono text-2xl font-bold text-[var(--ink)]">{formatCountdown(prazo2.diffHours)}</div>
             )}
             <div className="mt-2 flex gap-1">
-              {[16].map(id => <span key={id} className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5">#{id}</span>)}
+              {[16].map(id => <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>)}
             </div>
           </div>
 
-          <div className="border border-[#E0E0E0] p-5">
-            <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-1">Prazo 3 — Declaração DPO</h4>
-            <p className="font-mono text-xs text-[#555555] mb-3">Art. 9º § 4º · 3 dias úteis após encerramento da comunicação aos titulares</p>
+          <div className="border border-[rgba(21,38,43,0.12)] p-5">
+            <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-1">Prazo 3 — Declaração DPO</h4>
+            <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">Art. 9º § 4º · 3 dias úteis após encerramento da comunicação aos titulares</p>
             <div className="mb-3">
-              <label className="block font-mono text-xs text-[#555555] uppercase mb-1">Data Encerramento Comunicação</label>
+              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Data Encerramento Comunicação</label>
               <input
                 type="datetime-local"
                 value={titularEndDate}
@@ -202,31 +202,31 @@ export default function TabSLA({ effectiveClientId }) {
               />
             </div>
             {prazo3 && (
-              <div className="font-mono text-2xl font-bold text-[#111111]">{formatCountdown(prazo3.diffHours)}</div>
+              <div className="font-mono text-2xl font-bold text-[var(--ink)]">{formatCountdown(prazo3.diffHours)}</div>
             )}
             <div className="mt-2 flex gap-1">
-              {[23].map(id => <span key={id} className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5">#{id}</span>)}
+              {[23].map(id => <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>)}
             </div>
           </div>
 
-          <div className="border border-[#E0E0E0] p-5">
-            <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-1">Prazo 4 — Complementar SEI!</h4>
+          <div className="border border-[rgba(21,38,43,0.12)] p-5">
+            <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-1">Prazo 4 — Complementar SEI!</h4>
             <div className="flex items-center gap-2 mb-3">
-              <label className="font-mono text-xs text-[#555555]">Prazo customizável:</label>
+              <label className="font-mono text-xs text-[var(--ink-soft)]">Prazo customizável:</label>
               <input
                 type="number"
                 value={customSLADays}
                 min={1}
                 onChange={e => { setCustomSLADays(+e.target.value); savePmoField('customSLADays', +e.target.value); }}
-                className="w-20 border border-[#E0E0E0] px-2 py-1 font-mono text-sm focus:outline-none"
+                className="w-20 border border-[rgba(21,38,43,0.12)] px-2 py-1 font-mono text-sm focus:outline-none"
               />
-              <span className="font-mono text-xs text-[#555555]">dias úteis</span>
+              <span className="font-mono text-xs text-[var(--ink-soft)]">dias úteis</span>
             </div>
             {prazo4 && (
-              <div className="font-mono text-2xl font-bold text-[#111111]">{formatCountdown(prazo4.diffHours)}</div>
+              <div className="font-mono text-2xl font-bold text-[var(--ink)]">{formatCountdown(prazo4.diffHours)}</div>
             )}
             <div className="mt-2 flex gap-1">
-              {[24].map(id => <span key={id} className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5">#{id}</span>)}
+              {[24].map(id => <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>)}
             </div>
           </div>
         </div>
@@ -234,46 +234,46 @@ export default function TabSLA({ effectiveClientId }) {
 
       {/* Seção 3 — Prazos Customizados */}
       <div>
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#E0E0E0]">
-          <h3 className="font-syne font-bold text-[#111111] uppercase text-base">Prazos Customizados</h3>
-          <button onClick={() => setShowCustomForm(!showCustomForm)} className="flex items-center gap-1.5 bg-[#111111] text-white px-3 py-2 font-mono text-xs hover:bg-[#333]">
+        <div className="flex items-center justify-between mb-4 pb-2 border-b border-[rgba(21,38,43,0.12)]">
+          <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-base">Prazos Customizados</h3>
+          <button onClick={() => setShowCustomForm(!showCustomForm)} className="flex items-center gap-1.5 bg-[#173038] text-[#fffdf8] px-3 py-2 font-mono text-xs hover:bg-[#0f2128]">
             <Plus size={12} /> Adicionar Prazo
           </button>
         </div>
 
         {showCustomForm && (
-          <div className="border border-[#E0E0E0] p-5 mb-5 bg-gray-50">
+          <div className="border border-[rgba(21,38,43,0.12)] p-5 mb-5 bg-white/72">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Nome *</label><input type="text" value={customForm.nome} onChange={e => setCustomForm(f => ({ ...f, nome: e.target.value }))} className={`${inputClass} w-full`} /></div>
-              <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Base Legal</label><input type="text" value={customForm.baseLegal} onChange={e => setCustomForm(f => ({ ...f, baseLegal: e.target.value }))} className={`${inputClass} w-full`} /></div>
-              <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Data Início *</label><input type="datetime-local" value={customForm.dataInicio} onChange={e => setCustomForm(f => ({ ...f, dataInicio: e.target.value }))} className={`${inputClass} w-full`} /></div>
+              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Nome *</label><input type="text" value={customForm.nome} onChange={e => setCustomForm(f => ({ ...f, nome: e.target.value }))} className={`${inputClass} w-full`} /></div>
+              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Base Legal</label><input type="text" value={customForm.baseLegal} onChange={e => setCustomForm(f => ({ ...f, baseLegal: e.target.value }))} className={`${inputClass} w-full`} /></div>
+              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Data Início *</label><input type="datetime-local" value={customForm.dataInicio} onChange={e => setCustomForm(f => ({ ...f, dataInicio: e.target.value }))} className={`${inputClass} w-full`} /></div>
               <div className="flex gap-2">
-                <div className="flex-1"><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Qtd Dias</label><input type="number" value={customForm.dias} min={1} onChange={e => setCustomForm(f => ({ ...f, dias: +e.target.value }))} className={`${inputClass} w-full`} /></div>
-                <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Tipo</label>
+                <div className="flex-1"><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Qtd Dias</label><input type="number" value={customForm.dias} min={1} onChange={e => setCustomForm(f => ({ ...f, dias: +e.target.value }))} className={`${inputClass} w-full`} /></div>
+                <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Tipo</label>
                   <select value={customForm.tipo} onChange={e => setCustomForm(f => ({ ...f, tipo: e.target.value }))} className={`${inputClass} h-[42px]`}>
                     <option value="uteis">Úteis</option><option value="corridos">Corridos</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Atividade Vinculada</label>
+                <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Atividade Vinculada</label>
                 <select value={customForm.atividade} onChange={e => setCustomForm(f => ({ ...f, atividade: e.target.value }))} className={`${inputClass} w-full`}>
                   <option value="">Nenhuma</option>
                   {activities.map(a => <option key={a.id} value={a.id}>#{a.id} — {a.nome.slice(0, 40)}...</option>)}
                 </select>
               </div>
-              <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Responsável</label><input type="text" value={customForm.responsavel} onChange={e => setCustomForm(f => ({ ...f, responsavel: e.target.value }))} className={`${inputClass} w-full`} /></div>
+              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Responsável</label><input type="text" value={customForm.responsavel} onChange={e => setCustomForm(f => ({ ...f, responsavel: e.target.value }))} className={`${inputClass} w-full`} /></div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowCustomForm(false)} className="border border-[#E0E0E0] px-4 py-2 font-mono text-xs">Cancelar</button>
-              <button onClick={addCustom} className="bg-[#111111] text-white px-6 py-2 font-mono text-xs hover:bg-[#333]">Adicionar</button>
+              <button onClick={() => setShowCustomForm(false)} className="border border-[rgba(21,38,43,0.12)] px-4 py-2 font-mono text-xs">Cancelar</button>
+              <button onClick={addCustom} className="bg-[#173038] text-[#fffdf8] px-6 py-2 font-mono text-xs hover:bg-[#0f2128]">Adicionar</button>
             </div>
           </div>
         )}
 
         <div className="space-y-3">
           {customDeadlines.length === 0 && (
-            <div className="border border-dashed border-[#E0E0E0] p-8 text-center text-gray-400 font-dm text-sm">
+            <div className="border border-dashed border-[rgba(21,38,43,0.12)] p-8 text-center text-[var(--ink-soft)] font-dm text-sm">
               Nenhum prazo customizado adicionado
             </div>
           )}
@@ -288,21 +288,21 @@ export default function TabSLA({ effectiveClientId }) {
                 })()
             ) : null;
             return (
-              <div key={d.id} className={`border p-4 flex items-center justify-between gap-4 ${result?.overdue ? 'border-red-300 bg-red-50' : 'border-[#E0E0E0]'}`}>
+              <div key={d.id} className={`border p-4 flex items-center justify-between gap-4 ${result?.overdue ? 'border-red-300 bg-red-50' : 'border-[rgba(21,38,43,0.12)]'}`}>
                 <div>
-                  <div className="font-dm text-sm font-medium text-[#111111]">{d.nome}</div>
-                  {d.baseLegal && <div className="font-mono text-xs text-[#555555]">{d.baseLegal}</div>}
-                  {d.responsavel && <div className="font-mono text-xs text-[#555555]">Resp: {d.responsavel}</div>}
+                  <div className="font-dm text-sm font-medium text-[var(--ink)]">{d.nome}</div>
+                  {d.baseLegal && <div className="font-mono text-xs text-[var(--ink-soft)]">{d.baseLegal}</div>}
+                  {d.responsavel && <div className="font-mono text-xs text-[var(--ink-soft)]">Resp: {d.responsavel}</div>}
                   {result && (
-                    <div className={`font-mono text-sm font-bold mt-1 ${result.overdue ? 'text-red-600' : 'text-[#111111]'}`}>
+                    <div className={`font-mono text-sm font-bold mt-1 ${result.overdue ? 'text-red-600' : 'text-[var(--ink)]'}`}>
                       {result.overdue && <AlertTriangle size={12} className="inline mr-1" />}
                       {formatCountdown(result.diffHours)}
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-mono text-xs text-[#555555]">{d.dias} dias {d.tipo}</span>
-                  <button onClick={() => delCustom(d.id)} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                  <span className="font-mono text-xs text-[var(--ink-soft)]">{d.dias} dias {d.tipo}</span>
+                  <button onClick={() => delCustom(d.id)} className="text-[var(--ink-soft)] hover:text-red-600"><Trash2 size={13} /></button>
                 </div>
               </div>
             );

@@ -22,7 +22,6 @@ const TABS = [
   { id: 'andamentos', label: 'Andamentos' },
   { id: 'documentos', label: 'Documentos' },
   { id: 'prazos', label: 'Prazos' },
-  { id: 'comunicacao_titulares', label: 'Comunicação (Titulares)' },
 ];
 
 const STATUS_COMUNICACAO_OPTIONS = [
@@ -78,13 +77,13 @@ const ANDAMENTO_BADGE = {
   Notificação: 'bg-red-100 text-red-800',
   Decisão: 'bg-green-100 text-green-800',
   Ofício: 'bg-purple-100 text-purple-800',
-  Outro: 'bg-gray-100 text-gray-700',
+  Outro: 'bg-white/70 text-gray-700',
 };
 
 const DOC_STATUS_BADGE = {
   Enviado: 'bg-blue-100 text-blue-800',
   Protocolado: 'bg-green-100 text-green-800',
-  Rascunho: 'bg-gray-100 text-gray-700',
+  Rascunho: 'bg-white/70 text-gray-700',
   'Recebido pela ANPD': 'bg-purple-100 text-purple-800',
 };
 
@@ -110,7 +109,7 @@ function Field({ label, children, dark = false }) {
   return (
     <div>
       <label
-        className={`block font-mono text-xs font-medium uppercase mb-1.5 ${dark ? 'text-[#CAFF00]' : 'text-[#111111]'
+        className={`block font-mono text-xs font-medium uppercase mb-1.5 ${dark ? 'text-[var(--accent)]' : 'text-[var(--ink)]'
           }`}
       >
         {label}
@@ -121,10 +120,10 @@ function Field({ label, children, dark = false }) {
 }
 
 const inputClass =
-  'w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors bg-white';
+  'w-full border border-[rgba(21,38,43,0.12)] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors bg-white';
 
 const darkInputClass =
-  'w-full bg-gray-800 text-white border border-gray-600 px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#CAFF00] transition-colors';
+  'w-full bg-[#173038] text-[#fffdf8] border border-[rgba(21,38,43,0.16)] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[var(--accent)] transition-colors';
 
 // ─── Tab 1: Processo ──────────────────────────────────────────────────────────
 
@@ -169,8 +168,8 @@ function TabProcesso({ data, onSave, isAdmin }) {
   return (
     <div className="space-y-6">
       {/* Fields card */}
-      <div className="bg-[#111111] p-6">
-        <h2 className="font-syne font-bold text-white text-base uppercase mb-5">
+      <div className="app-panel-dark rounded-[28px] p-6">
+        <h2 className="font-syne font-bold text-[#fffdf8] text-base uppercase mb-5">
           Dados do Processo ANPD
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -187,12 +186,12 @@ function TabProcesso({ data, onSave, isAdmin }) {
                   className={`${darkInputClass} ${!canEdit('numeroProcesso') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {form.numeroProcesso ? (
-                  <span className="shrink-0 flex items-center gap-1 bg-amber-400 text-black font-mono text-xs px-2 py-1">
+                  <span className="shrink-0 flex items-center gap-1 rounded-full bg-amber-300 px-3 py-1 font-mono text-xs text-[#15262b]">
                     <ExternalLink size={11} />
                     SEI
                   </span>
                 ) : (
-                  <span className="shrink-0 bg-amber-100 text-amber-800 font-mono text-xs px-2 py-1">
+                  <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 font-mono text-xs text-[#f8d383]">
                     Pendente
                   </span>
                 )}
@@ -283,8 +282,8 @@ function TabProcesso({ data, onSave, isAdmin }) {
       </div>
 
       {/* Timeline visual */}
-      <div className="border border-[#E0E0E0] p-6">
-        <h3 className="font-syne font-bold text-[#111111] text-sm uppercase mb-5">
+      <div className="border border-[rgba(21,38,43,0.12)] p-6">
+        <h3 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-5">
           Etapas do Processo
         </h3>
         <div className="flex flex-col sm:flex-row gap-0">
@@ -297,10 +296,10 @@ function TabProcesso({ data, onSave, isAdmin }) {
                   onClick={() => toggleStage(idx)}
                   title={`Marcar "${stage}"`}
                   className={`w-8 h-8 flex items-center justify-center font-mono text-xs font-bold transition-colors shrink-0 ${completed
-                    ? 'bg-[#111111] text-white'
+                    ? 'bg-[#173038] text-[#fffdf8]'
                     : idx === Math.min(...TIMELINE_STAGES.map((_, i) => (form.etapas.includes(i) ? 99 : i)).filter((i) => !form.etapas.includes(i)))
-                      ? 'bg-[#CAFF00] text-[#111111]'
-                      : 'bg-gray-100 text-[#555555]'
+                      ? 'bg-[var(--accent)] text-[var(--ink)]'
+                      : 'bg-white/70 text-[var(--ink-soft)]'
                     }`}
                 >
                   {completed ? <Check size={14} /> : idx + 1}
@@ -312,7 +311,7 @@ function TabProcesso({ data, onSave, isAdmin }) {
                   <div className="hidden sm:block flex-1 h-px bg-[#E0E0E0] w-full mt-4" />
                 )}
                 <p
-                  className={`font-mono text-xs text-center mt-2 px-1 leading-tight ${completed ? 'text-[#111111] font-bold' : 'text-[#555555]'
+                  className={`font-mono text-xs text-center mt-2 px-1 leading-tight ${completed ? 'text-[var(--ink)] font-bold' : 'text-[var(--ink-soft)]'
                     }`}
                 >
                   {stage}
@@ -321,7 +320,7 @@ function TabProcesso({ data, onSave, isAdmin }) {
             );
           })}
         </div>
-        <p className="font-dm text-xs text-[#555555] mt-4">
+        <p className="font-dm text-xs text-[var(--ink-soft)] mt-4">
           Clique em uma etapa para marcar como concluída.
         </p>
       </div>
@@ -330,7 +329,7 @@ function TabProcesso({ data, onSave, isAdmin }) {
       <div>
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 bg-[#CAFF00] text-[#111111] font-dm font-medium px-8 py-3 hover:bg-[#b8e600] transition-colors"
+          className="flex items-center gap-2 bg-[var(--accent)] text-[var(--ink)] font-dm font-medium px-8 py-3 hover:bg-[var(--accent-deep)] transition-colors"
         >
           <Check size={16} />
           {saved ? 'Salvo!' : 'Salvar Processo'}
@@ -383,7 +382,7 @@ function TabAndamentos({ items, onAdd, onDelete }) {
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 bg-[#111111] text-white font-dm text-sm px-4 py-2.5 hover:bg-[#333] transition-colors"
+          className="flex items-center gap-2 bg-[#173038] text-[#fffdf8] font-dm text-sm px-4 py-2.5 hover:bg-[#0f2128] transition-colors"
         >
           <Plus size={15} />
           Registrar Andamento
@@ -391,7 +390,7 @@ function TabAndamentos({ items, onAdd, onDelete }) {
         {items.length > 0 && (
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 border border-[#E0E0E0] text-[#111111] font-dm text-sm px-4 py-2.5 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink)] font-dm text-sm px-4 py-2.5 hover:bg-white/72 transition-colors"
           >
             <Download size={15} />
             Exportar Histórico
@@ -401,8 +400,8 @@ function TabAndamentos({ items, onAdd, onDelete }) {
 
       {/* Form */}
       {showForm && (
-        <div className="border border-[#E0E0E0] p-5 bg-gray-50">
-          <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-4">
+        <div className="border border-[rgba(21,38,43,0.12)] p-5 bg-white/72">
+          <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-4">
             Novo Andamento
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -460,14 +459,14 @@ function TabAndamentos({ items, onAdd, onDelete }) {
           <div className="flex gap-3">
             <button
               onClick={() => setShowForm(false)}
-              className="border border-[#E0E0E0] px-4 py-2 font-mono text-xs hover:bg-gray-100"
+              className="border border-[rgba(21,38,43,0.12)] px-4 py-2 font-mono text-xs hover:bg-white/70"
             >
               Cancelar
             </button>
             <button
               onClick={handleAdd}
               disabled={!form.descricao.trim() || !form.autor.trim()}
-              className="bg-[#111111] text-white px-6 py-2 font-mono text-xs hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#173038] text-[#fffdf8] px-6 py-2 font-mono text-xs hover:bg-[#0f2128] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Adicionar
             </button>
@@ -477,18 +476,18 @@ function TabAndamentos({ items, onAdd, onDelete }) {
 
       {/* Table */}
       {items.length === 0 ? (
-        <div className="border border-dashed border-[#E0E0E0] p-10 text-center text-[#555555] font-dm text-sm">
+        <div className="border border-dashed border-[rgba(21,38,43,0.12)] p-10 text-center text-[var(--ink-soft)] font-dm text-sm">
           Nenhum andamento registrado.
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#E0E0E0]">
+              <tr className="border-b border-[rgba(21,38,43,0.12)]">
                 {['DATA', 'TIPO', 'DESCRIÇÃO', 'AUTOR', 'DOCUMENTO', 'AÇÕES'].map((h) => (
                   <th
                     key={h}
-                    className="text-left font-mono text-xs text-[#555555] uppercase pb-3 pr-4"
+                    className="text-left font-mono text-xs text-[var(--ink-soft)] uppercase pb-3 pr-4"
                   >
                     {h}
                   </th>
@@ -497,31 +496,31 @@ function TabAndamentos({ items, onAdd, onDelete }) {
             </thead>
             <tbody>
               {[...items].reverse().map((item) => (
-                <tr key={item.id} className="border-b border-[#E0E0E0] hover:bg-gray-50">
-                  <td className="py-3 pr-4 font-mono text-xs text-[#555555] whitespace-nowrap">
+                <tr key={item.id} className="border-b border-[rgba(21,38,43,0.12)] hover:bg-white/72">
+                  <td className="py-3 pr-4 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">
                     {formatDate(item.data)}
                   </td>
                   <td className="py-3 pr-4">
                     <span
-                      className={`font-mono text-xs px-2 py-0.5 ${ANDAMENTO_BADGE[item.tipo] || 'bg-gray-100 text-gray-700'
+                      className={`font-mono text-xs px-2 py-0.5 ${ANDAMENTO_BADGE[item.tipo] || 'bg-white/70 text-gray-700'
                         }`}
                     >
                       {item.tipo}
                     </span>
                   </td>
-                  <td className="py-3 pr-4 font-dm text-sm text-[#111111] max-w-xs">
+                  <td className="py-3 pr-4 font-dm text-sm text-[var(--ink)] max-w-xs">
                     <span className="line-clamp-2">{item.descricao}</span>
                   </td>
-                  <td className="py-3 pr-4 font-dm text-sm text-[#111111] whitespace-nowrap">
+                  <td className="py-3 pr-4 font-dm text-sm text-[var(--ink)] whitespace-nowrap">
                     {item.autor}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-xs text-[#555555]">
+                  <td className="py-3 pr-4 font-mono text-xs text-[var(--ink-soft)]">
                     {item.numeroDocumento || '—'}
                   </td>
                   <td className="py-3">
                     <button
                       onClick={() => onDelete(item.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      className="text-[var(--ink-soft)] hover:text-red-600 transition-colors"
                       title="Excluir andamento"
                     >
                       <Trash2 size={14} />
@@ -564,7 +563,7 @@ function TabDocumentos({ items, onAdd, onDelete }) {
       <div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 bg-[#111111] text-white font-dm text-sm px-4 py-2.5 hover:bg-[#333] transition-colors"
+          className="flex items-center gap-2 bg-[#173038] text-[#fffdf8] font-dm text-sm px-4 py-2.5 hover:bg-[#0f2128] transition-colors"
         >
           <Plus size={15} />
           Registrar Documento
@@ -572,8 +571,8 @@ function TabDocumentos({ items, onAdd, onDelete }) {
       </div>
 
       {showForm && (
-        <div className="border border-[#E0E0E0] p-5 bg-gray-50">
-          <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-4">
+        <div className="border border-[rgba(21,38,43,0.12)] p-5 bg-white/72">
+          <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-4">
             Novo Documento
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -646,14 +645,14 @@ function TabDocumentos({ items, onAdd, onDelete }) {
           <div className="flex gap-3">
             <button
               onClick={() => setShowForm(false)}
-              className="border border-[#E0E0E0] px-4 py-2 font-mono text-xs hover:bg-gray-100"
+              className="border border-[rgba(21,38,43,0.12)] px-4 py-2 font-mono text-xs hover:bg-white/70"
             >
               Cancelar
             </button>
             <button
               onClick={handleAdd}
               disabled={!form.nome.trim()}
-              className="bg-[#111111] text-white px-6 py-2 font-mono text-xs hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#173038] text-[#fffdf8] px-6 py-2 font-mono text-xs hover:bg-[#0f2128] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Adicionar
             </button>
@@ -662,18 +661,18 @@ function TabDocumentos({ items, onAdd, onDelete }) {
       )}
 
       {items.length === 0 ? (
-        <div className="border border-dashed border-[#E0E0E0] p-10 text-center text-[#555555] font-dm text-sm">
+        <div className="border border-dashed border-[rgba(21,38,43,0.12)] p-10 text-center text-[var(--ink-soft)] font-dm text-sm">
           Nenhum documento registrado.
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#E0E0E0]">
+              <tr className="border-b border-[rgba(21,38,43,0.12)]">
                 {['DOCUMENTO', 'TIPO', 'DATA ENVIO', 'Nº SEI', 'STATUS', 'AÇÕES'].map((h) => (
                   <th
                     key={h}
-                    className="text-left font-mono text-xs text-[#555555] uppercase pb-3 pr-4"
+                    className="text-left font-mono text-xs text-[var(--ink-soft)] uppercase pb-3 pr-4"
                   >
                     {h}
                   </th>
@@ -682,28 +681,28 @@ function TabDocumentos({ items, onAdd, onDelete }) {
             </thead>
             <tbody>
               {[...items].reverse().map((doc) => (
-                <tr key={doc.id} className="border-b border-[#E0E0E0] hover:bg-gray-50">
+                <tr key={doc.id} className="border-b border-[rgba(21,38,43,0.12)] hover:bg-white/72">
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-2">
-                      <FileText size={13} className="text-[#555555] shrink-0" />
-                      <span className="font-dm text-sm text-[#111111]">{doc.nome}</span>
+                      <FileText size={13} className="text-[var(--ink-soft)] shrink-0" />
+                      <span className="font-dm text-sm text-[var(--ink)]">{doc.nome}</span>
                     </div>
                     {doc.observacoes && (
-                      <p className="font-dm text-xs text-[#555555] mt-0.5 ml-5">{doc.observacoes}</p>
+                      <p className="font-dm text-xs text-[var(--ink-soft)] mt-0.5 ml-5">{doc.observacoes}</p>
                     )}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-xs text-[#555555] whitespace-nowrap">
+                  <td className="py-3 pr-4 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">
                     {doc.tipo}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-xs text-[#555555] whitespace-nowrap">
+                  <td className="py-3 pr-4 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">
                     {formatDate(doc.dataEnvio)}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-xs text-[#555555]">
+                  <td className="py-3 pr-4 font-mono text-xs text-[var(--ink-soft)]">
                     {doc.numeroSEI || '—'}
                   </td>
                   <td className="py-3 pr-4">
                     <span
-                      className={`font-mono text-xs px-2 py-0.5 ${DOC_STATUS_BADGE[doc.status] || 'bg-gray-100 text-gray-700'
+                      className={`font-mono text-xs px-2 py-0.5 ${DOC_STATUS_BADGE[doc.status] || 'bg-white/70 text-gray-700'
                         }`}
                     >
                       {doc.status}
@@ -712,7 +711,7 @@ function TabDocumentos({ items, onAdd, onDelete }) {
                   <td className="py-3">
                     <button
                       onClick={() => onDelete(doc.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      className="text-[var(--ink-soft)] hover:text-red-600 transition-colors"
                       title="Excluir documento"
                     >
                       <Trash2 size={14} />
@@ -761,17 +760,17 @@ function DeadlineCard({ title, base, deadlineDate, prazoInfo, cumprimentoKey, cu
     : null;
 
   return (
-    <div className={`border p-5 ${overdue && !cumprido ? 'border-red-300' : 'border-[#E0E0E0]'}`}>
+    <div className={`border p-5 ${overdue && !cumprido ? 'border-red-300' : 'border-[rgba(21,38,43,0.12)]'}`}>
       <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
-        <h4 className="font-syne font-bold text-[#111111] text-sm uppercase">{title}</h4>
+        <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase">{title}</h4>
         {badgeEl}
       </div>
-      <p className="font-mono text-xs text-[#555555] mb-3">{base}</p>
+      <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">{base}</p>
 
       {deadlineFmt && (
-        <p className="font-mono text-xs text-[#555555] mb-3">
+        <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">
           Prazo:{' '}
-          <span className={`font-bold ${overdue && !cumprido ? 'text-red-600' : 'text-[#111111]'}`}>
+          <span className={`font-bold ${overdue && !cumprido ? 'text-red-600' : 'text-[var(--ink)]'}`}>
             {deadlineFmt}
             {overdue && !cumprido && (
               <span className="ml-1 text-red-600">
@@ -813,7 +812,7 @@ function DeadlineCard({ title, base, deadlineDate, prazoInfo, cumprimentoKey, cu
 
       <button
         onClick={handleSave}
-        className="mt-4 flex items-center gap-2 bg-[#111111] text-white font-mono text-xs px-5 py-2 hover:bg-[#333] transition-colors"
+        className="mt-4 flex items-center gap-2 bg-[#173038] text-[#fffdf8] font-mono text-xs px-5 py-2 hover:bg-[#0f2128] transition-colors"
       >
         <Check size={13} />
         {saved ? 'Salvo!' : 'Salvar'}
@@ -866,11 +865,11 @@ function TabPrazos({ effectiveClientId, anpdData, onUpdatePrazos }) {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[#111111] p-4 flex flex-wrap items-center gap-4">
-        <Scale size={16} className="text-[#CAFF00]" />
+      <div className="bg-[#173038] p-4 flex flex-wrap items-center gap-4">
+        <Scale size={16} className="text-[var(--accent)]" />
         <div>
-          <p className="font-mono text-xs text-gray-400 uppercase">Data/Hora de Conhecimento</p>
-          <p className="font-dm text-sm text-white">
+          <p className="font-mono text-xs text-[var(--ink-soft)] uppercase">Data/Hora de Conhecimento</p>
+          <p className="font-dm text-sm text-[#fffdf8]">
             {new Date(info.dataConhecimento).toLocaleString('pt-BR')}
           </p>
         </div>
@@ -1000,8 +999,8 @@ Equipe de Resposta a Incidentes`;
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Coluna Esquerda: Formulário */}
       <div className="space-y-6">
-        <div className="bg-[#111111] p-6 space-y-5">
-          <h2 className="font-syne font-bold text-white text-base uppercase mb-2">Estrutura da Comunicação (Art. 9º)</h2>
+        <div className="bg-[#173038] p-6 space-y-5">
+          <h2 className="font-syne font-bold text-[#fffdf8] text-base uppercase mb-2">Estrutura da Comunicação (Art. 9º)</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Data do Conhecimento *" dark>
@@ -1014,16 +1013,16 @@ Equipe de Resposta a Incidentes`;
             </Field>
 
             <div className="flex flex-col justify-end">
-              <div className="bg-white/5 border border-white/10 p-3">
+              <div className="bg-white/70 border border-[rgba(21,38,43,0.08)] p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-[10px] text-gray-400 uppercase">Prazo Estimado</span>
+                  <span className="font-mono text-[10px] text-[var(--ink-soft)] uppercase">Prazo Estimado</span>
                   <span className={`font-mono text-[10px] px-1.5 py-0.5 ${form.agentePequenoPorte ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
                     {form.agentePequenoPorte ? 'Agente Pequeno Porte' : 'Padrão'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#CAFF00] font-syne font-bold text-xl">{deadlineFmt}</span>
-                  <span className="text-gray-500 font-dm text-[10px]">({deadlineDays} dias úteis)</span>
+                  <span className="text-[var(--accent)] font-syne font-bold text-xl">{deadlineFmt}</span>
+                  <span className="text-[var(--ink-soft)] font-dm text-[10px]">({deadlineDays} dias úteis)</span>
                 </div>
               </div>
             </div>
@@ -1034,7 +1033,7 @@ Equipe de Resposta a Incidentes`;
                 id="agentePequenoPorte"
                 checked={form.agentePequenoPorte}
                 onChange={e => set('agentePequenoPorte', e.target.checked)}
-                className="w-4 h-4 accent-[#CAFF00]"
+                className="w-4 h-4 accent-[#d6ff63]"
               />
               <label htmlFor="agentePequenoPorte" className="font-dm text-xs text-gray-300 cursor-pointer">
                 Agente de Pequeno Porte (Dobra o prazo p/ 6 dias úteis)
@@ -1088,12 +1087,12 @@ Equipe de Resposta a Incidentes`;
           </Field>
 
           {/* Comunicação fora do prazo */}
-          <div className="space-y-3 pt-2 border-t border-white/10">
+          <div className="space-y-3 pt-2 border-t border-[rgba(21,38,43,0.08)]">
             <div className="flex items-center justify-between">
-              <label className="font-mono text-xs font-medium uppercase text-[#CAFF00]">Comunicação fora do prazo?</label>
+              <label className="font-mono text-xs font-medium uppercase text-[var(--accent)]">Comunicação fora do prazo?</label>
               <button
                 onClick={() => set('comunicacaoForaPrazo', !form.comunicacaoForaPrazo)}
-                className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.comunicacaoForaPrazo ? 'bg-[#CAFF00]' : 'bg-gray-700'}`}
+                className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.comunicacaoForaPrazo ? 'bg-[var(--accent)]' : 'bg-gray-700'}`}
               >
                 <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${form.comunicacaoForaPrazo ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
@@ -1168,26 +1167,26 @@ Equipe de Resposta a Incidentes`;
               placeholder="Complemento livre à comunicação..."
               className={darkInputClass}
             />
-            <p className="text-right font-mono text-[10px] text-gray-500 mt-1">
+            <p className="text-right font-mono text-[10px] text-[var(--ink-soft)] mt-1">
               {form.observacoesAdicionais.length}/500
             </p>
           </Field>
         </div>
 
         {/* §§ Adicionais */}
-        <div className="border border-[#E0E0E0] p-6 space-y-6">
-          <h3 className="font-syne font-bold text-[#111111] text-sm uppercase">Configurações de Envio (§§ Art. 9º)</h3>
+        <div className="border border-[rgba(21,38,43,0.12)] p-6 space-y-6">
+          <h3 className="font-syne font-bold text-[var(--ink)] text-sm uppercase">Configurações de Envio (§§ Art. 9º)</h3>
 
           <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-100 italic">
+            <div className="flex items-start gap-3 p-3 bg-white/72 border border-gray-100 italic">
               <input
                 type="checkbox"
                 id="linguagemSimples"
                 checked={form.checklistLinguagemSimples}
                 onChange={e => set('checklistLinguagemSimples', e.target.checked)}
-                className="mt-1 w-4 h-4 accent-[#111111]"
+                className="mt-1 w-4 h-4 accent-[#173038]"
               />
-              <label htmlFor="linguagemSimples" className="font-dm text-xs text-[#111111] cursor-pointer">
+              <label htmlFor="linguagemSimples" className="font-dm text-xs text-[var(--ink)] cursor-pointer">
                 Declaro que a comunicação utiliza <strong>linguagem simples</strong> e de fácil entendimento aos titulares conforme § 1º do art. 9º.
               </label>
             </div>
@@ -1205,7 +1204,7 @@ Equipe de Resposta a Incidentes`;
 
             {form.formaComunicacao === 'Direta e individualizada' ? (
               <div className="space-y-3">
-                <label className="block font-mono text-[10px] font-bold text-gray-400 uppercase">Meios Utilizados</label>
+                <label className="block font-mono text-[10px] font-bold text-[var(--ink-soft)] uppercase">Meios Utilizados</label>
                 <div className="flex flex-wrap gap-4">
                   {['E-mail', 'SMS', 'Mensagem (App)', 'Telefone', 'Carta', 'Outro'].map(m => (
                     <label key={m} className="flex items-center gap-2 font-dm text-xs cursor-pointer">
@@ -1218,7 +1217,7 @@ Equipe de Resposta a Incidentes`;
                             : form.meiosDiretos.filter(item => item !== m);
                           set('meiosDiretos', newMeios);
                         }}
-                        className="w-3.5 h-3.5 accent-[#111111]"
+                        className="w-3.5 h-3.5 accent-[#173038]"
                       />
                       {m}
                     </label>
@@ -1228,7 +1227,7 @@ Equipe de Resposta a Incidentes`;
             ) : (
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <label className="block font-mono text-[10px] font-bold text-gray-400 uppercase">Canais de Divulgação</label>
+                  <label className="block font-mono text-[10px] font-bold text-[var(--ink-soft)] uppercase">Canais de Divulgação</label>
                   <div className="flex flex-wrap gap-4">
                     {['Site oficial', 'Mídias Sociais', 'App Próprio', 'Canais de Atendimento', 'Aviso em Loja', 'Outro'].map(m => (
                       <label key={m} className="flex items-center gap-2 font-dm text-xs cursor-pointer">
@@ -1241,7 +1240,7 @@ Equipe de Resposta a Incidentes`;
                               : form.meiosDivulgacao.filter(item => item !== m);
                             set('meiosDivulgacao', newMeios);
                           }}
-                          className="w-3.5 h-3.5 accent-[#111111]"
+                          className="w-3.5 h-3.5 accent-[#173038]"
                         />
                         {m}
                       </label>
@@ -1261,15 +1260,15 @@ Equipe de Resposta a Incidentes`;
             )}
           </div>
 
-          <div className="pt-6 border-t border-[#E0E0E0] space-y-4">
-            <h4 className="font-mono text-[10px] font-bold text-gray-400 uppercase">Declaração de Comunicação Realizada (§ 4º)</h4>
+          <div className="pt-6 border-t border-[rgba(21,38,43,0.12)] space-y-4">
+            <h4 className="font-mono text-[10px] font-bold text-[var(--ink-soft)] uppercase">Declaração de Comunicação Realizada (§ 4º)</h4>
             <div className="flex items-center gap-10">
               <label className="flex items-center gap-2 font-dm text-sm font-bold cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.declaracaoRealizada}
                   onChange={e => set('declaracaoRealizada', e.target.checked)}
-                  className="w-4 h-4 accent-[#111111]"
+                  className="w-4 h-4 accent-[#173038]"
                 />
                 Comunicação já realizada
               </label>
@@ -1290,7 +1289,7 @@ Equipe de Resposta a Incidentes`;
                   value={form.meiosUtilizadosResumo}
                   onChange={e => set('meiosUtilizadosResumo', e.target.value)}
                   rows={2}
-                  className={`${inputClass} bg-gray-50`}
+                  className={`${inputClass} bg-white/72`}
                 />
               </Field>
             )}
@@ -1311,10 +1310,10 @@ Equipe de Resposta a Incidentes`;
       {/* Coluna Direita: Preview Sticky */}
       <div className="relative">
         <div className="sticky top-8 space-y-6">
-          <div className="bg-gray-100 p-8 border border-[#E0E0E0] min-h-[600px] flex flex-col">
+          <div className="bg-white/70 p-8 border border-[rgba(21,38,43,0.12)] min-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-8 border-b border-gray-300 pb-4">
-              <h3 className="font-syne font-extrabold text-[#111111] text-base uppercase">Pré-visualização do Texto</h3>
-              <div className="flex items-center gap-1.5 bg-[#111111] text-white px-2 py-0.5 rounded-sm">
+              <h3 className="font-syne font-extrabold text-[var(--ink)] text-base uppercase">Pré-visualização do Texto</h3>
+              <div className="flex items-center gap-1.5 bg-[#173038] text-[#fffdf8] px-2 py-0.5 rounded-sm">
                 <FileText size={10} />
                 <span className="font-mono text-[9px] uppercase tracking-wider">Template travado</span>
               </div>
@@ -1327,13 +1326,13 @@ Equipe de Resposta a Incidentes`;
             <div className="mt-8 pt-6 border-t border-gray-300 flex flex-wrap gap-3">
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-[#111111] text-white font-dm font-medium px-6 py-3 text-sm hover:bg-[#333] transition-colors"
+                className="flex items-center gap-2 bg-[#173038] text-[#fffdf8] font-dm font-medium px-6 py-3 text-sm hover:bg-[#0f2128] transition-colors"
               >
                 <Check size={16} />
                 {saved ? 'Salvo no Sistema' : 'Salvar Registro'}
               </button>
               <button
-                className="flex items-center gap-2 border border-[#111111] text-[#111111] font-dm font-medium px-6 py-3 text-sm hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 border border-[rgba(21,38,43,0.16)] text-[var(--ink)] font-dm font-medium px-6 py-3 text-sm hover:bg-white/72 transition-colors"
                 onClick={() => {
                   const blob = new Blob([generateTemplate()], { type: 'text/plain' });
                   const url = URL.createObjectURL(blob);
@@ -1432,26 +1431,26 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
       adminClientName={adminClientName}
       onAdminBack={onAdminBack}
     >
-      <div className="p-6 md:p-10">
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
         {/* Page header */}
         <div className="mb-6">
-          <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase">
+          <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase">
             Acompanhamento ANPD
           </h1>
-          <p className="text-[#555555] font-dm text-sm mt-1">
+          <p className="text-[var(--ink-soft)] font-dm text-sm mt-1">
             Gestão do processo junto à Autoridade Nacional de Proteção de Dados
           </p>
         </div>
 
         {/* Tab nav */}
-        <div className="flex flex-wrap gap-0 border-b border-[#E0E0E0] mb-8">
+        <div className="mb-8 flex flex-wrap gap-2 rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/60 p-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative ${activeTab === tab.id
-                ? 'text-[#111111] border-b-2 border-[#111111] -mb-px'
-                : 'text-[#555555] hover:text-[#111111]'
+              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative px-4 py-2.5 ${activeTab === tab.id
+                ? 'text-[var(--ink)] rounded-full bg-[#173038] text-[#fffdf8]'
+                : 'rounded-full text-[var(--ink-soft)] hover:bg-white hover:text-[var(--ink)]'
                 }`}
             >
               {tab.label}
@@ -1486,12 +1485,6 @@ export default function ANPD({ clientId: propClientId, isAdmin = false, adminCli
             effectiveClientId={effectiveClientId}
             anpdData={anpdData}
             onUpdatePrazos={handleUpdatePrazos}
-          />
-        )}
-        {activeTab === 'comunicacao_titulares' && (
-          <TabComunicacaoTitulares
-            data={anpdData.comunicacaoTitulares || {}}
-            onSave={handleSaveComunicacaoTitulares}
           />
         )}
       </div>

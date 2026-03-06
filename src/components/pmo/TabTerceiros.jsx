@@ -4,7 +4,7 @@ import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 
 const STATUS_OPTS = ['Aguardando', 'Notificado', 'Em Análise', 'Ação em Curso', 'Concluído', 'Inadimplente'];
 const STATUS_STYLE = {
-  'Aguardando': 'bg-gray-100 text-gray-700 border-gray-200',
+  'Aguardando': 'bg-white/70 text-gray-700 border-gray-200',
   'Notificado': 'bg-blue-50 text-blue-700 border-blue-200',
   'Em Análise': 'bg-amber-50 text-amber-700 border-amber-200',
   'Ação em Curso': 'bg-purple-50 text-purple-700 border-purple-200',
@@ -53,7 +53,7 @@ export default function TabTerceiros({ effectiveClientId }) {
     return { elapsed: elapsed.toFixed(1), limit, overdue: elapsed > limit };
   };
 
-  const inputClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full";
+  const inputClass = "border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] w-full";
 
   return (
     <div>
@@ -65,48 +65,48 @@ export default function TabTerceiros({ effectiveClientId }) {
       </div>
 
       <div className="flex justify-end mb-4">
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 bg-[#111111] text-white px-4 py-2 font-mono text-xs hover:bg-[#333]">
+        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 bg-[#173038] text-[#fffdf8] px-4 py-2 font-mono text-xs hover:bg-[#0f2128]">
           <Plus size={13} /> Adicionar Terceiro
         </button>
       </div>
 
       {showForm && (
-        <div className="border border-[#E0E0E0] p-5 mb-5 bg-gray-50">
+        <div className="border border-[rgba(21,38,43,0.12)] p-5 mb-5 bg-white/72">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Parceiro *</label><input type="text" value={form.parceiro} onChange={e => setForm(f => ({ ...f, parceiro: e.target.value }))} className={inputClass} /></div>
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">POC</label><input type="text" value={form.poc} onChange={e => setForm(f => ({ ...f, poc: e.target.value }))} className={inputClass} /></div>
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Contato</label><input type="text" value={form.contato} onChange={e => setForm(f => ({ ...f, contato: e.target.value }))} className={inputClass} /></div>
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Hora Notificação</label><input type="datetime-local" value={form.horaNotificacao} onChange={e => setForm(f => ({ ...f, horaNotificacao: e.target.value }))} className={inputClass} /></div>
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Protocolo SLA (horas)</label><input type="number" value={form.protocoloSLA} onChange={e => setForm(f => ({ ...f, protocoloSLA: e.target.value }))} className={inputClass} placeholder="Ex: 1" /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Parceiro *</label><input type="text" value={form.parceiro} onChange={e => setForm(f => ({ ...f, parceiro: e.target.value }))} className={inputClass} /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">POC</label><input type="text" value={form.poc} onChange={e => setForm(f => ({ ...f, poc: e.target.value }))} className={inputClass} /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Contato</label><input type="text" value={form.contato} onChange={e => setForm(f => ({ ...f, contato: e.target.value }))} className={inputClass} /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Hora Notificação</label><input type="datetime-local" value={form.horaNotificacao} onChange={e => setForm(f => ({ ...f, horaNotificacao: e.target.value }))} className={inputClass} /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Protocolo SLA (horas)</label><input type="number" value={form.protocoloSLA} onChange={e => setForm(f => ({ ...f, protocoloSLA: e.target.value }))} className={inputClass} placeholder="Ex: 1" /></div>
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Status</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Status</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={inputClass}>
                 {STATUS_OPTS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Descrição da Ação</label><input type="text" value={form.descricaoAcao} onChange={e => setForm(f => ({ ...f, descricaoAcao: e.target.value }))} className={inputClass} /></div>
-            <div><label className="block font-mono text-xs uppercase text-[#555555] mb-1">Risco</label><input type="text" value={form.risco} onChange={e => setForm(f => ({ ...f, risco: e.target.value }))} className={inputClass} /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Descrição da Ação</label><input type="text" value={form.descricaoAcao} onChange={e => setForm(f => ({ ...f, descricaoAcao: e.target.value }))} className={inputClass} /></div>
+            <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Risco</label><input type="text" value={form.risco} onChange={e => setForm(f => ({ ...f, risco: e.target.value }))} className={inputClass} /></div>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => setShowForm(false)} className="border border-[#E0E0E0] px-4 py-2 font-mono text-xs">Cancelar</button>
-            <button onClick={add} className="bg-[#111111] text-white px-6 py-2 font-mono text-xs hover:bg-[#333]">Adicionar</button>
+            <button onClick={() => setShowForm(false)} className="border border-[rgba(21,38,43,0.12)] px-4 py-2 font-mono text-xs">Cancelar</button>
+            <button onClick={add} className="bg-[#173038] text-[#fffdf8] px-6 py-2 font-mono text-xs hover:bg-[#0f2128]">Adicionar</button>
           </div>
         </div>
       )}
 
       <div className="space-y-3">
         {terceiros.length === 0 && (
-          <div className="border border-[#E0E0E0] p-8 text-center text-gray-400 font-dm text-sm">Nenhum terceiro registrado</div>
+          <div className="border border-[rgba(21,38,43,0.12)] p-8 text-center text-[var(--ink-soft)] font-dm text-sm">Nenhum terceiro registrado</div>
         )}
         {terceiros.map(t => {
           const sla = getSLAStatus(t);
           const isInad = t.status === 'Inadimplente';
           return (
-            <div key={t.id} className={`border p-4 ${isInad ? 'border-red-300 bg-red-50/40' : 'border-[#E0E0E0]'}`}>
+            <div key={t.id} className={`border p-4 ${isInad ? 'border-red-300 bg-red-50/40' : 'border-[rgba(21,38,43,0.12)]'}`}>
               <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
-                  <div className="font-syne font-bold text-[#111111] text-sm">{t.parceiro}</div>
-                  {t.poc && <div className="font-dm text-xs text-[#555555]">POC: {t.poc} · {t.contato}</div>}
+                  <div className="font-syne font-bold text-[var(--ink)] text-sm">{t.parceiro}</div>
+                  {t.poc && <div className="font-dm text-xs text-[var(--ink-soft)]">POC: {t.poc} · {t.contato}</div>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <select
@@ -116,7 +116,7 @@ export default function TabTerceiros({ effectiveClientId }) {
                   >
                     {STATUS_OPTS.map(s => <option key={s}>{s}</option>)}
                   </select>
-                  <button onClick={() => del(t.id)} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                  <button onClick={() => del(t.id)} className="text-[var(--ink-soft)] hover:text-red-600"><Trash2 size={13} /></button>
                 </div>
               </div>
               {sla && (
@@ -125,7 +125,7 @@ export default function TabTerceiros({ effectiveClientId }) {
                   SLA: {sla.elapsed}h / {sla.limit}h {sla.overdue ? '— INADIMPLENTE' : 'decorridos'}
                 </div>
               )}
-              {t.descricaoAcao && <p className="font-dm text-xs text-[#555555] mt-1">{t.descricaoAcao}</p>}
+              {t.descricaoAcao && <p className="font-dm text-xs text-[var(--ink-soft)] mt-1">{t.descricaoAcao}</p>}
               {t.risco && <p className="font-mono text-xs text-amber-600 mt-0.5">Risco: {t.risco}</p>}
             </div>
           );

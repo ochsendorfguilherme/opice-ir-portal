@@ -54,24 +54,27 @@ export function AuthProvider({ children }) {
   };
 
   const verifyMFA = (code) => {
-    if (!code) return { success: false, error: 'Código obrigatório' };
+    if (!code) return { success: false, error: 'Codigo obrigatorio' };
     if (pendingUser) {
       const safe = pendingUser;
+      const accessTimestamp = new Date().toISOString();
 
-      // Update last access
       const allUsers = getStorage(KEYS.users(), USERS);
       const updatedUsers = allUsers.map(u =>
-        u.email === safe.email ? { ...u, lastAccess: new Date().toISOString() } : u
+        u.email === safe.email ? { ...u, lastAccess: accessTimestamp } : u
       );
       setStorage(KEYS.users(), updatedUsers);
 
-      setUser(safe);
-      localStorage.setItem('opice_ir_session', JSON.stringify(safe));
+      const updatedUser = updatedUsers.find(u => u.email === safe.email) || { ...safe, lastAccess: accessTimestamp };
+      const { password: _ignoredPassword, ...safeUpdatedUser } = updatedUser;
 
-      logAction('LOGIN', safe, safe, 'Login realizado via MFA');
+      setUser(safeUpdatedUser);
+      localStorage.setItem('opice_ir_session', JSON.stringify(safeUpdatedUser));
+
+      logAction('LOGIN', safeUpdatedUser, safeUpdatedUser, 'Login realizado via MFA');
 
       setPendingUser(null);
-      return { success: true, user: safe };
+      return { success: true, user: safeUpdatedUser };
     }
     return { success: false, error: 'Sessão expirada' };
   };
@@ -105,11 +108,14 @@ export function AuthProvider({ children }) {
 
     setStorage(KEYS.users(), updatedUsers);
 
-    const updatedUser = { ...user, password: newPassword, forcePasswordChange: false };
-    setUser(updatedUser);
-    localStorage.setItem('opice_ir_session', JSON.stringify(updatedUser));
+    const updatedAccount = updatedUsers.find(u => u.email === user.email);
+    if (!updatedAccount) return false;
 
-    logAction('EDITADO', updatedUser, updatedUser, 'Senha alterada obrigatoriamente no primeiro acesso');
+    const { password: _ignoredPassword, ...safeUpdatedUser } = updatedAccount;
+    setUser(safeUpdatedUser);
+    localStorage.setItem('opice_ir_session', JSON.stringify(safeUpdatedUser));
+
+    logAction('EDITADO', safeUpdatedUser, safeUpdatedUser, 'Senha alterada obrigatoriamente no primeiro acesso');
     return true;
   };
 

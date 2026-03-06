@@ -44,33 +44,33 @@ export default function PMO({ clientId: propClientId, isAdmin = false, adminClie
 
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-      <div className="p-6 md:p-10">
-        <div className="mb-6">
-          <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase">
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase">
             IR-PMO
           </h1>
-          <p className="text-[#555555] font-dm text-sm mt-1">Incident Response Project Management Office</p>
+          <p className="text-[var(--ink-soft)] font-dm text-sm mt-1">Incident Response Project Management Office</p>
         </div>
 
         {/* Tab nav */}
-        <div className="flex flex-wrap gap-0 border-b border-[#E0E0E0] mb-8">
+        <div className="mb-8 app-panel rounded-[28px] p-2 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative ${activeTab === tab.id
-                  ? 'text-[#111111] border-b-2 border-[#111111] -mb-px'
-                  : 'text-[#555555] hover:text-[#111111]'
+              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative px-4 py-2.5 ${activeTab === tab.id
+                  ? 'rounded-full bg-[#173038] text-white shadow-[0_12px_24px_rgba(23,48,56,0.22)]'
+                  : 'rounded-full text-[var(--ink-soft)] hover:bg-white hover:text-[var(--ink)]'
                 }`}
             >
               {tab.label}
               {tab.id === 'matriz' && alertCount > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center bg-red-600 text-white font-mono text-xs w-4 h-4 animate-pulse-red">
+                <span className="ml-1.5 inline-flex items-center justify-center bg-red-600 text-[#fffdf8] font-mono text-xs w-4 h-4 animate-pulse-red">
                   {alertCount}
                 </span>
               )}
               {tab.id === 'clevel' && (
-                <span className={`ml-1.5 inline-block w-2 h-2 rounded-full ${getBriefingBadge()}`} title="Status de preenchimento do Briefing" />
+                <span className={`ml-1.5 inline-block h-2 w-2 rounded-full ${getBriefingBadge()}`} title="Status de preenchimento do Briefing" />
               )}
             </button>
           ))}

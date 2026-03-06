@@ -41,12 +41,12 @@ function getInitial(name) {
 
 function ParticipantChip({ name, onRemove }) {
   return (
-    <span className="inline-flex items-center gap-1 bg-[#111111] text-[#CAFF00] font-mono text-xs px-2 py-1">
+    <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(183,236,35,0.28)] bg-[rgba(214,255,99,0.12)] px-2.5 py-1 font-mono text-[10px] uppercase text-[#6e8617]">
       {name}
       <button
         type="button"
         onClick={onRemove}
-        className="hover:text-white transition-colors"
+        className="hover:text-[#fffdf8] transition-colors"
         aria-label={`Remover ${name}`}
       >
         <X size={10} />
@@ -59,7 +59,7 @@ function ParticipantChip({ name, onRemove }) {
 
 function InitialChip({ initial }) {
   return (
-    <span className="inline-flex items-center justify-center w-6 h-6 bg-[#E0E0E0] text-[#111111] font-mono text-xs font-bold uppercase">
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(23,48,56,0.12)] text-[var(--ink)] font-mono text-xs font-bold uppercase">
       {initial}
     </span>
   );
@@ -165,16 +165,16 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/45"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white w-full max-w-lg mx-4 shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="app-panel w-full max-w-lg mx-4 shadow-[0_28px_56px_rgba(21,38,43,0.22)] flex flex-col max-h-[90vh] rounded-[30px] overflow-hidden">
         {/* Header */}
-        <div className="bg-[#111111] px-6 py-4 flex items-center justify-between">
-          <h2 className="font-syne font-extrabold text-[#CAFF00] text-lg uppercase">
+        <div className="soft-ribbon px-6 py-4 flex items-center justify-between rounded-t-[28px]">
+          <h2 className="font-syne font-extrabold text-[var(--accent)] text-lg uppercase">
             Nova Reunião
           </h2>
-          <button onClick={onClose} className="text-[#E0E0E0] hover:text-white">
+          <button onClick={onClose} className="text-[#E0E0E0] hover:text-[#fffdf8]">
             <X size={18} />
           </button>
         </div>
@@ -183,7 +183,7 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
           {/* Título */}
           <div>
-            <label className="block font-mono text-xs uppercase font-medium text-[#111111] mb-1">
+            <label className="block font-mono text-xs uppercase font-medium text-[var(--ink)] mb-1">
               Título <span className="text-red-500">*</span>
             </label>
             <input
@@ -191,7 +191,7 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
               value={form.titulo}
               onChange={e => handleChange('titulo', e.target.value)}
               placeholder="Ex.: Reunião de Status — Dia 1"
-              className={`w-full border px-3 py-2 font-dm text-sm text-[#111111] bg-white outline-none focus:border-[#111111] transition-colors ${errors.titulo ? 'border-red-500' : 'border-[#E0E0E0]'}`}
+              className={`w-full border px-3 py-2 font-dm text-sm text-[var(--ink)] bg-white outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors ${errors.titulo ? 'border-red-500' : 'border-[rgba(21,38,43,0.12)]'}`}
             />
             {errors.titulo && <p className="font-mono text-xs text-red-500 mt-1">{errors.titulo}</p>}
           </div>
@@ -199,45 +199,45 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
           {/* Data + Horário */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-mono text-xs uppercase font-medium text-[#111111] mb-1">
+              <label className="block font-mono text-xs uppercase font-medium text-[var(--ink)] mb-1">
                 Data <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={form.data}
                 onChange={e => handleChange('data', e.target.value)}
-                className={`w-full border px-3 py-2 font-dm text-sm text-[#111111] bg-white outline-none focus:border-[#111111] transition-colors ${errors.data ? 'border-red-500' : 'border-[#E0E0E0]'}`}
+                className={`w-full border px-3 py-2 font-dm text-sm text-[var(--ink)] bg-white outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors ${errors.data ? 'border-red-500' : 'border-[rgba(21,38,43,0.12)]'}`}
               />
             </div>
             <div>
-              <label className="block font-mono text-xs uppercase font-medium text-[#111111] mb-1">
+              <label className="block font-mono text-xs uppercase font-medium text-[var(--ink)] mb-1">
                 Horário de Início <span className="text-red-500">*</span>
               </label>
               <input
                 type="time"
                 value={form.horarioInicio}
                 onChange={e => handleChange('horarioInicio', e.target.value)}
-                className={`w-full border px-3 py-2 font-dm text-sm text-[#111111] bg-white outline-none focus:border-[#111111] transition-colors ${errors.horarioInicio ? 'border-red-500' : 'border-[#E0E0E0]'}`}
+                className={`w-full border px-3 py-2 font-dm text-sm text-[var(--ink)] bg-white outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors ${errors.horarioInicio ? 'border-red-500' : 'border-[rgba(21,38,43,0.12)]'}`}
               />
             </div>
           </div>
 
           {/* Nome do Cliente */}
           <div>
-            <label className="block font-mono text-xs uppercase font-medium text-[#111111] mb-1">
+            <label className="block font-mono text-xs uppercase font-medium text-[var(--ink)] mb-1">
               Nome do Cliente
             </label>
             <input
               type="text"
               value={form.nomeCliente}
               onChange={e => handleChange('nomeCliente', e.target.value)}
-              className="w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] bg-white outline-none focus:border-[#111111] transition-colors"
+              className="w-full border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] bg-white outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors"
             />
           </div>
 
           {/* Participantes */}
           <div>
-            <label className="block font-mono text-xs uppercase font-medium text-[#111111] mb-1">
+            <label className="block font-mono text-xs uppercase font-medium text-[var(--ink)] mb-1">
               Participantes
             </label>
             <div className="flex gap-2">
@@ -247,12 +247,12 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
                 onChange={e => setParticipantInput(e.target.value)}
                 onKeyDown={handleParticipantKeyDown}
                 placeholder="Nome do participante"
-                className="flex-1 border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] bg-white outline-none focus:border-[#111111] transition-colors"
+                className="flex-1 border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] bg-white outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors"
               />
               <button
                 type="button"
                 onClick={addParticipant}
-                className="bg-[#111111] text-white font-mono text-xs px-3 py-2 hover:bg-[#333] transition-colors"
+                className="bg-[#173038] text-[#fffdf8] font-mono text-xs px-3 py-2 hover:bg-[#0f2128] transition-colors"
               >
                 Adicionar
               </button>
@@ -272,7 +272,7 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
 
           {/* Pauta */}
           <div>
-            <label className="block font-mono text-xs uppercase font-medium text-[#111111] mb-1">
+            <label className="block font-mono text-xs uppercase font-medium text-[var(--ink)] mb-1">
               Pauta / Objetivo
             </label>
             <textarea
@@ -280,24 +280,24 @@ function NovaReuniaoModal({ clientId, onClose, onCreated }) {
               onChange={e => handleChange('pauta', e.target.value)}
               rows={3}
               placeholder="Descreva o objetivo desta reunião..."
-              className="w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm text-[#111111] bg-white outline-none focus:border-[#111111] transition-colors resize-none"
+              className="w-full border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm text-[var(--ink)] bg-white outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors resize-none"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E0E0E0] flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-[rgba(21,38,43,0.12)] flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] text-[#555555] hover:border-[#111111] hover:text-[#111111] transition-colors"
+            className="font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] hover:border-[rgba(21,38,43,0.16)] hover:text-[var(--ink)] transition-colors"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="font-mono text-xs uppercase px-5 py-2 bg-[#111111] text-[#CAFF00] hover:bg-[#333] transition-colors"
+            className="font-mono text-xs uppercase px-5 py-2 bg-[#173038] text-[var(--accent)] hover:bg-[#0f2128] transition-colors"
           >
             Iniciar Reunião →
           </button>
@@ -315,31 +315,31 @@ function MeetingCard({ meeting, onOpen, onOpenDelete }) {
   const overflow = meeting.participantes.length - maxChips;
 
   return (
-    <div className="border border-[#E0E0E0] bg-white hover:border-[#111111] transition-colors flex flex-col">
+    <div className="app-panel rounded-[28px] hover:-translate-y-0.5 transition-all shadow-[0_18px_36px_rgba(21,38,43,0.06)] flex flex-col overflow-hidden">
       {/* Top accent */}
       <div className={`h-0.5 w-full ${meeting.status === 'Em andamento' ? 'bg-red-500' : 'bg-green-500'}`} />
 
       <div className="p-5 flex flex-col gap-3 flex-1">
         {/* ID + Status */}
         <div className="flex items-center justify-between">
-          <span className="font-mono text-xs text-[#555555]">{meeting.id}</span>
+          <span className="font-mono text-xs text-[var(--ink-soft)]">{meeting.id}</span>
           <StatusBadge status={meeting.status} />
         </div>
 
         {/* Title */}
-        <h3 className="font-syne font-extrabold text-[#111111] text-base uppercase leading-tight">
+        <h3 className="font-syne font-extrabold text-[var(--ink)] text-base uppercase leading-tight">
           {meeting.titulo}
         </h3>
 
         {/* Date / Time */}
-        <div className="font-mono text-xs text-[#555555]">
+        <div className="font-mono text-xs text-[var(--ink-soft)]">
           {fmtDate(meeting.data)} &nbsp;·&nbsp; {meeting.horarioInicio}
           {meeting.horarioFim ? ` às ${meeting.horarioFim}` : ''}
         </div>
 
         {/* Client name */}
         {meeting.nomeCliente && (
-          <div className="font-dm text-xs text-[#555555] truncate">{meeting.nomeCliente}</div>
+          <div className="font-dm text-xs text-[var(--ink-soft)] truncate">{meeting.nomeCliente}</div>
         )}
 
         {/* Participant initials */}
@@ -349,9 +349,9 @@ function MeetingCard({ meeting, onOpen, onOpenDelete }) {
               <InitialChip key={i} initial={getInitial(p)} />
             ))}
             {overflow > 0 && (
-              <span className="font-mono text-xs text-[#555555]">+{overflow}</span>
+              <span className="font-mono text-xs text-[var(--ink-soft)]">+{overflow}</span>
             )}
-            <span className="font-mono text-xs text-[#555555] ml-1">
+            <span className="font-mono text-xs text-[var(--ink-soft)] ml-1">
               {meeting.participantes.length} participante{meeting.participantes.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -362,7 +362,7 @@ function MeetingCard({ meeting, onOpen, onOpenDelete }) {
       <div className="px-5 pb-4 flex gap-2">
         <button
           onClick={onOpen}
-          className="flex-1 font-mono text-xs uppercase py-2 border border-[#111111] text-[#111111] hover:bg-[#111111] hover:text-[#CAFF00] transition-colors"
+          className="flex-1 font-mono text-xs uppercase py-2 border border-[rgba(21,38,43,0.16)] text-[var(--ink)] hover:bg-[#173038] hover:text-[var(--accent)] transition-colors"
         >
           {meeting.status === 'Em andamento' ? 'Abrir →' : 'Ver Ata →'}
         </button>
@@ -383,25 +383,25 @@ function MeetingCard({ meeting, onOpen, onOpenDelete }) {
 function ConfirmDeleteModal({ meeting, onClose, onConfirm }) {
   if (!meeting) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/45" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white w-full max-w-sm mx-4 shadow-2xl flex flex-col">
-        <div className="bg-red-600 px-6 py-4 flex items-center gap-2 text-white">
+        <div className="bg-red-600 px-6 py-4 flex items-center gap-2 text-[#fffdf8]">
           <AlertTriangle size={18} />
           <h2 className="font-syne font-extrabold text-sm uppercase">Excluir Reunião</h2>
         </div>
         <div className="p-6">
-          <p className="font-dm text-[#111111] text-sm mb-4">
+          <p className="font-dm text-[var(--ink)] text-sm mb-4">
             Tem certeza que deseja excluir a reunião <strong>{meeting.titulo}</strong> ({meeting.id})?
           </p>
           <p className="font-mono text-xs text-red-600 bg-red-50 p-3 border border-red-200">
             Esta ação não pode ser desfeita. Todos os itens e anotações desta reunião serão perdidos. As ações já enviadas ao PMO <strong>não</strong> serão apagadas automaticamente.
           </p>
         </div>
-        <div className="px-6 py-4 border-t border-[#E0E0E0] flex justify-end gap-3 bg-gray-50">
-          <button onClick={onClose} className="font-mono text-xs px-4 py-2 border border-[#E0E0E0] text-[#555555] hover:border-[#111111] hover:text-[#111111] transition-colors uppercase">
+        <div className="px-6 py-4 border-t border-[rgba(21,38,43,0.12)] flex justify-end gap-3 bg-white/72">
+          <button onClick={onClose} className="font-mono text-xs px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] hover:border-[rgba(21,38,43,0.16)] hover:text-[var(--ink)] transition-colors uppercase">
             Cancelar
           </button>
-          <button onClick={() => onConfirm(meeting.id)} className="font-mono text-xs px-5 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors uppercase">
+          <button onClick={() => onConfirm(meeting.id)} className="font-mono text-xs px-5 py-2 bg-red-600 text-[#fffdf8] hover:bg-red-700 transition-colors uppercase">
             SIM, EXCLUIR
           </button>
         </div>
@@ -501,20 +501,20 @@ export default function Reunioes({ clientId: propClientId, isAdmin = false, admi
       adminClientName={adminClientName}
       onAdminBack={onAdminBack}
     >
-      <div className="p-6 md:p-10">
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
         {/* Page header */}
         <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
           <div>
-            <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase">
+            <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase">
               Registro de Reuniões
             </h1>
-            <p className="text-[#555555] font-dm text-sm mt-1">
+            <p className="text-[var(--ink-soft)] font-dm text-sm mt-1">
               Capture decisões, tarefas e pendências em tempo real
             </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-[#111111] text-white font-mono text-xs uppercase px-5 py-3 hover:bg-[#CAFF00] hover:text-[#111111] transition-colors"
+            className="btn-primary flex items-center gap-2 rounded-full px-5 py-3 font-mono text-xs uppercase"
           >
             <Plus size={14} />
             Nova Reunião
@@ -523,12 +523,12 @@ export default function Reunioes({ clientId: propClientId, isAdmin = false, admi
 
         {/* Content */}
         {meetings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 border border-dashed border-[#E0E0E0]">
+          <div className="flex flex-col items-center justify-center py-24 gap-4 border border-dashed border-[rgba(21,38,43,0.12)]">
             <BookOpen size={40} className="text-[#E0E0E0]" />
-            <p className="font-dm text-[#555555] text-sm">Nenhuma reunião registrada</p>
+            <p className="font-dm text-[var(--ink-soft)] text-sm">Nenhuma reunião registrada</p>
             <button
               onClick={() => setShowModal(true)}
-              className="font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] text-[#555555] hover:border-[#111111] hover:text-[#111111] transition-colors mt-2"
+              className="font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] hover:border-[rgba(21,38,43,0.16)] hover:text-[var(--ink)] transition-colors mt-2"
             >
               + Nova Reunião
             </button>
@@ -536,24 +536,24 @@ export default function Reunioes({ clientId: propClientId, isAdmin = false, admi
         ) : (
           <>
             {/* View toggle + Stats */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3 font-mono text-xs text-[#555555]">
+            <div className="app-panel mb-4 flex items-center justify-between rounded-[24px] p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
+              <div className="flex items-center gap-3 font-mono text-xs text-[var(--ink-soft)]">
                 <span>{meetings.length} reuniõ{meetings.length === 1 ? '' : 'es'}</span>
                 <span>·</span>
                 <span className="text-green-600">{meetings.filter(m => m.status === 'Encerrada').length} encerrada{meetings.filter(m => m.status === 'Encerrada').length !== 1 ? 's' : ''}</span>
                 <span>·</span>
                 <span className="text-red-600">{meetings.filter(m => m.status === 'Em andamento').length} em andamento</span>
               </div>
-              <div className="flex border border-[#E0E0E0]">
+              <div className="flex rounded-full border border-[rgba(21,38,43,0.12)] bg-white/70 p-1">
                 <button
                   onClick={() => setViewMode('cards')}
-                  className={`px-3 py-1.5 font-mono text-xs ${viewMode === 'cards' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
+                  className={`px-3 py-1.5 font-mono text-xs ${viewMode === 'cards' ? 'rounded-full bg-[#173038] text-white' : 'rounded-full bg-transparent text-[var(--ink-soft)] hover:bg-white'}`}
                 >
                   Cards
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`px-3 py-1.5 font-mono text-xs ${viewMode === 'list' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
+                  className={`px-3 py-1.5 font-mono text-xs ${viewMode === 'list' ? 'rounded-full bg-[#173038] text-white' : 'rounded-full bg-transparent text-[var(--ink-soft)] hover:bg-white'}`}
                 >
                   Lista
                 </button>
@@ -576,18 +576,18 @@ export default function Reunioes({ clientId: propClientId, isAdmin = false, admi
 
             {/* List/Table view */}
             {viewMode === 'list' && (
-              <div className="border border-[#E0E0E0] overflow-x-auto">
+              <div className="app-panel overflow-x-auto rounded-[28px] shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
                 <table className="w-full min-w-[700px]">
                   <thead>
-                    <tr className="bg-[#111111]">
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">ID</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Título</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Data</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Horário</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Participantes</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Status</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Ata</th>
-                      <th className="px-4 py-3 text-left font-mono text-xs text-white uppercase">Ação</th>
+                    <tr className="bg-[#173038]">
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">ID</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Título</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Data</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Horário</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Participantes</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Status</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Ata</th>
+                      <th className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -597,13 +597,13 @@ export default function Reunioes({ clientId: propClientId, isAdmin = false, admi
                         className={`hover:bg-[rgba(202,255,0,0.08)] transition-colors cursor-pointer ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'}`}
                         onClick={() => openMeeting(m)}
                       >
-                        <td className="px-4 py-3 font-mono text-xs text-[#555555]">{m.id}</td>
-                        <td className="px-4 py-3 font-dm text-sm text-[#111111] font-medium">{m.titulo}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-[#555555]">{fmtDate(m.data)}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-[#555555]">
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)]">{m.id}</td>
+                        <td className="px-4 py-3 font-dm text-sm text-[var(--ink)] font-medium">{m.titulo}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)]">{fmtDate(m.data)}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)]">
                           {m.horarioInicio}{m.horarioFim ? ` — ${m.horarioFim}` : ''}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-[#555555]">
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)]">
                           {(m.participantes || []).length} participante{(m.participantes || []).length !== 1 ? 's' : ''}
                         </td>
                         <td className="px-4 py-3">
@@ -613,20 +613,20 @@ export default function Reunioes({ clientId: propClientId, isAdmin = false, admi
                           {m.ataGerada ? (
                             <span className="font-mono text-xs text-green-600 flex items-center gap-1"><FileText size={11} /> Gerada</span>
                           ) : (
-                            <span className="font-mono text-xs text-gray-400">—</span>
+                            <span className="font-mono text-xs text-[var(--ink-soft)]">—</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-                              className="font-mono text-xs text-[#111111] hover:text-[#CAFF00] hover:bg-[#111111] border border-[#E0E0E0] hover:border-[#111111] px-3 py-1 transition-colors"
+                              className="font-mono text-xs text-[var(--ink)] hover:text-[var(--accent)] hover:bg-[#173038] border border-[rgba(21,38,43,0.12)] hover:border-[rgba(21,38,43,0.16)] px-3 py-1 transition-colors"
                             >
                               {m.status === 'Em andamento' ? 'Abrir →' : 'Ver Ata →'}
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setMeetingToDelete(m); }}
-                              className="font-mono text-xs text-gray-400 hover:text-red-600 transition-colors"
+                              className="font-mono text-xs text-[var(--ink-soft)] hover:text-red-600 transition-colors"
                               title="Excluir Reunião"
                             >
                               <Trash2 size={13} />

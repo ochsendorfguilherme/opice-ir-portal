@@ -10,7 +10,7 @@ const AGENTE_OPTIONS = ['Controlador', 'Operador', 'Ambos'];
 function Field({ label, children, dark = false }) {
   return (
     <div>
-      <label className={`block font-mono text-xs font-medium uppercase mb-1.5 ${dark ? 'text-[#CAFF00]' : 'text-[#111111]'}`}>{label}</label>
+      <label className={`block font-mono text-xs font-medium uppercase mb-1.5 ${dark ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>{label}</label>
       {children}
     </div>
   );
@@ -64,27 +64,27 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
     navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/perguntas` : '/perguntas');
   };
 
-  const inputClass = "w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors bg-white";
+  const inputClass = "w-full rounded-[18px] border border-[rgba(21,38,43,0.12)] bg-white px-4 py-3 font-dm text-sm text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] focus:outline-none focus:border-[rgba(183,236,35,0.42)] focus:ring-4 focus:ring-[rgba(214,255,99,0.12)] transition-colors";
 
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-      <div className="p-6 md:p-10 max-w-3xl">
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10 max-w-4xl">
         {/* Page header */}
         <div className="mb-8">
-          <div className="inline-block bg-[#CAFF00] px-3 py-1 mb-3">
+          <div className="inline-flex rounded-full bg-[var(--accent-glow)] px-3 py-1.5 mb-3">
             <span className="font-mono text-xs font-medium uppercase">Etapa 1 de 3</span>
           </div>
-          <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase">
+          <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase">
             Informações do Incidente
           </h1>
-          <p className="text-[#555555] font-dm mt-2">
+          <p className="text-[var(--ink-soft)] font-dm mt-2">
             Preencha todos os campos abaixo para continuar o processo de resposta a incidentes.
           </p>
         </div>
 
         {/* Client Card */}
-        <div className="bg-[#111111] p-6 mb-6">
-          <h2 className="font-syne font-bold text-white text-lg uppercase mb-5">Dados do Cliente</h2>
+        <div className="app-panel-dark rounded-[28px] p-6 mb-6">
+          <h2 className="font-syne font-bold text-[#fffdf8] text-lg uppercase mb-5">Dados do Cliente</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Field label="Nome do Cliente *" dark>
               <input
@@ -119,7 +119,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
                 onChange={e => handleChange('dataConhecimento', e.target.value)}
                 className={inputClass}
               />
-              <p className="text-gray-400 text-xs font-mono mt-1">Usado para cálculo de SLA e prazos ANPD</p>
+              <p className="text-[var(--ink-soft)] text-xs font-mono mt-1">Usado para cálculo de SLA e prazos ANPD</p>
             </Field>
             <Field label="Posição de Agente de Tratamento *" dark>
               <select
@@ -136,7 +136,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
         </div>
 
         {/* Contexto */}
-        <div className="border border-[#E0E0E0] p-6 mb-6">
+        <div className="app-panel rounded-[28px] p-6 mb-6">
           <Field label="Contexto Geral do Incidente * (mín. 30 caracteres)">
             <textarea
               value={form.contexto}
@@ -154,8 +154,8 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
         </div>
 
         {/* TLP Box */}
-        <div className="bg-[#111111] border-l-4 border-[#F59E0B] p-4 mb-8">
-          <div className="flex items-center gap-2 text-[#F59E0B] font-mono text-xs">
+        <div className="soft-ribbon mb-8 rounded-[24px] p-4">
+          <div className="flex items-center gap-2 font-mono text-xs text-[#f8d383]">
             <Lock size={12} />
             <span>TLP:AMBER+STRICT — Compartilhamento permitido apenas dentro do grupo de gestão do incidente.</span>
           </div>
@@ -165,7 +165,7 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 border border-[#111111] text-[#111111] font-dm font-medium px-6 py-3 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/72 text-[var(--ink)] font-dm font-medium px-6 py-3 hover:bg-white transition-colors"
           >
             <Save size={16} />
             {saved ? '✓ Salvo' : 'Salvar'}
@@ -176,8 +176,8 @@ export default function Informacoes({ clientId: propClientId, isAdmin = false, a
             disabled={!isComplete()}
             className={`flex items-center gap-2 font-dm font-medium px-8 py-3 transition-all ${
               isComplete()
-                ? 'bg-[#CAFF00] text-[#111111] hover:bg-[#b8e600] cursor-pointer'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'btn-lime rounded-full text-[var(--ink)] cursor-pointer'
+                : 'rounded-full bg-white/70 text-[var(--ink-soft)] cursor-not-allowed'
             }`}
           >
             Continuar para Perguntas

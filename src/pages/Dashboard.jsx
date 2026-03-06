@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
@@ -6,30 +6,63 @@ import { getStorage, setStorage, KEYS } from '../utils/storage';
 import { DEFAULT_ACTIVITIES } from '../data/activities';
 import { useSLATimer } from '../hooks/useSLA';
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
-import { Clock, AlertTriangle, Shield, Zap, Scale, ExternalLink } from 'lucide-react';
+import { Clock, Shield, Zap, Scale, ExternalLink } from 'lucide-react';
 import WelcomeModal from '../components/WelcomeModal';
 
 const STATUS_MAP = {
-  'Feito': { color: '#22C55E', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  'Em andamento': { color: '#F59E0B', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  'Planejado': { color: '#3B82F6', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  'Não se aplica': { color: '#9CA3AF', bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
+  Feito: { badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', accent: 'text-emerald-700' },
+  'Em andamento': { badge: 'bg-amber-100 text-amber-700 border-amber-200', accent: 'text-amber-700' },
+  Planejado: { badge: 'bg-sky-100 text-sky-700 border-sky-200', accent: 'text-sky-700' },
+  'Não se aplica': { badge: 'bg-stone-100 text-stone-600 border-stone-200', accent: 'text-stone-600' },
 };
 
-function StatusCard({ label, count, pct, colorClass, bgColor, isHighlight }) {
+function StatusCard({ label, count, pct, tone, isHighlight = false }) {
+  const tones = {
+    success: { count: 'text-emerald-700', pill: 'bg-emerald-100 text-emerald-700' },
+    warning: { count: 'text-amber-700', pill: 'bg-amber-100 text-amber-700' },
+    info: { count: 'text-sky-700', pill: 'bg-sky-100 text-sky-700' },
+    muted: { count: 'text-stone-600', pill: 'bg-stone-100 text-stone-600' },
+  };
+  const currentTone = tones[tone] || tones.muted;
+
   return (
-    <div className={`border border-[#E0E0E0] p-5 ${isHighlight ? 'bg-[#CAFF00]' : 'bg-white'}`}>
-      <div className={`font-mono text-xs uppercase font-medium mb-2 ${isHighlight ? 'text-[#111111]' : 'text-[#555555]'}`}>
-        {label}
-      </div>
-      <div className={`font-syne font-extrabold text-4xl ${isHighlight ? 'text-[#111111]' : colorClass}`}>
-        {count}
-      </div>
-      {pct !== undefined && (
-        <div className={`font-mono text-xs mt-1 ${isHighlight ? 'text-[#333]' : 'text-[#555555]'}`}>
-          {pct}% do total
+    <article className={`metric-card rounded-[28px] p-5 ${isHighlight ? 'highlight' : ''}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={`font-mono text-[11px] uppercase tracking-[0.24em] ${isHighlight ? 'text-white/62' : 'text-[var(--ink-soft)]'}`}>
+            {label}
+          </p>
+          <div className={`mt-3 text-4xl font-bold ${isHighlight ? 'text-white' : currentTone.count}`}>
+            {count}
+          </div>
         </div>
-      )}
+        {pct !== undefined && (
+          <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${isHighlight ? 'bg-white/12 text-white/78' : currentTone.pill}`}>
+            {pct}%
+          </span>
+        )}
+      </div>
+      <p className={`mt-4 text-sm ${isHighlight ? 'text-white/72' : 'text-[var(--ink-soft)]'}`}>
+        {isHighlight ? 'Total monitorado no incidente.' : 'Participação no conjunto de atividades.'}
+      </p>
+    </article>
+  );
+}
+
+function ProgressMeter({ label, pct, subtext }) {
+  return (
+    <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/68 p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">{label}</span>
+        <span className="font-mono text-xs font-semibold text-[var(--ink)]">{pct}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[rgba(21,38,43,0.08)]">
+        <div
+          className={`h-2 rounded-full transition-all duration-700 ${pct < 40 ? 'bg-[#d45a58]' : pct < 70 ? 'bg-[#d59b32]' : 'bg-[var(--accent-deep)]'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-2 text-sm text-[var(--ink-soft)]">{subtext}</p>
     </div>
   );
 }
@@ -40,45 +73,72 @@ function ANPDCountdown({ dataConhecimento }) {
 
   useEffect(() => {
     if (!dataConhecimento) return;
+
     const update = () => {
       const result = businessDaysRemaining(new Date(dataConhecimento), 3);
-      const label = formatCountdown(result.diffHours);
-      setCountdown(label);
+      setCountdown(formatCountdown(result.diffHours));
+
       if (result.overdue) setStatus('overdue');
-      else if (result.diffHours < result.diffHours * 0.25) setStatus('critical');
       else if (result.diffHours < 24) setStatus('critical');
       else if (result.diffHours < 48) setStatus('warning');
       else setStatus('ok');
     };
+
     update();
     const iv = setInterval(update, 60000);
     return () => clearInterval(iv);
   }, [dataConhecimento]);
 
-  const colors = {
-    ok: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'No Prazo' },
-    warning: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', label: 'Atenção' },
-    critical: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Crítico' },
-    overdue: { bg: 'bg-red-100 border-red-400', text: 'text-red-800', label: 'VENCIDO' },
+  const styles = {
+    ok: {
+      frame: 'border-emerald-200 bg-emerald-50/80',
+      icon: 'text-emerald-700',
+      tag: 'bg-emerald-100 text-emerald-700',
+      label: 'No prazo',
+    },
+    warning: {
+      frame: 'border-amber-200 bg-amber-50/80',
+      icon: 'text-amber-700',
+      tag: 'bg-amber-100 text-amber-700',
+      label: 'Atenção',
+    },
+    critical: {
+      frame: 'border-red-200 bg-red-50/85',
+      icon: 'text-red-700',
+      tag: 'bg-red-100 text-red-700',
+      label: 'Crítico',
+    },
+    overdue: {
+      frame: 'border-red-300 bg-red-100/90',
+      icon: 'text-red-800',
+      tag: 'bg-red-600 text-white',
+      label: 'Vencido',
+    },
   };
-  const c = colors[status];
+
+  const current = styles[status];
 
   return (
-    <div className={`border p-5 ${c.bg}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <Shield size={16} className={c.text} />
-        <span className={`font-mono text-xs font-medium uppercase ${c.text}`}>Countdown ANPD</span>
-        <span className={`ml-auto font-mono text-xs px-2 py-0.5 border ${c.bg} ${c.text} ${c.bg.replace('50', '200')}`}>
-          {c.label}
+    <section className={`app-panel rounded-[30px] border ${current.frame} p-6`}>
+      <div className="mb-4 flex items-center gap-3">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-white/75 ${current.icon}`}>
+          <Shield size={18} />
+        </div>
+        <div>
+          <p className="section-kicker">Prazo regulatório</p>
+          <h2 className="text-xl font-bold text-[var(--ink)]">Countdown ANPD</h2>
+        </div>
+        <span className={`ml-auto rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${current.tag}`}>
+          {current.label}
         </span>
       </div>
-      <div className={`font-mono text-3xl font-bold ${c.text}`}>
-        {countdown || '—'}
+      <div className={`font-mono text-4xl font-semibold ${current.icon}`}>
+        {countdown || '--'}
       </div>
-      <p className="text-[#555555] font-dm text-xs mt-2">
-        Art. 6º, Resolução nº 15/2024 — Prazo: 3 dias úteis
+      <p className="mt-3 text-sm text-[var(--ink-soft)]">
+        Resolução 15/2024. Prazo de comunicação considerado: 3 dias úteis.
       </p>
-    </div>
+    </section>
   );
 }
 
@@ -100,279 +160,373 @@ export default function Dashboard({ clientId: propClientId, isAdmin = false, adm
     } else {
       setActivities(stored);
     }
+
     setInfo(getStorage(KEYS.info(effectiveClientId), {}));
-    const c = getStorage(KEYS.crisis(effectiveClientId, 'active'));
-    setCrisis(c?.crisisActive === true && c?.crisisStatus !== 'closed' ? c : null);
-    // Welcome modal: show only for clients on first load
+
+    const currentCrisis = getStorage(KEYS.crisis(effectiveClientId, 'active'));
+    setCrisis(currentCrisis?.crisisActive === true && currentCrisis?.crisisStatus !== 'closed' ? currentCrisis : null);
+
     if (user?.role === 'client' && !getStorage(KEYS.welcomeShown(effectiveClientId))) {
       setShowWelcome(true);
     }
-  }, [effectiveClientId]);
+  }, [effectiveClientId, user?.role]);
 
   const sla = useSLATimer(info.dataConhecimento || null);
 
-  // Stats
   const total = activities.length;
   const counts = {};
-  activities.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1; });
-  const pct = (s) => total ? Math.round((counts[s] || 0) / total * 100) : 0;
+  activities.forEach((activity) => {
+    counts[activity.status] = (counts[activity.status] || 0) + 1;
+  });
+  const pct = (status) => (total ? Math.round(((counts[status] || 0) / total) * 100) : 0);
 
-  // By stage
   const etapas = ['Etapa 1', 'Etapa 2', 'Etapa 3'];
-  const stageStats = etapas.map(e => {
-    const acts = activities.filter(a => a.etapa === e);
-    const done = acts.filter(a => a.status === 'Feito').length;
-    return { label: e, pct: acts.length ? Math.round(done / acts.length * 100) : 0 };
+  const stageStats = etapas.map((etapa) => {
+    const stageActivities = activities.filter((activity) => activity.etapa === etapa);
+    const done = stageActivities.filter((activity) => activity.status === 'Feito').length;
+    return {
+      label: etapa,
+      pct: stageActivities.length ? Math.round((done / stageActivities.length) * 100) : 0,
+      total: stageActivities.length,
+    };
   });
 
   const recent = [...activities].slice(-5).reverse();
 
   const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
   const pmoActions = pmoData.actions || [];
-  const openActions = pmoActions.filter(a => a.status !== 'Feito').length;
+  const openActions = pmoActions.filter((action) => action.status !== 'Feito').length;
   const upcoming = pmoActions
-    .filter(a => a.prazo && a.status !== 'Feito')
+    .filter((action) => action.prazo && action.status !== 'Feito')
     .sort((a, b) => new Date(a.prazo) - new Date(b.prazo))[0];
 
   const nistPhase = pmoData.nistPhase || 'Detecção';
 
-  // Progresso Global
-  const jornadaPct = total ? Math.round((counts['Feito'] || 0) / total * 100) : 0;
+  const jornadaPct = total ? Math.round(((counts.Feito || 0) / total) * 100) : 0;
   const answersData = getStorage(KEYS.answers(effectiveClientId), {});
-  const TOTAL_QUESTIONS = 29; // 5+5+9+6+4
-  const answeredQs = Object.values(answersData).flatMap(sec => Object.values(sec).filter(v => v?.trim())).length;
-  const perguntasPct = Math.round(Math.min(answeredQs, TOTAL_QUESTIONS) / TOTAL_QUESTIONS * 100);
-  const pmoDone = pmoActions.filter(a => a.status === 'Feito').length;
-  const pmoPct = pmoActions.length ? Math.round(pmoDone / pmoActions.length * 100) : 0;
+  const TOTAL_QUESTIONS = 29;
+  const answeredQs = Object.values(answersData).flatMap((section) => Object.values(section).filter((value) => value?.trim())).length;
+  const perguntasPct = Math.round((Math.min(answeredQs, TOTAL_QUESTIONS) / TOTAL_QUESTIONS) * 100);
+  const pmoDone = pmoActions.filter((action) => action.status === 'Feito').length;
+  const pmoPct = pmoActions.length ? Math.round((pmoDone / pmoActions.length) * 100) : 0;
   const prazosPct = sla.status === 'critical' ? 0 : sla.status === 'warning' ? 50 : 100;
   const globalScore = Math.round((jornadaPct + perguntasPct + pmoPct + prazosPct) / 4);
-  const scoreColor = globalScore < 40 ? 'text-red-600' : globalScore < 70 ? 'text-amber-600' : 'text-green-600';
-  const scoreFill = globalScore < 40 ? 'bg-red-500' : globalScore < 70 ? 'bg-amber-500' : 'bg-[#CAFF00]';
+  const scoreLabel = globalScore < 40 ? 'Zona crítica' : globalScore < 70 ? 'Atenção' : 'Saudável';
+  const scoreTone = globalScore < 40 ? 'bg-red-100 text-red-700' : globalScore < 70 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+
+  const metaItems = [
+    { label: 'Cliente', value: info.nomeCliente || 'Não informado' },
+    { label: 'Data do incidente', value: info.dataIncidente || '--' },
+    { label: 'Agente', value: info.agente || '--' },
+    { label: 'Código', value: info.codigoCliente || '--' },
+  ];
+
+  const anpdData = getStorage(KEYS.anpd(effectiveClientId), {});
+  const processo = anpdData.processo || {};
+  const hasProcess = !!processo.numeroProcesso;
+  const hasAnpdData = Object.keys(processo).length > 0;
+  const nextDeadline = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), 3) : null;
 
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-      <div className="p-6 md:p-10">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase">
-            Dashboard de Incidente
-          </h1>
-          {info.nomeCliente && (
-            <p className="text-[#555555] font-dm mt-1">{info.nomeCliente}</p>
-          )}
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
+        <div className="mb-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <section className="app-panel relative overflow-hidden rounded-[32px] px-6 py-6 md:px-8 md:py-8">
+            <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#173038_0%,#d6ff63_100%)]" />
+            <p className="section-kicker mb-4">Incident command view</p>
+            <div className="flex flex-wrap items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-4xl font-bold text-[var(--ink)] md:text-5xl">Dashboard de Incidente</h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ink-soft)] md:text-base">
+                  Visão consolidada da jornada, prazos regulatórios, PMO e sinais de escalada do caso.
+                </p>
+              </div>
+              {info.nomeCliente && (
+                <div className="soft-ribbon rounded-[26px] px-5 py-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">Cliente ativo</p>
+                  <div className="mt-2 text-xl font-bold text-white">{info.nomeCliente}</div>
+                  {isAdmin && adminClientName && (
+                    <div className="mt-1 text-sm text-white/70">Acesso administrativo contextual</div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {metaItems.map((item) => (
+                <div key={item.label} className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/68 px-4 py-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">{item.label}</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--ink)] md:text-base">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="metric-card highlight rounded-[32px] px-6 py-6 md:px-7 md:py-7">
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-white/62">Pulso geral</p>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <div>
+                <div className="text-5xl font-bold text-white">{globalScore}%</div>
+                <p className="mt-2 max-w-xs text-sm leading-6 text-white/72">
+                  Combinação de jornada, perguntas respondidas, entregas PMO e pressão de prazo.
+                </p>
+              </div>
+              <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${scoreTone}`}>
+                {scoreLabel}
+              </span>
+            </div>
+            <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/12">
+              <div
+                className={`h-3 rounded-full transition-all duration-700 ${globalScore < 40 ? 'bg-[#d45a58]' : globalScore < 70 ? 'bg-[#f0bd59]' : 'bg-[var(--accent)]'}`}
+                style={{ width: `${globalScore}%` }}
+              />
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/54">Perguntas</p>
+                <div className="mt-2 text-2xl font-bold text-white">{perguntasPct}%</div>
+              </div>
+              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/54">PMO</p>
+                <div className="mt-2 text-2xl font-bold text-white">{pmoPct}%</div>
+              </div>
+              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/54">Jornada</p>
+                <div className="mt-2 text-2xl font-bold text-white">{jornadaPct}%</div>
+              </div>
+              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/54">Prazos</p>
+                <div className="mt-2 text-2xl font-bold text-white">{prazosPct}%</div>
+              </div>
+            </div>
+          </section>
         </div>
 
-        {/* Crisis Banner */}
         {crisis && (
-          <div className="mb-6 bg-red-600 text-white p-4 flex items-center gap-3 animate-pulse-red border border-red-700">
-            <Zap size={18} />
-            <span className="font-syne font-bold uppercase">
-              ⚡ WARROOM ATIVA — {crisis.crisisId} — Desde {new Date(crisis.crisisTimestamp).toLocaleString('pt-BR')}
-            </span>
-            <button
-              onClick={() => navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/pmo/warroom` : '/pmo/warroom')}
-              className="ml-auto bg-white text-red-600 font-dm text-sm px-4 py-1 font-medium hover:bg-red-50 transition-colors"
-            >
-              Ver WarRoom →
-            </button>
-          </div>
+          <section className="app-panel mb-8 rounded-[30px] border border-red-200 bg-red-50/85 p-5 shadow-[0_18px_34px_rgba(212,90,88,0.12)]">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white animate-pulse-red">
+                <Zap size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-red-700">War Room ativa</p>
+                <h2 className="mt-1 text-xl font-bold text-red-800">
+                  {crisis.crisisId} desde {new Date(crisis.crisisTimestamp).toLocaleString('pt-BR')}
+                </h2>
+                <p className="mt-1 text-sm text-red-700/85">O fluxo de crise está ativo e o SLA operacional está pausado enquanto a War Room permanece aberta.</p>
+              </div>
+              <button
+                onClick={() => navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/pmo/warroom` : '/pmo/warroom')}
+                className="btn-primary flex items-center gap-2 rounded-full"
+              >
+                Ver War Room
+              </button>
+            </div>
+          </section>
         )}
 
-        {/* Client Info Bar */}
-        {info.nomeCliente && (
-          <div className="bg-[#111111] text-white px-6 py-3 flex flex-wrap gap-6 mb-8 font-dm text-sm">
-            <span><span className="text-gray-500 mr-1 font-mono text-xs">CLIENTE</span>{info.nomeCliente}</span>
-            <span><span className="text-gray-500 mr-1 font-mono text-xs">DATA</span>{info.dataIncidente || '—'}</span>
-            <span><span className="text-gray-500 mr-1 font-mono text-xs">AGENTE</span>{info.agente || '—'}</span>
-            <span><span className="text-gray-500 mr-1 font-mono text-xs">CÓDIGO</span>{info.codigoCliente || '—'}</span>
-          </div>
-        )}
-
-        {/* Status Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <StatusCard label="Feito" count={counts['Feito'] || 0} pct={pct('Feito')} colorClass="text-green-600" />
-          <StatusCard label="Em andamento" count={counts['Em andamento'] || 0} pct={pct('Em andamento')} colorClass="text-amber-600" />
-          <StatusCard label="Planejado" count={counts['Planejado'] || 0} pct={pct('Planejado')} colorClass="text-blue-600" />
-          <StatusCard label="Não se aplica" count={counts['Não se aplica'] || 0} pct={pct('Não se aplica')} colorClass="text-gray-500" />
-          <StatusCard label="Total de Atividades" count={total} isHighlight />
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <StatusCard label="Feito" count={counts.Feito || 0} pct={pct('Feito')} tone="success" />
+          <StatusCard label="Em andamento" count={counts['Em andamento'] || 0} pct={pct('Em andamento')} tone="warning" />
+          <StatusCard label="Planejado" count={counts.Planejado || 0} pct={pct('Planejado')} tone="info" />
+          <StatusCard label="Não se aplica" count={counts["Não se aplica"] || 0} pct={pct("Não se aplica")} tone="muted" />
+          <StatusCard label="Total de atividades" count={total} isHighlight />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Jornada Progress */}
-          <div className="border border-[#E0E0E0] p-6">
-            <h2 className="font-syne font-bold text-[#111111] text-lg uppercase mb-5">Progresso por Etapa</h2>
-            <div className="space-y-4">
-              {stageStats.map(({ label, pct: p }) => (
-                <div key={label}>
-                  <div className="flex justify-between mb-1.5">
-                    <span className="font-dm text-sm text-[#111111]">{label}</span>
-                    <span className="font-mono text-sm font-medium text-[#111111]">{p}%</span>
+        <div className="mb-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <section className="app-panel rounded-[30px] p-6 md:p-7">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="section-kicker">Jornada</p>
+                <h2 className="text-2xl font-bold text-[var(--ink)]">Progresso por etapa</h2>
+              </div>
+              <span className="rounded-full bg-[var(--accent-glow)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink)]">
+                {total} atividades
+              </span>
+            </div>
+            <div className="space-y-5">
+              {stageStats.map(({ label, pct: stagePct, total: stageTotal }) => (
+                <div key={label} className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/68 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-[var(--ink)]">{label}</div>
+                      <div className="text-sm text-[var(--ink-soft)]">{stageTotal} atividades no fluxo</div>
+                    </div>
+                    <span className="font-mono text-sm font-semibold text-[var(--ink)]">{stagePct}%</span>
                   </div>
-                  <div className="w-full h-2 bg-[#E5E5E5]">
-                    <div className="h-2 bg-[#CAFF00] transition-all duration-700" style={{ width: `${p}%` }} />
+                  <div className="h-2 overflow-hidden rounded-full bg-[rgba(21,38,43,0.08)]">
+                    <div className="h-2 rounded-full bg-[linear-gradient(90deg,#173038_0%,#d6ff63_100%)] transition-all duration-700" style={{ width: `${stagePct}%` }} />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* ANPD + SLA */}
-          <div className="space-y-4">
+          <div className="grid gap-4">
             <ANPDCountdown dataConhecimento={info.dataConhecimento} />
 
-            <div className={`border p-5 ${sla.status === 'critical' ? 'border-red-200 bg-red-50' :
-                sla.status === 'warning' ? 'border-amber-200 bg-amber-50' :
-                  'border-[#E0E0E0] bg-white'
-              }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Clock size={14} className={sla.status === 'critical' ? 'text-red-600' : sla.status === 'warning' ? 'text-amber-600' : 'text-gray-500'} />
-                <span className="font-mono text-xs text-[#555555] uppercase">Tempo Decorrido (SLA)</span>
-                {crisis && (
-                  <span className="ml-auto font-mono text-xs text-amber-600">⏸ Pausado</span>
-                )}
-              </div>
-              <div className={`font-mono text-2xl font-bold ${sla.status === 'critical' ? 'text-red-600 animate-pulse-red' :
-                  sla.status === 'warning' ? 'text-amber-600 animate-pulse-amber' :
-                    'text-[#111111]'
-                }`}>
-                {info.dataConhecimento ? sla.label : '—'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* PMO Summary */}
-        <div className="border border-[#E0E0E0] p-6 mb-8">
-          <h2 className="font-syne font-bold text-[#111111] text-lg uppercase mb-5">Resumo PMO</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="border border-[#E0E0E0] p-4">
-              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Fase NIST</div>
-              <span className="inline-block bg-[#111111] text-white font-mono text-xs px-2 py-1">{nistPhase}</span>
-            </div>
-            <div className="border border-[#E0E0E0] p-4">
-              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Ações Abertas</div>
-              <div className="font-syne font-bold text-2xl text-[#111111]">{openActions}</div>
-            </div>
-            <div className="border border-[#E0E0E0] p-4 col-span-2">
-              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Próximo Prazo</div>
-              {upcoming ? (
-                <div>
-                  <div className="font-dm text-sm text-[#111111] truncate">{upcoming.descricao}</div>
-                  <div className="font-mono text-xs text-amber-600 mt-0.5">
-                    {new Date(upcoming.prazo).toLocaleDateString('pt-BR')}
-                  </div>
+            <section className={`app-panel rounded-[30px] p-6 ${sla.status === 'critical' ? 'border border-red-200 bg-red-50/85' : sla.status === 'warning' ? 'border border-amber-200 bg-amber-50/80' : ''}`}>
+              <div className="mb-4 flex items-center gap-3">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-white/75 ${sla.status === 'critical' ? 'text-red-700' : sla.status === 'warning' ? 'text-amber-700' : 'text-[var(--ink)]'}`}>
+                  <Clock size={18} />
                 </div>
-              ) : (
-                <div className="text-gray-400 font-dm text-sm">Nenhum prazo definido</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ANPD Card */}
-        {(() => {
-          const anpdData = getStorage(KEYS.anpd(effectiveClientId), {});
-          const processo = anpdData.processo || {};
-          const hasProcess = !!processo.numeroProcesso;
-          const hasAnpdData = Object.keys(processo).length > 0;
-          const nextDeadline = info.dataConhecimento
-            ? businessDaysRemaining(new Date(info.dataConhecimento), 3)
-            : null;
-          return (
-            <div className={`border p-5 mb-8 flex items-center gap-5 ${!hasProcess && hasAnpdData ? 'border-amber-300 bg-amber-50' : 'border-[#E0E0E0] bg-white'}`}>
-              <div className="flex items-center gap-2 shrink-0">
-                <Scale size={20} className={!hasProcess && hasAnpdData ? 'text-amber-600' : 'text-[#555555]'} />
-                <span className="font-mono text-xs text-[#555555] uppercase font-medium">ANPD</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                {hasProcess ? (
-                  <div className="flex flex-wrap gap-4 items-center">
-                    <span className="font-mono text-xs text-[#111111]">Processo: <strong>{processo.numeroProcesso}</strong></span>
-                    <span className={`font-mono text-xs px-2 py-0.5 border ${processo.statusComunicacao === 'Arquivado' ? 'bg-green-50 text-green-700 border-green-200' :
-                        processo.statusComunicacao === 'Em análise pela ANPD' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>{processo.statusComunicacao || 'Não comunicado'}</span>
-                    {nextDeadline && !nextDeadline.overdue && (
-                      <span className="font-mono text-xs text-[#555555]">Prazo: {formatCountdown(nextDeadline.diffHours)}</span>
-                    )}
-                    {nextDeadline?.overdue && (
-                      <span className="font-mono text-xs text-red-700 font-bold">⛔ PRAZO VENCIDO</span>
-                    )}
-                  </div>
-                ) : (
-                  <span className="font-dm text-sm text-amber-700">
-                    {hasAnpdData ? 'Processo ANPD sem número SEI — preencher urgente' : 'Processo ANPD não iniciado'}
+                <div>
+                  <p className="section-kicker">SLA operacional</p>
+                  <h2 className="text-xl font-bold text-[var(--ink)]">Tempo decorrido</h2>
+                </div>
+                {crisis && (
+                  <span className="ml-auto rounded-full bg-amber-100 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-700">
+                    Pausado
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/anpd` : '/anpd')}
-                className="flex items-center gap-1 font-mono text-xs text-[#111111] border border-[#E0E0E0] px-3 py-1.5 hover:bg-gray-50 transition-colors shrink-0"
-              >
-                <ExternalLink size={11} /> Ver ANPD
-              </button>
-            </div>
-          );
-        })()}
-
-        {/* Progresso Global */}
-        <div className="border border-[#E0E0E0] p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-[#111111] text-lg uppercase tracking-tight">Progresso Geral do Incidente</h2>
-            <span className={`font-mono text-2xl font-bold ${scoreColor}`}>{globalScore}%</span>
-          </div>
-          <div className="w-full h-2.5 bg-[#E5E5E5] mb-5">
-            <div className={`h-2.5 ${scoreFill} transition-all duration-700`} style={{ width: `${globalScore}%` }} />
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: 'Jornada', pct: jornadaPct, sub: 'atividades Feito' },
-              { label: 'Perguntas', pct: perguntasPct, sub: 'perguntas respondidas' },
-              { label: 'PMO', pct: pmoPct, sub: 'ações concluídas' },
-              { label: 'Prazos', pct: prazosPct, sub: sla.status === 'critical' ? 'SLA crítico' : sla.status === 'warning' ? 'SLA em atenção' : 'todos no prazo' },
-            ].map(({ label, pct: p, sub }) => (
-              <div key={label} className="flex items-center gap-4">
-                <span className="font-mono text-xs text-[#555555] uppercase w-24 shrink-0">{label}</span>
-                <div className="flex-1 h-1.5 bg-[#E5E5E5]">
-                  <div className={`h-1.5 ${p < 40 ? 'bg-red-500' : p < 70 ? 'bg-amber-500' : 'bg-[#CAFF00]'} transition-all duration-700`} style={{ width: `${p}%` }} />
-                </div>
-                <span className="font-mono text-xs text-[#111111] w-10 text-right shrink-0">{p}%</span>
-                <span className="font-mono text-xs text-[#555555] hidden md:block">{sub}</span>
+              <div className={`font-mono text-4xl font-semibold ${sla.status === 'critical' ? 'text-red-700 animate-pulse-red' : sla.status === 'warning' ? 'text-amber-700 animate-pulse-amber' : 'text-[var(--ink)]'}`}>
+                {info.dataConhecimento ? sla.label : '--'}
               </div>
-            ))}
+              <p className="mt-3 text-sm text-[var(--ink-soft)]">
+                Contagem a partir da data de conhecimento registrada para o incidente.
+              </p>
+            </section>
           </div>
         </div>
 
-        {/* Recent Activities */}
-        <div className="border border-[#E0E0E0]">
-          <div className="bg-[#111111] px-6 py-3">
-            <h2 className="font-syne font-bold text-white text-sm uppercase">Atividades Recentes</h2>
+        <div className="mb-8 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <section className="app-panel rounded-[30px] p-6 md:p-7">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="section-kicker">PMO snapshot</p>
+                <h2 className="text-2xl font-bold text-[var(--ink)]">Resumo PMO</h2>
+              </div>
+              <span className="rounded-full bg-[rgba(21,38,43,0.06)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+                {openActions} abertas
+              </span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Fase NIST</p>
+                <div className="mt-3 inline-flex rounded-full bg-[#173038] px-3 py-1 font-mono text-xs uppercase tracking-[0.18em] text-white">
+                  {nistPhase}
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Ações abertas</p>
+                <div className="mt-3 text-3xl font-bold text-[var(--ink)]">{openActions}</div>
+              </div>
+              <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4 md:col-span-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Proximo prazo</p>
+                {upcoming ? (
+                  <>
+                    <div className="mt-3 text-base font-semibold text-[var(--ink)]">{upcoming.descricao}</div>
+                    <div className="mt-2 inline-flex rounded-full bg-amber-100 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-700">
+                      {new Date(upcoming.prazo).toLocaleDateString('pt-BR')}
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-3 text-sm text-[var(--ink-soft)]">Nenhum prazo definido no momento.</div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className={`app-panel rounded-[30px] p-6 md:p-7 ${!hasProcess && hasAnpdData ? 'border border-amber-200 bg-amber-50/80' : ''}`}>
+            <div className="mb-5 flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-white/75 ${!hasProcess && hasAnpdData ? 'text-amber-700' : 'text-[var(--ink)]'}`}>
+                <Scale size={18} />
+              </div>
+              <div>
+                <p className="section-kicker">Regulatório</p>
+                <h2 className="text-2xl font-bold text-[var(--ink)]">Status ANPD</h2>
+              </div>
+            </div>
+            {hasProcess ? (
+              <div className="space-y-4">
+                <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Número do processo</p>
+                  <div className="mt-2 text-lg font-bold text-[var(--ink)]">{processo.numeroProcesso}</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${processo.statusComunicacao === "Arquivado" ? "bg-emerald-100 text-emerald-700" : processo.statusComunicacao === "Em análise pela ANPD" ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700"}`}>
+                    {processo.statusComunicacao || "Não comunicado"}
+                  </span>
+                  {nextDeadline && !nextDeadline.overdue && (
+                    <span className="rounded-full bg-stone-100 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-stone-700">
+                      Prazo restante: {formatCountdown(nextDeadline.diffHours)}
+                    </span>
+                  )}
+                  {nextDeadline?.overdue && (
+                    <span className="rounded-full bg-red-100 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-red-700">
+                      Prazo vencido
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[24px] border border-dashed border-[rgba(21,38,43,0.16)] bg-white/55 p-5">
+                <p className="text-base font-semibold text-[var(--ink)]">
+                  {hasAnpdData ? "Existe um processo ANPD iniciado, mas o número SEI ainda não foi preenchido." : "O processo ANPD ainda não foi iniciado neste ambiente de teste."}
+                </p>
+                <p className="mt-2 text-sm text-[var(--ink-soft)]">
+                  A tela regulatória concentra o preenchimento do processo, status de comunicação e evidências relacionadas.
+                </p>
+              </div>
+            )}
+            <button
+              onClick={() => navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/anpd` : '/anpd')}
+              className="btn-outline mt-5 flex items-center gap-2 rounded-full"
+            >
+              <ExternalLink size={14} /> Ver ANPD
+            </button>
+          </section>
+        </div>
+
+        <section className="app-panel mb-8 rounded-[30px] p-6 md:p-7">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="section-kicker">Scoreboard</p>
+              <h2 className="text-2xl font-bold text-[var(--ink)]">Progresso geral do incidente</h2>
+            </div>
+            <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${scoreTone}`}>
+              {globalScore}% consolidado
+            </span>
           </div>
-          <div className="divide-y divide-[#E0E0E0]">
-            {recent.map(a => {
-              const s = STATUS_MAP[a.status] || STATUS_MAP['Planejado'];
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <ProgressMeter label="Jornada" pct={jornadaPct} subtext="Atividades concluídas no fluxo principal." />
+            <ProgressMeter label="Perguntas" pct={perguntasPct} subtext="Questionário preenchido com dados do incidente." />
+            <ProgressMeter label="PMO" pct={pmoPct} subtext="Ações operacionais concluídas no acompanhamento." />
+            <ProgressMeter label="Prazos" pct={prazosPct} subtext={sla.status === "critical" ? "SLA em estado crítico." : sla.status === "warning" ? "SLA pede acompanhamento." : "Sem alerta de prazo."} />
+          </div>
+        </section>
+
+        <section className="app-panel overflow-hidden rounded-[30px]">
+          <div className="soft-ribbon flex items-center justify-between gap-4 px-6 py-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">Timeline</p>
+              <h2 className="text-xl font-bold text-white">Atividades recentes</h2>
+            </div>
+            <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white/72">
+              Últimas {recent.length}
+            </span>
+          </div>
+          <div className="divide-y divide-[rgba(21,38,43,0.08)]">
+            {recent.map((activity) => {
+              const style = STATUS_MAP[activity.status] || STATUS_MAP.Planejado;
               return (
-                <div key={a.id} className="flex items-center px-6 py-3 gap-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-dm text-sm text-[#111111] truncate">{a.nome}</div>
-                    <div className="font-mono text-xs text-[#555555]">{a.etapa}</div>
+                <div key={activity.id} className="flex flex-wrap items-center gap-4 px-6 py-4 transition-colors hover:bg-white/55">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-[var(--ink)]">{activity.nome}</div>
+                    <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">{activity.etapa}</div>
                   </div>
-                  <span className={`font-mono text-xs px-2.5 py-1 border shrink-0 ${s.bg} ${s.text} ${s.border}`}>
-                    {a.status}
+                  <span className={`rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${style.badge}`}>
+                    {activity.status}
                   </span>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
       </div>
 
       {showWelcome && !isAdmin && (
-        <WelcomeModal
-          clientId={effectiveClientId}
-          clientName={info.nomeCliente}
-          onClose={() => setShowWelcome(false)}
-        />
+        <WelcomeModal clientId={effectiveClientId} clientName={info.nomeCliente} onClose={() => setShowWelcome(false)} />
       )}
     </Layout>
   );

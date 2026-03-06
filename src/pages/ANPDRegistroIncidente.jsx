@@ -170,23 +170,23 @@ function SectionHeader({ title, subtitle, icon: Icon, open, onToggle, alert }) {
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-5 py-4 bg-[#111111] hover:bg-[#1a1a1a] transition-colors"
+      className="w-full flex items-center justify-between px-5 py-4 bg-[#173038] hover:bg-[#1a1a1a] transition-colors"
     >
       <div className="flex items-center gap-2.5">
-        {Icon && <Icon size={15} className={alert ? 'text-red-400' : 'text-[#CAFF00]'} />}
+        {Icon && <Icon size={15} className={alert ? 'text-red-400' : 'text-[var(--accent)]'} />}
         <div className="text-left">
-          <div className="font-syne font-bold text-white text-sm uppercase">{title}</div>
-          {subtitle && <div className="font-mono text-[10px] text-gray-400 mt-0.5">{subtitle}</div>}
+          <div className="font-syne font-bold text-[#fffdf8] text-sm uppercase">{title}</div>
+          {subtitle && <div className="font-mono text-[10px] text-[var(--ink-soft)] mt-0.5">{subtitle}</div>}
         </div>
       </div>
-      {open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+      {open ? <ChevronUp size={14} className="text-[var(--ink-soft)]" /> : <ChevronDown size={14} className="text-[var(--ink-soft)]" />}
     </button>
   );
 }
 
 function FieldLabel({ children, required, hint }) {
   return (
-    <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">
+    <label className="block font-mono text-xs font-medium uppercase text-[var(--ink)] mb-1.5">
       {children}
       {required && <span className="text-red-500 ml-0.5">*</span>}
       {hint && <span className="ml-2 font-mono text-[10px] text-[#888888] normal-case">{hint}</span>}
@@ -194,7 +194,7 @@ function FieldLabel({ children, required, hint }) {
   );
 }
 
-const inputClass = 'w-full border border-[#E0E0E0] px-4 py-2.5 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors bg-white';
+const inputClass = 'w-full border border-[rgba(21,38,43,0.12)] px-4 py-2.5 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors bg-white';
 const taClass = `${inputClass} resize-none`;
 
 function Toggle({ checked, onChange, label }) {
@@ -203,11 +203,11 @@ function Toggle({ checked, onChange, label }) {
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${checked ? 'bg-[#111111]' : 'bg-gray-300'}`}
+        className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${checked ? 'bg-[#173038]' : 'bg-gray-300'}`}
       >
         <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
       </button>
-      <span className="font-dm text-sm text-[#111111]">{label}</span>
+      <span className="font-dm text-sm text-[var(--ink)]">{label}</span>
     </label>
   );
 }
@@ -250,7 +250,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
       ...EMPTY_FORM,
       data_conhecimento: info.dataConhecimento || '',
       // pré-preenche categoria se tiver na comunicação e ainda não foi salvo o registro
-      categoria_dados_afetados: registro.categoria_dados_afetados ?? (comunicacao?.categoria_dados_afetados || ''),
+      categoria_dados_afetados: registro.categoria_dados_afetados ? registro.categoria_dados_afetados : (comunicacao?.categoria_dados_afetados || ''),
       ...registro,
     });
   }, [effectiveClientId]);
@@ -347,31 +347,31 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-xs text-[#888888] uppercase">ANPD</span>
             <span className="font-mono text-xs text-[#888888]">/</span>
-            <span className="font-mono text-xs text-[#111111] uppercase font-bold">Registro do Incidente (Art. 10)</span>
+            <span className="font-mono text-xs text-[var(--ink)] uppercase font-bold">Registro do Incidente (Art. 10)</span>
           </div>
-          <h1 className="font-syne font-extrabold text-[#111111] text-3xl uppercase">
+          <h1 className="font-syne font-extrabold text-[var(--ink)] text-3xl uppercase">
             Registro do Incidente
           </h1>
-          <p className="text-[#555555] font-dm text-sm mt-1">
+          <p className="text-[var(--ink-soft)] font-dm text-sm mt-1">
             Art. 10º da Resolução CD/ANPD nº 15/2024 · Retenção mínima: 5 anos (caput)
           </p>
         </div>
 
         {/* Retention banner */}
-        <div className="flex items-center gap-3 px-4 py-3 mb-6 border border-[#E0E0E0] bg-[#F9F9F9]">
-          <Archive size={15} className="text-[#555555] shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 mb-6 border border-[rgba(21,38,43,0.12)] bg-[#F9F9F9]">
+          <Archive size={15} className="text-[var(--ink-soft)] shrink-0" />
           <div className="font-mono text-xs flex flex-wrap gap-x-2 gap-y-0.5">
-            <span className="text-[#555555]">Retenção mínima:</span>
-            <span className="font-bold text-[#111111]">5 anos a partir da data do registro</span>
+            <span className="text-[var(--ink-soft)]">Retenção mínima:</span>
+            <span className="font-bold text-[var(--ink)]">5 anos a partir da data do registro</span>
             {retencaoMin && (
               <>
-                <span className="text-[#555555]">·</span>
-                <span className="font-bold text-[#111111]">Manter até: {formatDate(retencaoMin)}</span>
+                <span className="text-[var(--ink-soft)]">·</span>
+                <span className="font-bold text-[var(--ink)]">Manter até: {formatDate(retencaoMin)}</span>
               </>
             )}
             {form.prazo_manutencao_maior && form.data_retencao_estendida_ate && (
               <>
-                <span className="text-[#555555]">·</span>
+                <span className="text-[var(--ink-soft)]">·</span>
                 <span className="font-bold text-amber-700">Prazo estendido até: {formatDate(form.data_retencao_estendida_ate)}</span>
               </>
             )}
@@ -396,7 +396,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
           <div className="flex-1 min-w-0 space-y-4">
 
             {/* Retenção */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="Dados de Registro e Retenção"
                 subtitle="Caput Art. 10 · Mínimo 5 anos"
@@ -415,14 +415,14 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
                       className={`${inputClass} w-56`}
                     />
                     {retencaoMin && (
-                      <p className="font-mono text-xs text-[#555555] mt-1.5">
+                      <p className="font-mono text-xs text-[var(--ink-soft)] mt-1.5">
                         Retenção mínima até: <strong>{formatDate(retencaoMin)}</strong>
                       </p>
                     )}
                     {errors.data_registro && <p className="text-red-500 font-mono text-xs mt-1">{errors.data_registro}</p>}
                   </div>
 
-                  <div className="pt-3 border-t border-[#E0E0E0]">
+                  <div className="pt-3 border-t border-[rgba(21,38,43,0.12)]">
                     <Toggle
                       checked={form.prazo_manutencao_maior}
                       onChange={v => set('prazo_manutencao_maior', v)}
@@ -460,7 +460,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* I — Data de conhecimento */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="I — Data de Conhecimento do Incidente"
                 subtitle="Art. 10, §1º, inciso I"
@@ -483,7 +483,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* II — Circunstâncias */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="II — Circunstâncias do Incidente"
                 subtitle="Art. 10, §1º, inciso II"
@@ -507,7 +507,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* III — Natureza e categoria */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="III — Natureza e Categoria de Dados Afetados"
                 subtitle="Art. 10, §1º, inciso III"
@@ -550,7 +550,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* IV — Número de titulares */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="IV — Número de Titulares Afetados"
                 subtitle="Art. 10, §1º, inciso IV"
@@ -600,7 +600,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* V — Avaliação do risco */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="V — Avaliação do Risco e Possíveis Danos"
                 subtitle="Art. 10, §1º, inciso V"
@@ -624,7 +624,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* VI — Medidas de correção */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="VI — Medidas de Correção e Mitigação"
                 subtitle="Art. 10, §1º, inciso VI · quando aplicável"
@@ -652,7 +652,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
                       onChange={e => set('medidas_correcao_mitigacao', e.target.value)}
                       disabled={form.nao_aplicavel_mitigacao}
                       placeholder="Ex.: Isolamento do sistema comprometido, redefinição de credenciais, notificação às autoridades..."
-                      className={`${taClass} ${form.nao_aplicavel_mitigacao ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                      className={`${taClass} ${form.nao_aplicavel_mitigacao ? 'bg-white/70 text-[var(--ink-soft)] cursor-not-allowed' : ''}`}
                     />
                     {errors.medidas_correcao_mitigacao && <p className="text-red-500 font-mono text-xs mt-1">{errors.medidas_correcao_mitigacao}</p>}
                   </div>
@@ -661,7 +661,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* VII/VIII — Comunicação */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="VII — Forma e Conteúdo da Comunicação"
                 subtitle="Art. 10, §1º, inciso VII · Ausência: inciso VIII"
@@ -686,7 +686,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
                   />
 
                   {form.houve_comunicacao ? (
-                    <div className="space-y-4 pl-4 border-l-2 border-[#CAFF00]">
+                    <div className="space-y-4 pl-4 border-l-2 border-[var(--accent)]">
                       <div>
                         <FieldLabel required hint="§1º, VII">Forma da comunicação realizada</FieldLabel>
                         <select
@@ -713,9 +713,9 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
                         {errors.conteudo_comunicacao_resumo && <p className="text-red-500 font-mono text-xs mt-1">{errors.conteudo_comunicacao_resumo}</p>}
                       </div>
                       {comunicacaoRef && (
-                        <div className="bg-[#F9F9F9] border border-[#E0E0E0] px-4 py-3">
-                          <p className="font-mono text-xs text-[#555555] uppercase mb-1">Referência — Comunicação (Titulares) — Art. 9º</p>
-                          <p className="font-dm text-xs text-[#111111]">
+                        <div className="bg-[#F9F9F9] border border-[rgba(21,38,43,0.12)] px-4 py-3">
+                          <p className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Referência — Comunicação (Titulares) — Art. 9º</p>
+                          <p className="font-dm text-xs text-[var(--ink)]">
                             Registrada em: {new Date(comunicacaoRef.updated_at).toLocaleString('pt-BR')} · por {comunicacaoRef.updated_by}
                           </p>
                           <p className="font-dm text-xs text-[#888888] mt-1">Este documento será referenciado no resumo gerado.</p>
@@ -741,7 +741,7 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
             </div>
 
             {/* Anotações internas */}
-            <div className="border border-[#E0E0E0]">
+            <div className="border border-[rgba(21,38,43,0.12)]">
               <SectionHeader
                 title="Anotações Internas"
                 subtitle="Máximo 500 caracteres · Não compõe o texto regulado"
@@ -775,15 +775,15 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
               <button
                 type="button"
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-[#111111] text-white font-mono text-xs px-5 py-3 hover:bg-[#333] transition-colors"
+                className="flex items-center gap-2 bg-[#173038] text-[#fffdf8] font-mono text-xs px-5 py-3 hover:bg-[#0f2128] transition-colors"
               >
-                {saved ? <CheckCircle size={14} className="text-[#CAFF00]" /> : <Save size={14} />}
+                {saved ? <CheckCircle size={14} className="text-[var(--accent)]" /> : <Save size={14} />}
                 {saved ? 'Salvo!' : 'Salvar Registro'}
               </button>
               <button
                 type="button"
                 onClick={handlePrint}
-                className="flex items-center gap-2 border border-[#111111] text-[#111111] font-mono text-xs px-5 py-3 hover:bg-[#F5F5F5] transition-colors"
+                className="flex items-center gap-2 border border-[rgba(21,38,43,0.16)] text-[var(--ink)] font-mono text-xs px-5 py-3 hover:bg-[#F5F5F5] transition-colors"
               >
                 <Printer size={14} />
                 Exportar / Imprimir PDF
@@ -811,13 +811,13 @@ export default function ANPDRegistroIncidente({ clientId: propClientId, isAdmin 
           {/* ── PREVIEW ── */}
           <div className="xl:w-[420px] shrink-0">
             <div className="xl:sticky xl:top-6">
-              <div className="border border-[#E0E0E0] bg-white">
-                <div className="bg-[#111111] px-4 py-3 flex items-center justify-between">
-                  <span className="font-syne font-bold text-white text-xs uppercase">Resumo do Registro (Art. 10)</span>
-                  <span className="font-mono text-[10px] text-[#CAFF00] uppercase">Template travado</span>
+              <div className="border border-[rgba(21,38,43,0.12)] bg-white">
+                <div className="bg-[#173038] px-4 py-3 flex items-center justify-between">
+                  <span className="font-syne font-bold text-[#fffdf8] text-xs uppercase">Resumo do Registro (Art. 10)</span>
+                  <span className="font-mono text-[10px] text-[var(--accent)] uppercase">Template travado</span>
                 </div>
                 <div className="p-4 max-h-[70vh] overflow-y-auto">
-                  <pre className="font-mono text-[10px] text-[#111111] whitespace-pre-wrap leading-relaxed">{preview}</pre>
+                  <pre className="font-mono text-[10px] text-[var(--ink)] whitespace-pre-wrap leading-relaxed">{preview}</pre>
                 </div>
               </div>
               {form.updated_at && (

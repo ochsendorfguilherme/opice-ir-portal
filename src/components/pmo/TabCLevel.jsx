@@ -118,7 +118,7 @@ ${data.oQueFazendo || '—'}`;
     };
 
     const impacts = data.impacts || {};
-    const taClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full resize-none transition-colors";
+    const taClass = "border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] w-full resize-none transition-colors";
 
     const charsOQueHouve = (data.oQueHouve || '').length;
 
@@ -126,19 +126,19 @@ ${data.oQueFazendo || '—'}`;
         <div className="space-y-6">
             {/* Tab Header Info */}
             <div className="mb-8">
-                <h2 className="font-syne font-bold text-[#111111] text-2xl uppercase">Resumo Executivo — C-Level</h2>
-                <p className="text-[#555555] font-dm mt-1 max-w-2xl">
+                <h2 className="font-syne font-bold text-[var(--ink)] text-2xl uppercase">Resumo Executivo — C-Level</h2>
+                <p className="text-[var(--ink-soft)] font-dm mt-1 max-w-2xl">
                     Briefing objetivo para apresentação à diretoria e stakeholders.
                     Mantenha este resumo atualizado a cada evolução relevante do incidente.
                 </p>
             </div>
 
             {/* BLOCO 1 — BRIEFING ATUAL */}
-            <div className="bg-white border-l-4 border-l-[#CAFF00] shadow-sm">
+            <div className="bg-white border-l-4 border-l-[var(--accent)] shadow-sm">
                 <div className="p-6 space-y-5">
                     {/* Campo 1 */}
                     <div>
-                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[#111111] mb-2">
+                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[var(--ink)] mb-2">
                             O QUE HOUVE:
                         </label>
                         <textarea
@@ -148,14 +148,14 @@ ${data.oQueFazendo || '—'}`;
                             placeholder="Descreva o incidente em 1-2 frases objetivas para um executivo não técnico."
                             className={taClass}
                         />
-                        <div className={`text-right mt-1 font-mono text-[10px] ${charsOQueHouve > 280 ? 'text-red-500' : 'text-gray-400'}`}>
+                        <div className={`text-right mt-1 font-mono text-[10px] ${charsOQueHouve > 280 ? 'text-red-500' : 'text-[var(--ink-soft)]'}`}>
                             {charsOQueHouve} / 280
                         </div>
                     </div>
 
                     {/* Campo 2 */}
                     <div>
-                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[#111111] mb-2">
+                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[var(--ink)] mb-2">
                             IMPACTO:
                         </label>
                         <textarea
@@ -169,7 +169,7 @@ ${data.oQueFazendo || '—'}`;
 
                     {/* Campo 3 */}
                     <div>
-                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[#111111] mb-2">
+                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[var(--ink)] mb-2">
                             O QUE ESTAMOS FAZENDO:
                         </label>
                         <textarea
@@ -183,17 +183,17 @@ ${data.oQueFazendo || '—'}`;
                 </div>
 
                 {/* Footer Actions */}
-                <div className="bg-gray-50 border-t border-[#E0E0E0] px-6 py-4 flex flex-wrap gap-3 justify-end items-center">
+                <div className="bg-white/72 border-t border-[rgba(21,38,43,0.12)] px-6 py-4 flex flex-wrap gap-3 justify-end items-center">
                     <button
                         onClick={handleCopy}
-                        className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[#E0E0E0] text-[#111111] hover:border-[#111111] hover:bg-white transition-colors"
+                        className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink)] hover:border-[rgba(21,38,43,0.16)] hover:bg-white transition-colors"
                     >
                         <Copy size={13} />
                         {copyFeedback ? 'Copiado!' : 'Copiar Briefing'}
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-[#111111] text-white hover:bg-[#333] transition-colors"
+                        className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-[#173038] text-[#fffdf8] hover:bg-[#0f2128] transition-colors"
                     >
                         <FileDown size={13} />
                         Exportar PDF
@@ -202,8 +202,8 @@ ${data.oQueFazendo || '—'}`;
             </div>
 
             {/* BLOCO 2 — IMPACTO DETALHADO */}
-            <div className="border border-[#E0E0E0] bg-white p-6">
-                <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-5">Avaliação de Impacto</h3>
+            <div className="border border-[rgba(21,38,43,0.12)] bg-white p-6">
+                <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-5">Avaliação de Impacto</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
@@ -216,13 +216,13 @@ ${data.oQueFazendo || '—'}`;
                         const isFilled = !!val.trim();
                         return (
                             <div key={cat} className="flex flex-col h-full">
-                                <div className="font-mono text-xs text-[#555555] font-semibold uppercase mb-2">{cat}</div>
+                                <div className="font-mono text-xs text-[var(--ink-soft)] font-semibold uppercase mb-2">{cat}</div>
                                 <textarea
                                     value={val}
                                     onChange={e => save({ impacts: { ...impacts, [cat]: e.target.value } })}
                                     rows={4}
-                                    className={`flex-1 border-x border-t border-b-4 bg-gray-50 px-3 py-2 font-dm text-sm focus:outline-none focus:bg-white transition-all
-                    ${isFilled ? 'border-b-green-500 border-x-[#E0E0E0] border-t-[#E0E0E0]' : 'border-b-[#E0E0E0] border-x-[#E0E0E0] border-t-[#E0E0E0] focus:border-b-[#CAFF00]'}
+                                    className={`flex-1 border-x border-t border-b-4 bg-white/72 px-3 py-2 font-dm text-sm focus:outline-none focus:bg-white transition-all
+                    ${isFilled ? 'border-b-green-500 border-x-[#E0E0E0] border-t-[#E0E0E0]' : 'border-b-[#E0E0E0] border-x-[#E0E0E0] border-t-[#E0E0E0] focus:border-b-[var(--accent)]'}
                   `}
                                     placeholder={placeholder}
                                 />
@@ -233,39 +233,39 @@ ${data.oQueFazendo || '—'}`;
             </div>
 
             {/* BLOCO 3 — HISTÓRICO DE VERSÕES */}
-            <div className="border border-[#E0E0E0] bg-white">
-                <div className="bg-[#111111] px-5 py-3">
-                    <h3 className="font-syne font-bold text-white uppercase text-sm flex items-center gap-2">
-                        <Clock size={14} className="text-[#CAFF00]" />
+            <div className="border border-[rgba(21,38,43,0.12)] bg-white">
+                <div className="bg-[#173038] px-5 py-3">
+                    <h3 className="font-syne font-bold text-[#fffdf8] uppercase text-sm flex items-center gap-2">
+                        <Clock size={14} className="text-[var(--accent)]" />
                         Histórico de Atualizações
                     </h3>
                 </div>
 
                 <div className="p-0">
                     {history.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500 font-dm text-sm">
+                        <div className="p-6 text-center text-[var(--ink-soft)] font-dm text-sm">
                             Nenhuma versão salva ainda. O histórico é gerado automaticamente ao copiar ou exportar o briefing.
                         </div>
                     ) : (
                         <div className="divide-y divide-[#E0E0E0]">
                             {history.map((snap, i) => (
-                                <div key={i} className="px-5 py-4 hover:bg-gray-50 transition-colors flex flex-col md:flex-row md:items-center gap-4">
+                                <div key={i} className="px-5 py-4 hover:bg-white/72 transition-colors flex flex-col md:flex-row md:items-center gap-4">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-3 mb-1">
-                                            <span className="font-mono text-xs font-bold text-[#111111]">
+                                            <span className="font-mono text-xs font-bold text-[var(--ink)]">
                                                 {new Date(snap.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                                             </span>
-                                            <span className="font-mono text-[10px] text-[#555555] bg-gray-200 px-1.5 py-0.5 uppercase">
+                                            <span className="font-mono text-[10px] text-[var(--ink-soft)] bg-gray-200 px-1.5 py-0.5 uppercase">
                                                 {snap.user}
                                             </span>
                                         </div>
-                                        <div className="font-dm text-sm text-[#555555] truncate">
+                                        <div className="font-dm text-sm text-[var(--ink-soft)] truncate">
                                             {snap.content.oQueHouve ? `"${snap.content.oQueHouve.slice(0, 80)}..."` : '(Vazio)'}
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => handleRestore(snap)}
-                                        className="shrink-0 flex items-center gap-1.5 font-mono text-xs text-[#111111] px-3 py-1.5 border border-[#E0E0E0] hover:bg-gray-200 transition-colors"
+                                        className="shrink-0 flex items-center gap-1.5 font-mono text-xs text-[var(--ink)] px-3 py-1.5 border border-[rgba(21,38,43,0.12)] hover:bg-gray-200 transition-colors"
                                     >
                                         <RotateCcw size={12} />
                                         Restaurar versão

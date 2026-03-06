@@ -32,7 +32,7 @@ function AutoSaveTextarea({ value, onChange, placeholder }) {
         onChange={handleChange}
         placeholder={placeholder}
         rows={3}
-        className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors resize-none"
+        className="w-full border border-[rgba(21,38,43,0.12)] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors resize-none"
       />
       {saved && (
         <span className="absolute top-2 right-2 text-green-600 font-mono text-xs flex items-center gap-1">
@@ -110,223 +110,400 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
     setSentToTimeline(prev => ({ ...prev, [sec.id]: true }));
   };
 
+
   const generatePDF = () => {
-    const doc = new jsPDF();
-    const pageW = doc.internal.pageSize.width;
-    let y = 20;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginX = 16;
+    const contentW = pageW - marginX * 2;
+    const theme = {
+      ink: [20, 36, 43],
+      inkSoft: [96, 112, 118],
+      teal: [23, 48, 56],
+      tealDeep: [16, 34, 40],
+      line: [220, 224, 218],
+      paper: [248, 246, 239],
+      panel: [239, 235, 225],
+      accent: [214, 255, 99],
+      accentDeep: [137, 168, 44],
+      amber: [255, 178, 31],
+    };
 
-    const addPage = () => { doc.addPage(); y = 20; };
-    const checkPage = (need = 20) => { if (y + need > 270) addPage(); };
+    const safe = (value, fallback = 'Não informado') => {
+      const str = value === undefined || value === null ? '' : String(value).trim();
+      return str || fallback;
+    };
 
-    // Cover header (always)
-    doc.setFillColor(17, 17, 17);
-    doc.rect(0, 0, pageW, 35, 'F');
-    doc.setTextColor(202, 255, 0);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TLP:AMBER+STRICT', 14, 12);
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
-    doc.text('OPICE BLUM — Relatório de Investigação', 14, 22);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Cliente: ${info.nomeCliente || '—'} | Data: ${info.dataIncidente || '—'} | Gerado: ${new Date().toLocaleString('pt-BR')}`, 14, 30);
-    y = 50;
+    const safeInline = (value, fallback = 'Não informado') => safe(value, fallback).replace(/\r?\n+/g, ' ');
+    const sanitizeFilename = (value) => safeInline(value, 'Cliente').replace(/[^a-zA-Z0-9_-]+/g, '_');
+    const now = new Date();
+    const nowLabel = now.toLocaleString('pt-BR');
+    const infoFields = [
+      ['Nome do cliente', info.nomeCliente],
+      ['Código do cliente', info.codigoCliente || info.clientCode],
+      ['Data do incidente', info.dataIncidente],
+      ['Conhecimento (UTC)', info.dataConhecimento],
+      ['Agente de tratamento', info.agenteTratamento || info.agente],
+      ['Contexto geral', info.contexto],
+    ].filter(([, value]) => value);
+    const totalQuestions = QUESTION_SECTIONS.reduce((acc, sec) => acc + sec.questions.length, 0);
+    const answeredQuestions = QUESTION_SECTIONS.reduce(
+      (acc, sec) => acc + Object.values(answers[sec.id] || {}).filter((value) => String(value || '').trim()).length,
+      0
+    );
+    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+    const clevel = pmoData.clevel || {};
+    const activities = getStorage(KEYS.activities(effectiveClientId), []);
+    const timeline = (pmoData.timeline || []).slice(0, 10);
+    const selectedLabels = PDF_SECTIONS.filter((section) => pdfSections[section.id]).map((section) => section.label);
+    const sectionSummary = [
+      {
+        title: 'Cobertura do questionário',
+        value: totalQuestions ? Math.round((answeredQuestions / totalQuestions) * 100) + '%' : '0%',
+        detail: answeredQuestions + ' de ' + totalQuestions + ' respostas registradas',
+      },
+      {
+        title: 'Seções iniciadas',
+        value: String(sectionsStarted).padStart(2, '0'),
+        detail: 'de 5 seções do fluxo principal',
+      },
+      {
+        title: 'Blocos exportados',
+        value: String(selectedLabels.length).padStart(2, '0'),
+        detail: selectedLabels.length ? selectedLabels.join(' - ') : 'Nenhuma seção selecionada',
+      },
+    ];
 
-    // Section: Informações do Cliente
-    if (pdfSections.info) {
-      checkPage(15);
-      doc.setTextColor(17, 17, 17);
-      doc.setFontSize(11);
+    let y = 18;
+
+    const addPage = () => {
+      doc.addPage();
+      y = 18;
+    };
+
+    const ensureSpace = (need = 18) => {
+      if (y + need > pageH - 20) addPage();
+    };
+
+    const drawPageChrome = (title, subtitle = '') => {
+      doc.setFillColor(...theme.paper);
+      doc.rect(0, 0, pageW, pageH, 'F');
+      doc.setFillColor(...theme.teal);
+      doc.roundedRect(marginX, 10, contentW, 14, 4, 4, 'F');
+      doc.setFillColor(...theme.paper);
+      doc.roundedRect(marginX + 3, 13, 33, 8, 3, 3, 'F');
+      doc.setTextColor(...theme.teal);
       doc.setFont('helvetica', 'bold');
-      doc.text('INFORMAÇÕES DO CLIENTE', 14, y);
-      y += 8;
-      const infoFields = [
-        ['Nome do Cliente', info.nomeCliente],
-        ['Data do Incidente', info.dataIncidente],
-        ['Data de Conhecimento', info.dataConhecimento],
-        ['Agente de Tratamento', info.agenteTratamento],
-        ['Contexto Geral', info.contextoGeral],
-      ];
-      infoFields.forEach(([label, val]) => {
-        if (!val) return;
-        checkPage(10);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(17, 17, 17);
-        doc.text(`${label}:`, 14, y);
+      doc.setFontSize(8);
+      doc.text('TLP:AMBER+STRICT', marginX + 6, 18);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(15);
+      doc.text(title, marginX + 40, 18);
+      if (subtitle) {
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(40, 40, 40);
-        const lines = doc.splitTextToSize(String(val), pageW - 28);
-        doc.text(lines, 14, y + 4);
-        y += lines.length * 5 + 6;
-      });
-      y += 5;
-    }
+        doc.setFontSize(8.5);
+        doc.setTextColor(214, 223, 225);
+        doc.text(subtitle, marginX + 40, 22);
+      }
+      y = 34;
+    };
 
-    // Section: Perguntas
-    if (pdfSections.perguntas) {
-      checkPage(15);
-      doc.setTextColor(17, 17, 17);
-      doc.setFontSize(12);
+    const drawFooter = (pageNumber, totalPages) => {
+      doc.setDrawColor(...theme.line);
+      doc.line(marginX, pageH - 14, pageW - marginX, pageH - 14);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...theme.inkSoft);
+      doc.text('Relatório confidencial de resposta a incidente', marginX, pageH - 8);
+      doc.text('Página ' + pageNumber + ' de ' + totalPages, pageW - marginX - 24, pageH - 8);
+    };
+
+    const drawSectionBand = (eyebrow, title, note = '') => {
+      ensureSpace(20);
+      doc.setFillColor(...theme.panel);
+      doc.roundedRect(marginX, y, contentW, 18, 5, 5, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.text('PERGUNTAS DO INCIDENTE', 14, y);
-      y += 10;
+      doc.setFontSize(8);
+      doc.setTextColor(...theme.accentDeep);
+      doc.text(eyebrow.toUpperCase(), marginX + 5, y + 6);
+      doc.setFontSize(13);
+      doc.setTextColor(...theme.ink);
+      doc.text(title, marginX + 5, y + 12.5);
+      if (note) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...theme.inkSoft);
+        doc.text(note, pageW - marginX - doc.getTextWidth(note), y + 12.5);
+      }
+      y += 24;
+    };
 
-      QUESTION_SECTIONS.forEach(sec => {
-        checkPage(15);
-        doc.setTextColor(17, 17, 17);
-        doc.setFontSize(11);
+    const drawMetricCard = (x, top, width, title, value, detail, variant = 'light') => {
+      const dark = variant === 'dark';
+      doc.setFillColor(...(dark ? theme.tealDeep : theme.panel));
+      doc.roundedRect(x, top, width, 28, 5, 5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...(dark ? theme.amber : theme.inkSoft));
+      doc.text(title.toUpperCase(), x + 4, top + 7);
+      doc.setFontSize(18);
+      doc.setTextColor(...(dark ? [255, 255, 255] : theme.ink));
+      doc.text(String(value), x + 4, top + 17);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...(dark ? [214, 223, 225] : theme.inkSoft));
+      const detailLines = doc.splitTextToSize(detail, width - 8);
+      doc.text(detailLines, x + 4, top + 23);
+    };
+
+    const drawLabelValueGrid = (items) => {
+      const colGap = 6;
+      const colW = (contentW - colGap) / 2;
+      let rowTop = y;
+      let rowHeight = 0;
+      items.forEach(([label, rawValue], index) => {
+        const value = safe(rawValue);
+        const x = marginX + (index % 2) * (colW + colGap);
+        const lines = doc.splitTextToSize(value, colW - 10);
+        const boxH = Math.max(18, 11 + lines.length * 4.5);
+        if (index % 2 === 0) {
+          ensureSpace(boxH + 4);
+          rowTop = y;
+          rowHeight = boxH;
+        } else {
+          rowHeight = Math.max(rowHeight, boxH);
+        }
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x, rowTop, colW, rowHeight, 4, 4, 'F');
+        doc.setDrawColor(...theme.line);
+        doc.roundedRect(x, rowTop, colW, rowHeight, 4, 4, 'S');
         doc.setFont('helvetica', 'bold');
-        doc.text(`SEÇÃO ${sec.id} — ${sec.title}`, 14, y);
-        y += 8;
+        doc.setFontSize(8);
+        doc.setTextColor(...theme.inkSoft);
+        doc.text(label.toUpperCase(), x + 4, rowTop + 6);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...theme.ink);
+        doc.text(lines, x + 4, rowTop + 12);
+        if (index % 2 === 1 || index === items.length - 1) y = rowTop + rowHeight + 4;
+      });
+    };
 
-        sec.questions.forEach((q, qi) => {
-          checkPage(20);
-          const ans = answers[sec.id]?.[qi] || '';
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(17, 17, 17);
-          const qLines = doc.splitTextToSize(`${qi + 1}. ${q}`, pageW - 28);
-          doc.text(qLines, 14, y);
-          y += qLines.length * 5 + 2;
+    const drawParagraphBlock = (label, rawValue, options = {}) => {
+      const value = safe(rawValue, options.emptyLabel || 'Não preenchido');
+      const lines = doc.splitTextToSize(value, contentW - 12);
+      const boxH = Math.max(20, 12 + lines.length * 4.6);
+      ensureSpace(boxH + 4);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(marginX, y, contentW, boxH, 5, 5, 'F');
+      doc.setDrawColor(...theme.line);
+      doc.roundedRect(marginX, y, contentW, boxH, 5, 5, 'S');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...theme.inkSoft);
+      doc.text(label.toUpperCase(), marginX + 5, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(...theme.ink);
+      doc.text(lines, marginX + 5, y + 13);
+      y += boxH + 5;
+    };
 
-          doc.setFont('helvetica', 'normal');
-          if (ans.trim()) {
-            doc.setTextColor(40, 40, 40);
-            const lines = doc.splitTextToSize(ans, pageW - 28);
-            checkPage(lines.length * 5 + 5);
-            doc.text(lines, 14, y);
-            y += lines.length * 5 + 4;
-          } else {
-            doc.setTextColor(150, 150, 150);
-            doc.text('(Não respondido)', 14, y);
-            y += 6;
-          }
+    const drawBullets = (items) => {
+      items.forEach((item) => {
+        ensureSpace(8);
+        doc.setFillColor(...theme.amber);
+        doc.circle(marginX + 3, y + 1.5, 1.2, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(...theme.teal);
+        const lines = doc.splitTextToSize(item, contentW - 10);
+        doc.text(lines, marginX + 7, y + 3);
+        y += lines.length * 4.5 + 2;
+      });
+    };
+
+    const drawQuestionAnswer = (indexLabel, question, answer) => {
+      const answerText = safe(answer, 'Não respondido no momento da exportação.');
+      const qLines = doc.splitTextToSize(question, contentW - 14);
+      const aLines = doc.splitTextToSize(answerText, contentW - 14);
+      const boxH = 16 + qLines.length * 4.2 + aLines.length * 4.5;
+      ensureSpace(boxH + 4);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(marginX, y, contentW, boxH, 5, 5, 'F');
+      doc.setDrawColor(...theme.line);
+      doc.roundedRect(marginX, y, contentW, boxH, 5, 5, 'S');
+      doc.setFillColor(...theme.teal);
+      doc.roundedRect(marginX + 4, y + 4, 14, 8, 2.5, 2.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text(indexLabel, marginX + 7.5, y + 9.5);
+      doc.setFontSize(10);
+      doc.setTextColor(...theme.ink);
+      doc.text(qLines, marginX + 22, y + 9);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...theme.inkSoft);
+      doc.text(aLines, marginX + 22, y + 9 + qLines.length * 4.2 + 3);
+      y += boxH + 4;
+    };
+
+    const drawTimelineItem = (event, index) => {
+      const eventLabel = safeInline(event.evento, 'Evento sem descricao');
+      const meta = [safeInline(event.datetime, 'Sem horario'), safeInline(event.fase, 'Sem fase'), safeInline(event.fonte, 'Sem fonte')].join('  -  ');
+      const eventLines = doc.splitTextToSize(eventLabel, contentW - 18);
+      const metaLines = doc.splitTextToSize(meta, contentW - 18);
+      const boxH = 14 + eventLines.length * 4.2 + metaLines.length * 4;
+      ensureSpace(boxH + 4);
+      doc.setFillColor(...(index % 2 === 0 ? [255, 255, 255] : [252, 250, 244]));
+      doc.roundedRect(marginX, y, contentW, boxH, 5, 5, 'F');
+      doc.setDrawColor(...theme.line);
+      doc.roundedRect(marginX, y, contentW, boxH, 5, 5, 'S');
+      doc.setFillColor(...theme.accent);
+      doc.circle(marginX + 6, y + 7, 2.2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...theme.ink);
+      doc.text(eventLines, marginX + 12, y + 8);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...theme.inkSoft);
+      doc.text(metaLines, marginX + 12, y + 8 + eventLines.length * 4.2 + 2);
+      y += boxH + 4;
+    };
+
+    doc.setFillColor(...theme.paper);
+    doc.rect(0, 0, pageW, pageH, 'F');
+    doc.setFillColor(...theme.tealDeep);
+    doc.rect(0, 0, pageW, 82, 'F');
+    doc.setFillColor(...theme.amber);
+    doc.roundedRect(marginX, 14, 42, 9, 3, 3, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...theme.tealDeep);
+    doc.text('TLP:AMBER+STRICT', marginX + 6, 20);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text('Relatório de Investigação', marginX, 42);
+    doc.setFontSize(11.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(214, 223, 225);
+    const subtitleLines = doc.splitTextToSize('Documento executivo consolidado com contexto do incidente, respostas registradas e andamento operacional do portal.', 110);
+    doc.text(subtitleLines, marginX, 52);
+
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(pageW - 76, 18, 60, 46, 8, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...theme.inkSoft);
+    doc.text('Dossiê', pageW - 70, 28);
+    doc.setFontSize(16);
+    doc.setTextColor(...theme.ink);
+    doc.text(safeInline(info.nomeCliente, 'Cliente'), pageW - 70, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...theme.inkSoft);
+    doc.text('Gerado em ' + nowLabel, pageW - 70, 48);
+    doc.text('Usuário: ' + safeInline(user?.email, 'Sistema'), pageW - 70, 54);
+    doc.text('Fluxo: Incident Response Portal', pageW - 70, 60);
+
+    y = 94;
+    drawSectionBand('Visão geral', 'Panorama do relatório', 'exportação automática');
+    const cardGap = 5;
+    const cardW = (contentW - cardGap * 2) / 3;
+    sectionSummary.forEach((card, index) => {
+      drawMetricCard(marginX + index * (cardW + cardGap), y, cardW, card.title, card.value, card.detail, index === 0 ? 'dark' : 'light');
+    });
+    y += 34;
+
+    drawSectionBand('Contexto', 'Identificação do incidente');
+    drawLabelValueGrid(infoFields.length ? infoFields : [['Cliente', 'Não informado'], ['Data do incidente', 'Não informado']]);
+
+    drawSectionBand('Leitura rápida', 'Pontos de atenção para a diretoria');
+    drawBullets([
+      'Escopo exportado: ' + (selectedLabels.length ? selectedLabels.join(', ') : 'nenhuma seção adicional selecionada'),
+      'Respostas salvas: ' + answeredQuestions + ' de ' + totalQuestions + ' perguntas cadastradas no formulario.',
+      'Jornada operacional: ' + activities.length + ' atividades registradas e ' + timeline.length + ' eventos recentes considerados para timeline.',
+    ]);
+
+    if (pdfSections.info) {
+      drawSectionBand('Dados-base', 'Informações do cliente e do evento');
+      drawLabelValueGrid(infoFields.length ? infoFields : [['Cliente', 'Não informado'], ['Data do incidente', 'Não informado']]);
+      if (info.contexto) drawParagraphBlock('Contexto geral', info.contexto);
+    }
+
+    if (pdfSections.perguntas) {
+      QUESTION_SECTIONS.forEach((section, sectionIndex) => {
+        addPage();
+        drawPageChrome('Perguntas do incidente', 'Seção ' + section.id + ' de ' + QUESTION_SECTIONS.length);
+        drawSectionBand('Seção ' + section.id, section.title, sectionAnswered(section.id) + '/' + section.questions.length + ' respondidas');
+        section.questions.forEach((question, questionIndex) => {
+          drawQuestionAnswer(section.id + '.' + (questionIndex + 1), question, answers[section.id]?.[questionIndex] || '');
         });
-        y += 5;
+        if (sectionIndex === QUESTION_SECTIONS.length - 1 && !pdfSections.jornada && !pdfSections.pmo && !pdfSections.timeline) {
+          drawParagraphBlock('Fechamento', 'Este relatório foi consolidado com base nas respostas disponíveis no momento da exportação. Recomenda-se nova emissão após atualizações relevantes do incidente.');
+        }
       });
     }
 
-    // Section: Jornada
     if (pdfSections.jornada) {
       addPage();
-      const activities = getStorage(KEYS.activities(effectiveClientId), []);
-      doc.setTextColor(17, 17, 17);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('STATUS DA JORNADA DO INCIDENTE', 14, y);
-      y += 10;
-
+      drawPageChrome('Jornada do incidente', 'Status operacional consolidado');
+      drawSectionBand('Workflow', 'Distribuição das atividades por status', activities.length + ' registros encontrados');
       const statusGroups = ['Feito', 'Em andamento', 'Planejado', 'Não se aplica'];
-      statusGroups.forEach(st => {
-        const acts = activities.filter(a => a.status === st);
-        if (acts.length === 0) return;
-        checkPage(10);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(17, 17, 17);
-        doc.text(`${st.toUpperCase()} (${acts.length})`, 14, y);
-        y += 6;
-        acts.forEach(a => {
-          checkPage(8);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(60, 60, 60);
-          const line = doc.splitTextToSize(`#${a.id} ${a.nome} — ${a.etapa} — ${a.responsavel || '—'}`, pageW - 28);
-          doc.text(line, 18, y);
-          y += line.length * 5 + 2;
-        });
-        y += 3;
+      const statusCards = statusGroups.map((status) => ({
+        title: status,
+        value: String(activities.filter((activity) => activity.status === status).length).padStart(2, '0'),
+        detail: 'atividades classificadas nesse status',
+      }));
+      statusCards.forEach((card, index) => {
+        const x = marginX + (index % 2) * (((contentW - 5) / 2) + 5);
+        if (index % 2 === 0) ensureSpace(32);
+        drawMetricCard(x, y, (contentW - 5) / 2, card.title, card.value, card.detail, card.title === 'Em andamento' ? 'dark' : 'light');
+        if (index % 2 === 1 || index === statusCards.length - 1) y += 32;
       });
-    }
-
-    // Section: PMO Executive Summary
-    if (pdfSections.pmo) {
-      addPage();
-      const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-      const clevel = pmoData.clevel || {};
-      doc.setTextColor(17, 17, 17);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('RESUMO EXECUTIVO PMO (C-LEVEL)', 14, y);
-      y += 10;
-      const fields = [
-        ['O que houve', clevel.oQueHouve],
-        ['Impacto', clevel.impacto],
-        ['O que estamos fazendo', clevel.oQueFazendo],
-      ];
-      fields.forEach(([label, val]) => {
-        checkPage(15);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(17, 17, 17);
-        doc.text(`${label}:`, 14, y);
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(40, 40, 40);
-        const text = val?.trim() || '(Não preenchido)';
-        const lines = doc.splitTextToSize(text, pageW - 28);
-        checkPage(lines.length * 5 + 5);
-        doc.text(lines, 14, y);
-        y += lines.length * 5 + 6;
-      });
-    }
-
-    // Section: Timeline
-    if (pdfSections.timeline) {
-      addPage();
-      const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-      const timeline = (pmoData.timeline || []).slice(0, 10);
-      doc.setTextColor(17, 17, 17);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TIMELINE DE EVENTOS (ÚLTIMOS 10)', 14, y);
-      y += 10;
-
-      if (timeline.length === 0) {
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(150, 150, 150);
-        doc.text('Nenhum evento registrado', 14, y);
-        y += 6;
+      if (!activities.length) {
+        drawParagraphBlock('Leitura do módulo', 'Nenhuma atividade da jornada foi registrada até o momento.');
       } else {
-        timeline.forEach(ev => {
-          checkPage(18);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(17, 17, 17);
-          doc.text(`${ev.datetime?.replace('T', ' ') || '—'} — [${ev.fase || '—'}]`, 14, y);
-          y += 5;
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(40, 40, 40);
-          const evLines = doc.splitTextToSize(ev.evento || '', pageW - 28);
-          checkPage(evLines.length * 4 + 5);
-          doc.text(evLines, 14, y);
-          y += evLines.length * 4 + 4;
-          if (ev.fonte) {
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Fonte: ${ev.fonte}`, 18, y);
-            y += 4;
-          }
+        drawSectionBand('Backlog', 'Atividades mais recentes');
+        activities.slice(0, 10).forEach((activity) => {
+          drawParagraphBlock(
+            (activity.etapa || 'Etapa') + ' - ' + (activity.status || 'Sem status'),
+            safeInline(activity.nome, 'Atividade sem nome') + '\nResponsável: ' + safeInline(activity.responsavel, 'Não definido') + (activity.obs ? '\nObservações: ' + safeInline(activity.obs) : '')
+          );
         });
       }
     }
 
-    // Footer on each page
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-      doc.setPage(p);
-      doc.setFillColor(17, 17, 17);
-      doc.rect(0, doc.internal.pageSize.height - 12, pageW, 12, 'F');
-      doc.setTextColor(245, 158, 11);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Confidencial — TLP:AMBER+STRICT', 14, doc.internal.pageSize.height - 4);
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Página ${p} de ${totalPages}`, pageW - 30, doc.internal.pageSize.height - 4);
+    if (pdfSections.pmo) {
+      addPage();
+      drawPageChrome('Resumo executivo PMO', 'Recorte C-Level para comunicação executiva');
+      drawSectionBand('Resumo', 'Camada executiva do incidente');
+      drawParagraphBlock('O que houve', clevel.oQueHouve, { emptyLabel: 'Não preenchido no PMO.' });
+      drawParagraphBlock('Impacto', clevel.impacto, { emptyLabel: 'Não preenchido no PMO.' });
+      drawParagraphBlock('O que estamos fazendo', clevel.oQueFazendo, { emptyLabel: 'Não preenchido no PMO.' });
     }
 
-    const fname = `OPICE_IR_${(info.nomeCliente || 'Cliente').replace(/\s/g,'_')}_${info.dataIncidente || 'sem_data'}.pdf`;
+    if (pdfSections.timeline) {
+      addPage();
+      drawPageChrome('Timeline de eventos', 'Últimos 10 registros do PMO');
+      drawSectionBand('Timeline', 'Linha do tempo operacional', timeline.length + ' eventos selecionados');
+      if (!timeline.length) {
+        drawParagraphBlock('Timeline', 'Nenhum evento foi registrado no PMO ate o momento.');
+      } else {
+        timeline.forEach((event, index) => drawTimelineItem(event, index));
+      }
+    }
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let page = 1; page <= totalPages; page += 1) {
+      doc.setPage(page);
+      drawFooter(page, totalPages);
+    }
+
+    const fname = 'OPICE_IR_' + sanitizeFilename(info.nomeCliente) + '_' + (info.dataIncidente || now.toISOString().slice(0, 10)) + '.pdf';
     doc.save(fname);
     setShowPdfModal(false);
   };
@@ -337,16 +514,16 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
         {/* Header */}
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
-            <div className="inline-block bg-[#CAFF00] px-3 py-1 mb-3">
+            <div className="inline-flex rounded-full bg-[var(--accent-glow)] px-3 py-1.5 mb-3">
               <span className="font-mono text-xs font-medium uppercase">Etapa 2 de 3</span>
             </div>
-            <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase">
+            <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase">
               Perguntas do Incidente
             </h1>
           </div>
           <button
             onClick={() => setShowPdfModal(true)}
-            className="flex items-center gap-2 bg-[#111111] text-white font-dm text-sm px-4 py-2.5 hover:bg-[#333] transition-colors shrink-0"
+            className="btn-primary flex items-center gap-2 rounded-full px-4 py-2.5 text-sm shrink-0"
           >
             <FileDown size={15} />
             Gerar Relatório
@@ -356,24 +533,24 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
         {/* Global progress */}
         <div className="mb-6">
           <div className="flex justify-between mb-2">
-            <span className="font-dm text-sm text-[#555555]">{sectionsStarted} de 5 seções iniciadas</span>
-            <span className="font-mono text-sm text-[#111111] font-medium">{progressPct}%</span>
+            <span className="font-dm text-sm text-[var(--ink-soft)]">{sectionsStarted} de 5 seções iniciadas</span>
+            <span className="font-mono text-sm text-[var(--ink)] font-medium">{progressPct}%</span>
           </div>
-          <div className="w-full h-2 bg-[#E5E5E5]">
-            <div className="h-2 bg-[#CAFF00] transition-all duration-500" style={{ width: `${progressPct}%` }} />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/70">
+            <div className="h-2 rounded-full bg-[var(--accent-deep)] transition-all duration-500" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
         {/* Unlock banner */}
         {allSectionsStarted && (
-          <div className="bg-[#CAFF00] px-6 py-4 mb-6 flex items-center gap-3">
-            <Check size={18} className="text-[#111111]" />
-            <span className="font-dm font-medium text-[#111111]">
+          <div className="mb-6 flex items-center gap-3 rounded-[24px] border border-[rgba(183,236,35,0.28)] bg-[rgba(214,255,99,0.16)] px-6 py-4">
+            <Check size={18} className="text-[var(--ink)]" />
+            <span className="font-dm font-medium text-[var(--ink)]">
               ✓ Você pode acessar a Jornada do Incidente
             </span>
             <button
               onClick={() => navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/jornada` : '/jornada')}
-              className="ml-auto bg-[#111111] text-white font-dm text-sm px-4 py-1.5"
+              className="btn-primary ml-auto rounded-full px-4 py-2 text-sm"
             >
               Acessar Jornada →
             </button>
@@ -389,16 +566,16 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
             const complete = answered >= total;
 
             return (
-              <div key={sec.id} className="border border-[#E0E0E0]">
-                <div className={`flex items-center ${complete ? 'bg-[#CAFF00]' : 'bg-white hover:bg-gray-50'} transition-colors`}>
+              <div key={sec.id} className="border border-[rgba(21,38,43,0.12)]">
+                <div className={`flex items-center ${complete ? 'bg-[var(--accent)]' : 'bg-white hover:bg-white/72'} transition-colors`}>
                   <button
                     onClick={() => setOpen(prev => ({ ...prev, [sec.id]: !prev[sec.id] }))}
                     className="flex items-center gap-4 px-5 py-4 text-left flex-1"
                   >
-                    <span className="font-bold uppercase text-sm flex-1 text-[#111111]">
+                    <span className="font-bold uppercase text-sm flex-1 text-[var(--ink)]">
                       {sec.title}
                     </span>
-                    <span className={`font-mono text-xs px-2 py-0.5 border ${complete ? 'bg-[#111111] text-[#CAFF00] border-[#111111]' : answered > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                    <span className={`font-mono text-xs px-2 py-0.5 border ${complete ? 'bg-[#173038] text-[var(--accent)] border-[rgba(21,38,43,0.16)]' : answered > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white/72 text-[var(--ink-soft)] border-gray-200'}`}>
                       {answered}/{total}
                     </span>
                     {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -407,7 +584,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                     <button
                       onClick={e => { e.stopPropagation(); sendSectionToTimeline(sec); }}
                       disabled={sentToTimeline[sec.id]}
-                      className={`shrink-0 flex items-center gap-1.5 mr-3 px-3 py-1.5 font-mono text-xs transition-colors ${sentToTimeline[sec.id] ? 'bg-green-100 text-green-700' : 'bg-[#111111] text-white hover:bg-[#333]'}`}
+                      className={`shrink-0 flex items-center gap-1.5 mr-3 px-3 py-1.5 font-mono text-xs transition-colors ${sentToTimeline[sec.id] ? 'bg-green-100 text-green-700' : 'bg-[#173038] text-[#fffdf8] hover:bg-[#0f2128]'}`}
                       title="Enviar para Timeline PMO"
                     >
                       {sentToTimeline[sec.id] ? <><Check size={11} /> Enviado</> : <><Send size={11} /> Timeline PMO</>}
@@ -419,8 +596,8 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                   <div className="p-5 space-y-5 bg-white">
                     {sec.questions.map((q, qi) => (
                       <div key={qi}>
-                        <label className="block font-dm text-sm text-[#111111] mb-2">
-                          <span className="font-mono text-xs text-[#555555] mr-2">{qi + 1}.</span>
+                        <label className="block font-dm text-sm text-[var(--ink)] mb-2">
+                          <span className="font-mono text-xs text-[var(--ink-soft)] mr-2">{qi + 1}.</span>
                           {q}
                         </label>
                         <AutoSaveTextarea
@@ -438,8 +615,8 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
         </div>
 
         {/* Próximas etapas box */}
-        <div className="mt-8 bg-[#111111] p-6">
-          <h3 className="font-syne font-bold text-white text-lg uppercase mb-2">Próximas Etapas</h3>
+        <div className="mt-8 bg-[#173038] p-6">
+          <h3 className="font-syne font-bold text-[#fffdf8] text-lg uppercase mb-2">Próximas Etapas</h3>
           <p className="text-gray-300 font-dm text-sm">
             Preparar para as próximas etapas de resposta a incidentes (Plano de Trabalho)
           </p>
@@ -447,14 +624,14 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
 
         {/* PDF Modal */}
         {showPdfModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="bg-white border-2 border-[#111111] max-w-2xl w-full max-h-[90vh] flex flex-col">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/45 p-4">
+            <div className="bg-white border-2 border-[rgba(21,38,43,0.16)] max-w-2xl w-full max-h-[90vh] flex flex-col">
               {/* Modal header */}
-              <div className="bg-[#111111] p-4 flex items-center justify-between shrink-0">
+              <div className="bg-[#173038] p-4 flex items-center justify-between shrink-0">
                 <div>
-                  <div className="text-[#CAFF00] font-mono text-xs">TLP:AMBER+STRICT</div>
-                  <div className="text-white font-syne font-bold text-lg uppercase">Relatório de Investigação</div>
-                  <div className="text-gray-400 font-dm text-xs">
+                  <div className="text-[var(--accent)] font-mono text-xs">TLP:AMBER+STRICT</div>
+                  <div className="text-[#fffdf8] font-syne font-bold text-lg uppercase">Relatório de Investigação</div>
+                  <div className="text-[var(--ink-soft)] font-dm text-xs">
                     {info.nomeCliente || '—'} | {info.dataIncidente || '—'}
                   </div>
                 </div>
@@ -462,8 +639,8 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
 
               <div className="flex flex-1 overflow-hidden">
                 {/* Left: section selector */}
-                <div className="w-56 shrink-0 border-r border-[#E0E0E0] p-4 bg-gray-50 overflow-y-auto">
-                  <div className="font-mono text-xs uppercase text-[#555555] mb-3 tracking-widest">Incluir no relatório:</div>
+                <div className="w-56 shrink-0 border-r border-[rgba(21,38,43,0.12)] p-4 bg-white/72 overflow-y-auto">
+                  <div className="font-mono text-xs uppercase text-[var(--ink-soft)] mb-3 tracking-widest">Incluir no relatório:</div>
                   <div className="space-y-2">
                     {PDF_SECTIONS.map(s => (
                       <label key={s.id} className="flex items-start gap-2 cursor-pointer group">
@@ -471,11 +648,11 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                           type="checkbox"
                           checked={pdfSections[s.id]}
                           onChange={e => setPdfSections(prev => ({ ...prev, [s.id]: e.target.checked }))}
-                          className="w-3.5 h-3.5 mt-0.5 shrink-0 accent-[#111111]"
+                          className="w-3.5 h-3.5 mt-0.5 shrink-0 accent-[#173038]"
                         />
-                        <span className={`font-dm text-xs leading-tight ${pdfSections[s.id] ? 'text-[#111111] font-medium' : 'text-gray-500'}`}>
+                        <span className={`font-dm text-xs leading-tight ${pdfSections[s.id] ? 'text-[var(--ink)] font-medium' : 'text-[var(--ink-soft)]'}`}>
                           {s.label}
-                          {s.default && <span className="ml-1 font-mono text-[10px] text-gray-400">(padrão)</span>}
+                          {s.default && <span className="ml-1 font-mono text-[10px] text-[var(--ink-soft)]">(padrão)</span>}
                         </span>
                       </label>
                     ))}
@@ -486,7 +663,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                 <div className="overflow-y-auto flex-1 p-5">
                   {pdfSections.info && (
                     <div className="mb-6">
-                      <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-3 pb-2 border-b border-[#E0E0E0]">
+                      <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-3 pb-2 border-b border-[rgba(21,38,43,0.12)]">
                         INFORMAÇÕES DO CLIENTE
                       </h4>
                       {[
@@ -496,23 +673,23 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                         ['Agente', info.agenteTratamento],
                       ].filter(([, v]) => v).map(([l, v]) => (
                         <div key={l} className="flex gap-2 mb-1">
-                          <span className="font-mono text-xs text-[#555555] shrink-0">{l}:</span>
-                          <span className="font-dm text-xs text-[#111111]">{v}</span>
+                          <span className="font-mono text-xs text-[var(--ink-soft)] shrink-0">{l}:</span>
+                          <span className="font-dm text-xs text-[var(--ink)]">{v}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   {pdfSections.perguntas && QUESTION_SECTIONS.map(sec => (
                     <div key={sec.id} className="mb-6">
-                      <h4 className="font-syne font-bold text-[#111111] text-sm uppercase mb-3 pb-2 border-b border-[#E0E0E0]">
+                      <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-3 pb-2 border-b border-[rgba(21,38,43,0.12)]">
                         SEÇÃO {sec.id} — {sec.title}
                       </h4>
                       {sec.questions.map((q, qi) => {
                         const ans = answers[sec.id]?.[qi];
                         return (
                           <div key={qi} className="mb-3">
-                            <p className="font-dm text-sm font-medium text-[#111111]">{qi + 1}. {q}</p>
-                            <p className={`font-dm text-sm mt-1 ml-4 ${ans?.trim() ? 'text-[#333]' : 'text-gray-400 italic'}`}>
+                            <p className="font-dm text-sm font-medium text-[var(--ink)]">{qi + 1}. {q}</p>
+                            <p className={`font-dm text-sm mt-1 ml-4 ${ans?.trim() ? 'text-[#333]' : 'text-[var(--ink-soft)] italic'}`}>
                               {ans?.trim() || '(Não respondido)'}
                             </p>
                           </div>
@@ -521,7 +698,7 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
                     </div>
                   ))}
                   {!pdfSections.perguntas && !pdfSections.info && !pdfSections.jornada && !pdfSections.pmo && !pdfSections.timeline && (
-                    <div className="text-center py-10 text-gray-400 font-dm text-sm">
+                    <div className="text-center py-10 text-[var(--ink-soft)] font-dm text-sm">
                       Selecione ao menos uma seção para incluir no relatório.
                     </div>
                   )}
@@ -544,19 +721,19 @@ export default function Perguntas({ clientId: propClientId, isAdmin = false, adm
               </div>
 
               {/* Footer */}
-              <div className="bg-[#111111] px-5 py-3 flex items-center justify-between shrink-0">
+              <div className="bg-[#173038] px-5 py-3 flex items-center justify-between shrink-0">
                 <span className="text-[#F59E0B] font-mono text-xs">Confidencial — TLP:AMBER+STRICT</span>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowPdfModal(false)}
-                    className="text-gray-300 font-dm text-sm px-4 py-2 border border-gray-600 hover:border-gray-400 transition-colors"
+                    className="text-gray-300 font-dm text-sm px-4 py-2 border border-[rgba(21,38,43,0.16)] hover:border-gray-400 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={generatePDF}
                     disabled={!Object.values(pdfSections).some(Boolean)}
-                    className="bg-[#CAFF00] text-[#111111] font-dm font-medium text-sm px-6 py-2 hover:bg-[#b8e600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[var(--accent)] text-[var(--ink)] font-dm font-medium text-sm px-6 py-2 hover:bg-[var(--accent-deep)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Confirmar Download
                   </button>

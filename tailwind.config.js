@@ -1,81 +1,74 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        lime: { DEFAULT: '#CAFF00', dark: '#A8D400' },
-        brand: {
-          black: '#111111',
-          dark: '#0A0A0A',
-          gray: '#555555',
-          border: '#E0E0E0',
+        accent: {
+          DEFAULT: '#d6ff63',
+          deep: '#b7ec23',
+        },
+        shell: {
+          ink: '#15262b',
+          teal: '#173038',
+          deep: '#0f2128',
+          mist: '#f3efe4',
+          surface: '#fffdf8',
+          border: 'rgba(21, 38, 43, 0.12)',
         },
         status: {
-          done: '#22C55E',
-          ongoing: '#F59E0B',
-          planned: '#3B82F6',
-          na: '#9CA3AF',
+          done: '#299166',
+          ongoing: '#d59b32',
+          planned: '#4f83ff',
+          na: '#8c969a',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['Inter', 'monospace'],
-        display: ['Inter', 'sans-serif'],
-        syne: ['Inter', 'sans-serif'],
-        dm: ['Inter', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
+        display: ['Space Grotesk', 'Manrope', 'sans-serif'],
+        syne: ['Space Grotesk', 'Manrope', 'sans-serif'],
+        dm: ['Manrope', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         tightest: '-0.04em',
         tighter: '-0.03em',
         tight: '-0.02em',
-        normal: '0em',
         wide: '0.04em',
         wider: '0.06em',
         widest: '0.08em',
-        label: '0.1em',
+        label: '0.12em',
       },
-      borderRadius: {
-        DEFAULT: '0px',
-        sm: '2px',
-        md: '2px',
-        lg: '2px',
-        xl: '2px',
-        '2xl': '2px',
-        full: '9999px',
+      boxShadow: {
+        shell: '0 18px 36px rgba(17, 29, 34, 0.08)',
+        float: '0 26px 54px rgba(15, 33, 40, 0.18)',
       },
       keyframes: {
         'pulse-amber': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(245,158,11,0.7)' },
-          '50%': { boxShadow: '0 0 0 6px rgba(245,158,11,0)' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(213,155,50,0.5)' },
+          '50%': { boxShadow: '0 0 0 8px rgba(213,155,50,0)' },
         },
         'pulse-red': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(220,38,38,0.8)' },
-          '50%': { boxShadow: '0 0 0 8px rgba(220,38,38,0)' },
-        },
-        'bounce-in': {
-          '0%': { transform: 'scale(0.5)', opacity: '0' },
-          '70%': { transform: 'scale(1.1)' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(212,90,88,0.55)' },
+          '50%': { boxShadow: '0 0 0 10px rgba(212,90,88,0)' },
         },
         'fade-in-left': {
           '0%': { transform: 'translateX(-20px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
-        'siren': {
-          '0%, 100%': { transform: 'rotate(-15deg)', opacity: '1' },
-          '50%': { transform: 'rotate(15deg)', opacity: '0.8' },
-        }
+        'bounce-in': {
+          '0%': { transform: 'scale(0.92)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
       },
       animation: {
-        'pulse-amber': 'pulse-amber 1.5s ease-in-out infinite',
-        'pulse-red': 'pulse-red 1s ease-in-out infinite',
-        'bounce-in': 'bounce-in 0.5s ease-out forwards',
+        'pulse-amber': 'pulse-amber 1.6s ease-in-out infinite',
+        'pulse-red': 'pulse-red 1.15s ease-in-out infinite',
         'fade-in-left': 'fade-in-left 0.3s ease-out forwards',
-        'siren': 'siren 0.5s ease-in-out infinite',
+        'bounce-in': 'bounce-in 0.45s ease-out forwards',
       }
     },
   },

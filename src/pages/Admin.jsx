@@ -9,142 +9,184 @@ import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
 import TLPBanner from '../components/TLPBanner';
 import OpiceLogo from '../components/OpiceLogo';
 import {
-  Plus, X, Shield, Users, Activity, Clock, AlertTriangle, Zap,
-  LogOut, ArrowRight, Edit2, CheckCircle, AlertCircle, Trash2
+  Plus,
+  X,
+  Users,
+  AlertTriangle,
+  Zap,
+  LogOut,
+  ArrowRight,
+  Edit2,
+  CheckCircle,
+  AlertCircle,
+  Trash2,
+  Shield,
 } from 'lucide-react';
 
 const AGENTE_OPTS = ['Controlador', 'Operador', 'Ambos'];
 
-function ClientCard({ client, onAccess, onEdit, onDelete }) {
+function classifyClient(client, currentTime) {
+  const info = getStorage(KEYS.info(client.id), {});
+  const crisis = getStorage(KEYS.crisis(client.id, 'active'));
+  const hasCrisis = crisis?.crisisActive === true && crisis?.crisisStatus !== 'closed';
+  const hoursSinceKnowledge = info.dataConhecimento
+    ? (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60)
+    : 0;
+  const anpd = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), 3) : null;
+
+  if (hasCrisis || anpd?.overdue || hoursSinceKnowledge >= 48) return 'critical';
+  if (hoursSinceKnowledge >= 36 || (anpd && !anpd.overdue && anpd.diffHours < 48)) return 'attention';
+  return 'stable';
+}
+
+function ClientCard({ client, level, onAccess, onEdit, onDelete }) {
   const info = getStorage(KEYS.info(client.id), {});
   const acts = getStorage(KEYS.activities(client.id), []);
   const crisis = getStorage(KEYS.crisis(client.id, 'active'));
   const hasCrisis = crisis?.crisisActive === true && crisis?.crisisStatus !== 'closed';
 
-  // Calculate stats
   const total = acts.length;
-  const done = acts.filter(a => a.status === 'Feito').length;
-  const ongoing = acts.filter(a => a.status === 'Em andamento').length;
-  const waiting = acts.filter(a => a.status === 'Planejado').length;
-  const pct = total ? Math.round(done / total * 100) : 0;
+  const done = acts.filter((activity) => activity.status === 'Feito').length;
+  const ongoing = acts.filter((activity) => activity.status === 'Em andamento').length;
+  const waiting = acts.filter((activity) => activity.status === 'Planejado').length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
 
   const sla = useSLATimer(info.dataConhecimento || null);
-  const slaAlert = info.dataConhecimento ? (Date.now() - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60) >= 36 : false;
+  const slaAlert = info.dataConhecimento
+    ? (Date.now() - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60) >= 36
+    : false;
   const anpd = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), 3) : null;
 
-  const slaStatusColor = sla.status === 'critical' ? 'bg-red-50 border-red-300' : sla.status === 'warning' ? 'bg-amber-50 border-amber-300' : 'border-[#E0E0E0]';
+  const levelStyle = {
+    critical: {
+      frame: 'border-red-200 bg-red-50/78',
+      rail: 'bg-[linear-gradient(90deg,#d45a58_0%,#f0bd59_100%)]',
+      badge: 'bg-red-600 text-white',
+      label: hasCrisis ? 'War Room' : 'Crítico',
+    },
+    attention: {
+      frame: 'border-amber-200 bg-amber-50/72',
+      rail: 'bg-[linear-gradient(90deg,#d59b32_0%,#f2db77_100%)]',
+      badge: 'bg-amber-100 text-amber-700',
+      label: 'Atenção',
+    },
+    stable: {
+      frame: 'border-[var(--border)] bg-white/70',
+      rail: 'bg-[linear-gradient(90deg,#173038_0%,#d6ff63_100%)]',
+      badge: 'bg-emerald-100 text-emerald-700',
+      label: 'Estável',
+    },
+  }[level];
 
   return (
-    <div className={`border p-5 ${hasCrisis ? 'border-red-500 bg-red-50/30' : slaStatusColor} transition-colors flex flex-col h-full`}>
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 min-w-0">
+    <article className={`app-panel relative flex h-full flex-col overflow-hidden rounded-[30px] p-5 ${levelStyle.frame}`}>
+      <div className={`absolute inset-x-0 top-0 h-1 ${levelStyle.rail}`} />
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            {hasCrisis && <Zap size={14} className="text-red-600 animate-pulse shrink-0" />}
-            <h3 className="font-syne font-bold text-[#111111] text-lg truncate" title={client.displayName || client.name}>
+            {hasCrisis && <Zap size={14} className="shrink-0 text-red-600 animate-pulse" />}
+            <h3 className="truncate text-xl font-bold text-[var(--ink)]" title={client.displayName || client.name}>
               {client.displayName || client.name}
             </h3>
           </div>
-          <div className="flex gap-3 mt-0.5">
-            <span className="font-mono text-[10px] text-[#555555] uppercase tracking-wider">{client.id}</span>
-            {info.agente && <span className="font-mono text-[10px] text-[#555555] uppercase tracking-wider border-l pl-3 border-gray-200">{info.agente}</span>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${levelStyle.badge}`}>
+              {levelStyle.label}
+            </span>
+            <span className="rounded-full bg-[rgba(21,38,43,0.06)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+              {client.id}
+            </span>
+            {info.agente && (
+              <span className="rounded-full bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+                {info.agente}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex flex-col gap-2">
+
+        <div className="flex w-full max-w-[178px] flex-col gap-2">
           <button
             onClick={() => onAccess(client)}
-            className="shrink-0 bg-[#111111] text-white font-mono text-xs px-4 py-2 hover:bg-[#333] transition-colors flex items-center justify-center gap-2 border border-black"
+            className="btn-primary flex items-center justify-center gap-2 rounded-full px-4 py-3 text-xs uppercase tracking-[0.16em]"
           >
-            ACESSAR <ArrowRight size={12} />
+            Acessar <ArrowRight size={12} />
           </button>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-[1fr_auto] gap-2">
             <button
               onClick={() => onEdit(client)}
-              className="flex-1 bg-white text-[#111111] font-mono text-[10px] px-4 py-1.5 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 border border-gray-200"
+              className="btn-outline flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.14em]"
             >
-              <Edit2 size={10} /> EDITAR
+              <Edit2 size={12} /> Editar
             </button>
             <button
               onClick={() => onDelete(client)}
-              className="shrink-0 bg-red-50 text-red-600 font-mono text-[10px] px-3 py-1.5 hover:bg-red-100 transition-colors flex items-center justify-center border border-red-200"
-              title="Excluir Cliente"
+              className="flex h-full items-center justify-center rounded-full border border-red-200 bg-white/80 px-3 text-red-600 transition-colors hover:bg-red-50"
+              title="Excluir cliente"
             >
-              <Trash2 size={12} />
+              <Trash2 size={13} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="mb-6">
-        <div className="flex justify-between text-[10px] font-mono mb-1.5 uppercase tracking-widest">
-          <span className="text-[#555555]">Progresso Geral</span>
-          <span className="text-[#111111] font-bold">{pct}%</span>
+      <div className="mt-6">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Progresso geral</span>
+          <span className="font-mono text-xs font-semibold text-[var(--ink)]">{pct}%</span>
         </div>
-        <div className="w-full h-1.5 bg-[#E5E5E5] flex">
-          <div className="h-1.5 bg-[#CAFF00] transition-all duration-700" style={{ width: `${pct}%` }} />
+        <div className="h-2 overflow-hidden rounded-full bg-[rgba(21,38,43,0.08)]">
+          <div className="h-2 rounded-full bg-[linear-gradient(90deg,#173038_0%,#d6ff63_100%)] transition-all duration-700" style={{ width: `${pct}%` }} />
         </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        <div className="bg-white border border-gray-100 p-3">
-          <div className="font-mono text-[9px] text-gray-500 uppercase mb-1">Em Andamento</div>
-          <div className="font-syne font-bold text-xl text-amber-600">{ongoing}</div>
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Em andamento</div>
+          <div className="mt-2 text-2xl font-bold text-amber-700">{ongoing}</div>
         </div>
-        <div className="bg-white border border-gray-100 p-3">
-          <div className="font-mono text-[9px] text-gray-500 uppercase mb-1">Concluídos</div>
-          <div className="font-syne font-bold text-xl text-green-600">{done}</div>
+        <div className="rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Concluídas</div>
+          <div className="mt-2 text-2xl font-bold text-emerald-700">{done}</div>
         </div>
-        <div className="bg-white border border-gray-100 p-3">
-          <div className="font-mono text-[9px] text-gray-500 uppercase mb-1">Aguardando</div>
-          <div className="font-syne font-bold text-xl text-blue-600">{waiting}</div>
+        <div className="rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Planejadas</div>
+          <div className="mt-2 text-2xl font-bold text-sky-700">{waiting}</div>
         </div>
-        <div className={`border p-3 ${slaAlert ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
-          <div className="font-mono text-[9px] text-gray-500 uppercase mb-1 flex items-center gap-1">
-            <AlertTriangle size={9} className={slaAlert ? 'text-red-500' : 'text-gray-400'} />
+        <div className={`rounded-[22px] border p-4 ${slaAlert ? 'border-red-200 bg-red-50/85' : 'border-[rgba(21,38,43,0.08)] bg-white/72'}`}>
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+            <AlertTriangle size={12} className={slaAlert ? 'text-red-600' : 'text-[var(--ink-soft)]'} />
             Alertas SLA
           </div>
-          <div className={`font-syne font-bold text-xl ${slaAlert ? 'text-red-600' : 'text-gray-400'}`}>
-            {slaAlert ? '1' : '0'}
-          </div>
+          <div className={`mt-2 text-2xl font-bold ${slaAlert ? 'text-red-700' : 'text-[var(--ink)]'}`}>{slaAlert ? '1' : '0'}</div>
         </div>
       </div>
 
-      <div className="mt-auto flex flex-wrap gap-2 text-[10px] tracking-tight">
-        {/* SLA Status Tag */}
+      <div className="mt-6 flex flex-wrap gap-2">
         {info.dataConhecimento && (
-          <span className={`font-mono px-2 py-0.5 uppercase border ${sla.status === 'critical' ? 'bg-red-600 text-white border-red-600 animate-pulse' :
-            sla.status === 'warning' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-              'bg-gray-100 text-gray-600 border-gray-200'
-            }`}>
+          <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${sla.status === 'critical' ? 'bg-red-600 text-white' : sla.status === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-700'}`}>
             SLA: {sla.label}
           </span>
         )}
 
-        {/* ANPD Status Tag */}
         {anpd && (
-          <span className={`font-mono px-2 py-0.5 uppercase border ${anpd.overdue ? 'bg-red-100 text-red-700 border-red-200' :
-            anpd.diffHours < 24 ? 'bg-red-50 text-red-600 border-red-100' :
-              anpd.diffHours < 48 ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                'bg-gray-50 text-gray-600 border-gray-200'
-            }`}>
-            ANPD: {anpd.overdue ? 'VENCIDO' : formatCountdown(anpd.diffHours)}
+          <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${anpd.overdue ? 'bg-red-100 text-red-700' : anpd.diffHours < 24 ? 'bg-red-50 text-red-700' : anpd.diffHours < 48 ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-700'}`}>
+            ANPD: {anpd.overdue ? 'Vencido' : formatCountdown(anpd.diffHours)}
           </span>
         )}
 
-        {/* Crisis status */}
         {hasCrisis && (
-          <span className="font-mono px-2 py-0.5 bg-red-600 text-white border border-red-600 animate-pulse">
-            ⚡ WARROOM ATIVA
+          <span className="rounded-full bg-red-600 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white">
+            WarRoom ativa
           </span>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function Admin() {
-  const { user, logout } = useAuth();
+  const { logout, logAction, user: currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [clients, setClients] = useState([]);
@@ -155,18 +197,26 @@ export default function Admin() {
   const [toast, setToast] = useState(null);
 
   const [newForm, setNewForm] = useState({
-    name: '', email: '', password: '', codigo: '', dataIncidente: '', agente: 'Controlador', displayName: ''
+    name: '',
+    email: '',
+    password: '',
+    codigo: '',
+    dataIncidente: '',
+    agente: 'Controlador',
+    displayName: '',
   });
 
   const [editForm, setEditForm] = useState({
-    displayName: '', codigo: '', dataIncidente: '', agente: 'Controlador'
+    displayName: '',
+    codigo: '',
+    dataIncidente: '',
+    agente: 'Controlador',
   });
 
   useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!toast) return undefined;
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   useEffect(() => {
@@ -174,14 +224,38 @@ export default function Admin() {
   }, []);
 
   const createClient = () => {
-    if (!newForm.name || !newForm.email) return;
-    const id = `client_dyn_${generateId('').toLowerCase()}`;
-    const displayName = newForm.displayName || newForm.name;
-    const newClient = { id, name: newForm.name, email: newForm.email, displayName };
+    const clientName = newForm.name.trim();
+    const clientEmail = newForm.email.trim().toLowerCase();
+    const displayName = (newForm.displayName || newForm.name).trim();
+    const initialPassword = newForm.password.trim() || 'Opice@2025';
 
-    // Save client info
+    if (!clientName || !clientEmail) {
+      setToast({ type: 'error', message: 'Nome e email são obrigatórios.' });
+      return;
+    }
+
+    const existingUsers = getStorage(KEYS.users(), USERS);
+    const emailInUse = existingUsers.some((user) => (user.email || '').trim().toLowerCase() === clientEmail);
+    if (emailInUse) {
+      setToast({ type: 'error', message: 'Já existe um usuário com este email.' });
+      return;
+    }
+
+    const id = `client_dyn_${generateId('').toLowerCase()}`;
+    const newClient = { id, name: clientName, email: clientEmail, displayName };
+    const newClientUser = {
+      id,
+      email: clientEmail,
+      password: initialPassword,
+      role: 'client',
+      name: displayName,
+      clientId: id,
+      status: 'Ativo',
+      forcePasswordChange: true,
+    };
+
     setStorage(KEYS.info(id), {
-      nomeCliente: newForm.name,
+      nomeCliente: displayName,
       codigoCliente: newForm.codigo,
       dataIncidente: newForm.dataIncidente,
       agente: newForm.agente,
@@ -189,14 +263,19 @@ export default function Admin() {
       contexto: '',
     });
 
-    // Init activities
-    const activities = DEFAULT_ACTIVITIES.map(a => ({ ...a, status: 'Planejado' }));
+    const activities = DEFAULT_ACTIVITIES.map((activity) => ({ ...activity, status: 'Planejado' }));
     setStorage(KEYS.activities(id), activities);
 
-    // Save to clients list
-    const existing = getStorage(KEYS.clients(), []);
-    setStorage(KEYS.clients(), [...existing, newClient]);
-    setClients(prev => [...prev, newClient]);
+    const existingClients = getStorage(KEYS.clients(), []);
+    setStorage(KEYS.clients(), [...existingClients.filter((client) => client.id !== id), newClient]);
+    setStorage(KEYS.users(), [...existingUsers, newClientUser]);
+
+    setClients(fetchClients());
+    logAction('CRIADO', newClientUser, currentUser, `Cliente ${displayName} criado com identificador ${id}.`);
+    setToast({
+      type: 'success',
+      message: newForm.password.trim() ? 'Cliente criado com sucesso!' : 'Cliente criado. Senha inicial: Opice@2025',
+    });
     setNewForm({ name: '', email: '', password: '', codigo: '', dataIncidente: '', agente: 'Controlador', displayName: '' });
     setShowNewModal(false);
   };
@@ -208,7 +287,7 @@ export default function Admin() {
       displayName: client.displayName || client.name,
       codigo: info.codigoCliente || '',
       dataIncidente: info.dataIncidente || '',
-      agente: info.agente || 'Controlador'
+      agente: info.agente || 'Controlador',
     });
   };
 
@@ -219,38 +298,85 @@ export default function Admin() {
     }
 
     const clientId = editingClient.id;
+    const currentClient = clients.find((client) => client.id === clientId) || editingClient;
+    const updatedClient = {
+      ...currentClient,
+      name: currentClient.name,
+      displayName: editForm.displayName,
+    };
 
-    // Update clients list
     const existingClients = getStorage(KEYS.clients(), []);
-    const updatedClients = existingClients.map(c =>
-      c.id === clientId ? { ...c, displayName: editForm.displayName } : c
-    );
-    setStorage(KEYS.clients(), updatedClients);
-    setClients(prev => prev.map(c => c.id === clientId ? { ...c, displayName: editForm.displayName } : c));
+    setStorage(KEYS.clients(), [...existingClients.filter((client) => client.id !== clientId), updatedClient]);
 
-    // Update info
     const info = getStorage(KEYS.info(clientId), {});
     setStorage(KEYS.info(clientId), {
       ...info,
       nomeCliente: editForm.displayName,
       codigoCliente: editForm.codigo,
       dataIncidente: editForm.dataIncidente,
-      agente: editForm.agente
+      agente: editForm.agente,
     });
 
+    const existingUsers = getStorage(KEYS.users(), USERS);
+    const updatedUsers = existingUsers.map((user) => (
+      user.role === 'client' && user.clientId === clientId
+        ? { ...user, name: editForm.displayName }
+        : user
+    ));
+    setStorage(KEYS.users(), updatedUsers);
+
+    setClients(fetchClients());
+    logAction('EDITADO', updatedClient, currentUser, `Cliente ${clientId} atualizado na visão administrativa.`);
     setToast({ type: 'success', message: 'Informações do cliente atualizadas com sucesso!' });
     setEditingClient(null);
   };
 
   const confirmDelete = () => {
-    if (deleteConfirmText !== clientToDelete.id && deleteConfirmText !== clientToDelete.name && deleteConfirmText !== clientToDelete.displayName) {
+    if (
+      deleteConfirmText !== clientToDelete.id
+      && deleteConfirmText !== clientToDelete.name
+      && deleteConfirmText !== clientToDelete.displayName
+    ) {
       setToast({ type: 'error', message: 'Texto de confirmação incorreto.' });
       return;
     }
 
-    softDeleteClient(clientToDelete.id);
+    const clientId = clientToDelete.id;
+    const timestamp = new Date().toISOString();
+
+    softDeleteClient(clientId);
+
+    const existingUsers = getStorage(KEYS.users(), USERS);
+    const updatedUsers = existingUsers.map((user) => (
+      user.clientId === clientId
+        ? {
+            ...user,
+            status: 'Revogado',
+            revocationReason: 'Cliente excluído',
+            revocationType: 'Cliente excluído',
+            revocationDate: timestamp,
+            revokedBy: currentUser?.name || currentUser?.email || 'Admin',
+          }
+        : user
+    ));
+    setStorage(KEYS.users(), updatedUsers);
+
+    const existingInvites = getStorage(KEYS.invites(), []);
+    const updatedInvites = existingInvites.map((invite) => (
+      invite.clientId === clientId && invite.status === 'PENDENTE_APROVACAO_ADMIN'
+        ? {
+            ...invite,
+            status: 'CANCELADO_CLIENTE_EXCLUIDO',
+            rejectionReason: 'Cliente excluído',
+            updatedAt: timestamp,
+          }
+        : invite
+    ));
+    setStorage(KEYS.invites(), updatedInvites);
+
     setClients(fetchClients());
-    setToast({ type: 'success', message: 'Cliente excluído com sucesso!' });
+    logAction('REVOGADO', clientToDelete, currentUser, `Cliente ${clientId} excluido logicamente e acessos vinculados foram revogados.`);
+    setToast({ type: 'success', message: 'Cliente excluído com acessos revogados.' });
     setClientToDelete(null);
     setDeleteConfirmText('');
   };
@@ -265,293 +391,365 @@ export default function Admin() {
     return () => clearInterval(timer);
   }, []);
 
-  // Global stats
-  const allActivities = clients.flatMap(c => getStorage(KEYS.activities(c.id), []));
-  const totalOngoing = allActivities.filter(a => a.status === 'Em andamento').length;
-  const totalDone = allActivities.filter(a => a.status === 'Feito').length;
-  const waiting = allActivities.filter(a => a.status === 'Planejado').length;
+  const allActivities = clients.flatMap((client) => getStorage(KEYS.activities(client.id), []));
+  const totalOngoing = allActivities.filter((activity) => activity.status === 'Em andamento').length;
 
-  const slaAlerts = clients.filter(c => {
-    const info = getStorage(KEYS.info(c.id), {});
+  const slaAlerts = clients.filter((client) => {
+    const info = getStorage(KEYS.info(client.id), {});
     if (!info.dataConhecimento) return false;
-    const h = (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
-    return h >= 36;
+    const hours = (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
+    return hours >= 36;
   }).length;
 
-  const criticalAlerts = clients.filter(c => {
-    const info = getStorage(KEYS.info(c.id), {});
-    if (!info.dataConhecimento) return false;
-    const h = (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60);
-    return h >= 48;
-  }).length;
+  const triagedClients = [...clients]
+    .sort((a, b) => {
+      const crisisA = getStorage(KEYS.crisis(a.id, 'active'))?.crisisActive;
+      const crisisB = getStorage(KEYS.crisis(b.id, 'active'))?.crisisActive;
+      if (crisisA && !crisisB) return -1;
+      if (!crisisA && crisisB) return 1;
 
-  // Sort: crisis first, then critical, warning, ok
-  const sorted = [...clients].sort((a, b) => {
-    const crisisA = getStorage(KEYS.crisis(a.id, 'active'))?.crisisActive;
-    const crisisB = getStorage(KEYS.crisis(b.id, 'active'))?.crisisActive;
-    if (crisisA && !crisisB) return -1;
-    if (!crisisA && crisisB) return 1;
-    const infoA = getStorage(KEYS.info(a.id), {});
-    const infoB = getStorage(KEYS.info(b.id), {});
-    const hA = infoA.dataConhecimento ? (currentTime - new Date(infoA.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
-    const hB = infoB.dataConhecimento ? (currentTime - new Date(infoB.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
-    return hB - hA;
+      const infoA = getStorage(KEYS.info(a.id), {});
+      const infoB = getStorage(KEYS.info(b.id), {});
+      const hoursA = infoA.dataConhecimento ? (currentTime - new Date(infoA.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+      const hoursB = infoB.dataConhecimento ? (currentTime - new Date(infoB.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+      return hoursB - hoursA;
+    })
+    .map((client) => ({ client, level: classifyClient(client, currentTime) }));
+
+  const groupedClients = {
+    critical: triagedClients.filter((entry) => entry.level === 'critical'),
+    attention: triagedClients.filter((entry) => entry.level === 'attention'),
+    stable: triagedClients.filter((entry) => entry.level === 'stable'),
+  };
+
+  const urgentAlerts = triagedClients.flatMap(({ client }) => {
+    const info = getStorage(KEYS.info(client.id), {});
+    const crisis = getStorage(KEYS.crisis(client.id, 'active'));
+    const hasCrisis = crisis?.crisisActive === true && crisis?.crisisStatus !== 'closed';
+    const hours = info.dataConhecimento ? (currentTime - new Date(info.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
+    const anpdResult = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), 3) : null;
+
+    if (hasCrisis) {
+      return [{
+        id: client.id,
+        title: `${client.displayName || client.name} com WarRoom ativa`,
+        meta: crisis.crisisTimestamp ? `${Math.round((currentTime - new Date(crisis.crisisTimestamp)) / 3600000)}h de crise` : 'Crise ativa',
+        tone: 'border-red-200 bg-red-50/85 text-red-800',
+      }];
+    }
+
+    if (anpdResult?.overdue) {
+      return [{
+        id: client.id,
+        title: `${client.displayName || client.name} com prazo ANPD vencido`,
+        meta: formatCountdown(anpdResult.diffHours),
+        tone: 'border-red-200 bg-red-50/85 text-red-800',
+      }];
+    }
+
+    if (hours >= 48) {
+      return [{
+        id: client.id,
+        title: `${client.displayName || client.name} com SLA critico`,
+        meta: `${Math.round(hours)}h desde o conhecimento`,
+        tone: 'border-amber-200 bg-amber-50/85 text-amber-800',
+      }];
+    }
+
+    return [];
   });
 
-  const inputClass = "border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] w-full";
+  const inputClass = 'w-full rounded-[20px] border border-[rgba(21,38,43,0.12)] bg-white/78 px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[rgba(23,48,56,0.42)] focus:bg-white';
+
+  const sectionMeta = {
+    critical: {
+      kicker: 'Fila critica',
+      title: 'Crise e risco imediato',
+      description: 'Clientes com WarRoom ativa, ANPD vencido ou SLA ja em zona critica.',
+      badge: 'bg-red-100 text-red-700',
+    },
+    attention: {
+      kicker: 'Observacao',
+      title: 'Atenção nas próximas horas',
+      description: 'Clientes que estão se aproximando de pressão regulatória ou operacional.',
+      badge: 'bg-amber-100 text-amber-700',
+    },
+    stable: {
+      kicker: 'Operacao regular',
+      title: 'Carteira estavel',
+      description: 'Clientes sem sinais imediatos de escalacao na leitura atual.',
+      badge: 'bg-emerald-100 text-emerald-700',
+    },
+  };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9]">
+    <div className="min-h-screen bg-transparent text-[var(--ink)]">
       <TLPBanner />
 
-      {/* Admin Header */}
-      <div className="bg-[#111111] px-6 md:px-10 py-5 flex items-center gap-6">
-        <OpiceLogo />
-        <span className="bg-[#CAFF00] text-[#111111] font-mono text-xs font-bold px-2 py-0.5">ADMIN</span>
-        <h1 className="font-syne font-bold text-white text-lg uppercase hidden md:block">
-          Gestão de Incidentes — Visão Geral
-        </h1>
-        <div className="ml-auto flex items-center gap-3">
-          <button
-            onClick={() => navigate('/admin/acessos')}
-            className="flex items-center gap-2 text-[#CAFF00] hover:bg-[#CAFF00]/10 px-4 py-2 rounded-sm transition-colors border border-[#CAFF00]/20 font-mono text-xs uppercase"
-            title="Gestão de Acessos"
-          >
-            <Users size={16} />
-            <span className="hidden sm:inline">Acessos</span>
-          </button>
-          <div className="flex items-center gap-3 border-l border-white/20 pl-4">
-            <button
-              onClick={() => setShowNewModal(true)}
-              className="flex items-center gap-1.5 bg-[#CAFF00] text-[#111111] font-dm font-medium text-sm px-4 py-2 hover:bg-[#b8e600] transition-colors"
-            >
-              <Plus size={15} />
-              Novo Cliente
-            </button>
-            <button
-              onClick={() => { logout(); navigate('/login'); }}
-              className="flex items-center gap-1.5 text-gray-400 hover:text-white font-dm text-sm transition-colors"
-            >
-              <LogOut size={15} />
-              Sair
-            </button>
+      <div className="px-6 pb-10 pt-6 md:px-10 md:pt-8">
+        <section className="app-panel mb-8 rounded-[34px] px-6 py-6 md:px-8 md:py-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <OpiceLogo />
+            <div>
+              <p className="section-kicker">Admin command center</p>
+              <h1 className="text-3xl font-bold text-[var(--ink)] md:text-4xl">Gestao de Incidentes</h1>
+            </div>
+            <span className="soft-ribbon rounded-full px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em]">Admin</span>
+            <div className="ml-auto flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => navigate('/admin/acessos')}
+                className="btn-outline flex items-center gap-2 rounded-full text-xs uppercase tracking-[0.16em]"
+                title="Gestao de acessos"
+              >
+                <Users size={15} /> Acessos
+              </button>
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="btn-lime flex items-center gap-2 rounded-full text-xs uppercase tracking-[0.16em]"
+              >
+                <Plus size={15} /> Novo cliente
+              </button>
+              <button
+                onClick={() => { logout(); navigate('/login'); }}
+                className="btn-primary flex items-center gap-2 rounded-full text-xs uppercase tracking-[0.16em]"
+              >
+                <LogOut size={15} /> Sair
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="px-6 md:px-10 py-8">
-        {/* Global stats REMOVED as requested */}
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Clientes ativos</p>
+              <div className="mt-2 text-3xl font-bold text-[var(--ink)]">{clients.length}</div>
+            </div>
+            <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Em crise</p>
+              <div className="mt-2 text-3xl font-bold text-red-700">{groupedClients.critical.length}</div>
+            </div>
+            <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Alertas SLA</p>
+              <div className="mt-2 text-3xl font-bold text-amber-700">{slaAlerts}</div>
+            </div>
+            <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Atividades em andamento</p>
+              <div className="mt-2 text-3xl font-bold text-[var(--ink)]">{totalOngoing}</div>
+            </div>
+          </div>
+        </section>
 
-        {/* Alertas Consolidados */}
-        {(() => {
-          const alertItems = sorted.flatMap(c => {
-            const inf = getStorage(KEYS.info(c.id), {});
-            const cr = getStorage(KEYS.crisis(c.id, 'active'));
-            const hasCrisis = cr?.crisisActive === true && cr?.crisisStatus !== 'closed';
-            const h = inf.dataConhecimento ? (currentTime - new Date(inf.dataConhecimento).getTime()) / (1000 * 60 * 60) : 0;
-            const anpdResult = inf.dataConhecimento ? businessDaysRemaining(new Date(inf.dataConhecimento), 3) : null;
-            const items = [];
-            if (hasCrisis) items.push({ type: 'warroom', label: `⚡ ${c.displayName || c.name} — WARROOM ATIVA`, time: cr.crisisTimestamp ? `${Math.round((currentTime - new Date(cr.crisisTimestamp)) / 3600000)}h` : '', id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
-            else if (anpdResult?.overdue) items.push({ type: 'anpd', label: `⛔ ${c.displayName || c.name} — PRAZO ANPD VENCIDO`, time: formatCountdown(anpdResult.diffHours), id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
-            else if (h >= 48) items.push({ type: 'sla', label: `🔴 ${c.displayName || c.name} — SLA Crítico`, time: `${Math.round(h)}h`, id: c.id, color: 'text-red-700 bg-red-50 border-red-300' });
-            return items;
-          });
-          return alertItems.length > 0 ? (
-            <div className="mb-8 border border-red-300 bg-white">
-              <div className="bg-red-600 px-5 py-3">
-                <span className="font-mono text-xs text-white font-bold uppercase tracking-widest">🚨 Alertas que requerem atenção imediata</span>
-              </div>
-              <div className="divide-y divide-red-100">
-                {alertItems.map((alert, i) => (
-                  <div key={i} className={`flex items-center gap-4 px-5 py-3 ${alert.color}`}>
-                    <span className="font-mono text-sm flex-1">{alert.label}</span>
-                    {alert.time && <span className="font-mono text-xs opacity-70">{alert.time}</span>}
-                    <button onClick={() => handleAccess({ id: alert.id })} className="flex items-center gap-1 font-mono text-xs bg-[#111111] text-white px-3 py-1 hover:bg-[#333] transition-colors">
-                      Acessar <ArrowRight size={10} />
-                    </button>
+        {urgentAlerts.length > 0 ? (
+          <section className="app-panel mb-8 overflow-hidden rounded-[30px]">
+            <div className="soft-ribbon px-6 py-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">Queue</p>
+              <h2 className="text-xl font-bold text-white">Atenção imediata</h2>
+            </div>
+            <div className="space-y-3 p-5">
+              {urgentAlerts.map((alert) => (
+                <div key={`${alert.id}-${alert.title}`} className={`flex flex-wrap items-center gap-4 rounded-[24px] border px-4 py-4 ${alert.tone}`}>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/70">
+                    <Shield size={16} />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold">{alert.title}</div>
+                    <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] opacity-75">{alert.meta}</div>
+                  </div>
+                  <button onClick={() => handleAccess({ id: alert.id })} className="btn-primary flex items-center gap-2 rounded-full text-xs uppercase tracking-[0.16em]">
+                    Acessar <ArrowRight size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="app-panel mb-8 rounded-[30px] border border-emerald-200 bg-emerald-50/78 px-5 py-4">
+            <div className="flex items-center gap-3 text-emerald-800">
+              <CheckCircle size={18} />
+              <span className="text-sm font-semibold">Nenhum cliente exige intervencao imediata neste recorte.</span>
+            </div>
+          </section>
+        )}
+
+        {(['critical', 'attention', 'stable']).map((groupKey) => {
+          const entries = groupedClients[groupKey];
+          if (!entries.length) return null;
+          const meta = sectionMeta[groupKey];
+
+          return (
+            <section key={groupKey} className="mb-9">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="section-kicker">{meta.kicker}</p>
+                  <h2 className="text-2xl font-bold text-[var(--ink)]">{meta.title}</h2>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">{meta.description}</p>
+                </div>
+                <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${meta.badge}`}>
+                  {entries.length} cliente(s)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                {entries.map(({ client, level }) => (
+                  <ClientCard
+                    key={client.id}
+                    client={client}
+                    level={level}
+                    onAccess={handleAccess}
+                    onEdit={handleEdit}
+                    onDelete={setClientToDelete}
+                  />
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="mb-8 border border-green-200 bg-green-50 px-5 py-4 flex items-center gap-3">
-              <span className="text-green-700 font-mono text-sm">✓ Todos os clientes dentro dos prazos</span>
-            </div>
+            </section>
           );
-        })()}
-        {/* Client list */}
-        <h2 className="font-syne font-bold text-[#111111] text-xl uppercase mb-4">Clientes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {sorted.map(client => (
-            <ClientCard key={client.id} client={client} onAccess={handleAccess} onEdit={handleEdit} onDelete={setClientToDelete} />
-          ))}
-        </div>
+        })}
       </div>
 
-      {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-24 right-6 z-[100] animate-in slide-in-from-right-4 fade-in duration-300 pointer-events-none`}>
-          <div className={`px-5 py-3 shadow-2xl flex items-center gap-3 border ${toast.type === 'success' ? 'bg-[#CAFF00] border-[#CAFF00] text-[#111111]' : 'bg-red-600 border-red-600 text-white'}`}>
+        <div className="fixed right-6 top-24 z-[100] animate-in slide-in-from-right-4 fade-in duration-300 pointer-events-none">
+          <div className={`flex items-center gap-3 rounded-full border px-5 py-3 shadow-[0_18px_36px_rgba(21,38,43,0.18)] ${toast.type === 'success' ? 'bg-[linear-gradient(135deg,#ecffb0_0%,#d6ff63_48%,#b7ec23_100%)] border-[#d6ff63] text-[#15262b]' : 'bg-[#d45a58] border-[#d45a58] text-white'}`}>
             {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-            <span className="font-dm text-sm font-medium">{toast.message}</span>
+            <span className="text-sm font-semibold">{toast.message}</span>
           </div>
         </div>
       )}
 
-      {/* New Client Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white border border-[#E0E0E0] w-full max-w-md shadow-2xl">
-            <div className="bg-[#111111] px-5 py-4 flex items-center justify-between">
-              <h3 className="font-syne font-bold text-white uppercase">Novo Cliente</h3>
-              <button onClick={() => setShowNewModal(false)} className="text-gray-400 hover:text-white"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/45 p-4 backdrop-blur-sm">
+          <div className="app-panel w-full max-w-xl overflow-hidden rounded-[32px]">
+            <div className="soft-ribbon flex items-center justify-between px-6 py-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">Provisionamento</p>
+                <h3 className="text-xl font-bold text-white">Novo cliente</h3>
+              </div>
+              <button onClick={() => setShowNewModal(false)} className="rounded-full bg-white/10 p-2 text-white/72 transition-colors hover:bg-white/16 hover:text-white">
+                <X size={18} />
+              </button>
             </div>
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Login/Identificador *</label>
-                  <input type="text" value={newForm.name} onChange={e => setNewForm(f => ({ ...f, name: e.target.value }))} className={inputClass} placeholder="cliente_exemplo" />
-                </div>
-                <div>
-                  <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Nome de Exibição</label>
-                  <input type="text" value={newForm.displayName} onChange={e => setNewForm(f => ({ ...f, displayName: e.target.value }))} className={inputClass} placeholder="Exemplo S.A." />
-                </div>
+            <div className="grid gap-4 p-6 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Login / identificador *</label>
+                <input type="text" value={newForm.name} onChange={(e) => setNewForm((form) => ({ ...form, name: e.target.value }))} className={inputClass} placeholder="cliente_exemplo" />
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Email *</label>
-                <input type="email" value={newForm.email} onChange={e => setNewForm(f => ({ ...f, email: e.target.value }))} className={inputClass} />
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Nome de exibição</label>
+                <input type="text" value={newForm.displayName} onChange={(e) => setNewForm((form) => ({ ...form, displayName: e.target.value }))} className={inputClass} placeholder="Exemplo SA" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Email *</label>
+                <input type="email" value={newForm.email} onChange={(e) => setNewForm((form) => ({ ...form, email: e.target.value }))} className={inputClass} />
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Senha</label>
-                <input type="password" value={newForm.password} onChange={e => setNewForm(f => ({ ...f, password: e.target.value }))} className={inputClass} />
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Senha inicial</label>
+                <input type="password" value={newForm.password} onChange={(e) => setNewForm((form) => ({ ...form, password: e.target.value }))} className={inputClass} />
+                <p className="mt-2 text-xs text-[var(--ink-soft)]">Se ficar vazio, sera usada a senha padrao `Opice@2025`.</p>
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Código do Cliente</label>
-                <input type="text" value={newForm.codigo} onChange={e => setNewForm(f => ({ ...f, codigo: e.target.value }))} className={inputClass} placeholder="CLI-001" />
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Código do cliente</label>
+                <input type="text" value={newForm.codigo} onChange={(e) => setNewForm((form) => ({ ...form, codigo: e.target.value }))} className={inputClass} placeholder="CLI-001" />
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Data do Incidente</label>
-                <input type="date" value={newForm.dataIncidente} onChange={e => setNewForm(f => ({ ...f, dataIncidente: e.target.value }))} className={inputClass} />
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Data do incidente</label>
+                <input type="date" value={newForm.dataIncidente} onChange={(e) => setNewForm((form) => ({ ...form, dataIncidente: e.target.value }))} className={inputClass} />
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Agente de Tratamento</label>
-                <select value={newForm.agente} onChange={e => setNewForm(f => ({ ...f, agente: e.target.value }))} className={inputClass}>
-                  {AGENTE_OPTS.map(o => <option key={o}>{o}</option>)}
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Agente de tratamento</label>
+                <select value={newForm.agente} onChange={(e) => setNewForm((form) => ({ ...form, agente: e.target.value }))} className={inputClass}>
+                  {AGENTE_OPTS.map((option) => <option key={option}>{option}</option>)}
                 </select>
               </div>
             </div>
-            <div className="px-5 pb-5 flex gap-3">
-              <button onClick={() => setShowNewModal(false)} className="flex-1 border border-[#E0E0E0] font-dm text-sm py-3 hover:bg-gray-50">Cancelar</button>
-              <button onClick={createClient} className="flex-1 bg-[#111111] text-white font-dm text-sm py-3 hover:bg-[#333] transition-colors">Criar Cliente</button>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setShowNewModal(false)} className="btn-outline flex-1 rounded-full">Cancelar</button>
+              <button onClick={createClient} className="btn-primary flex-1 rounded-full">Criar cliente</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Client Modal */}
       {editingClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white border border-[#E0E0E0] w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-[#111111] px-5 py-4 flex items-center justify-between">
-              <h3 className="font-syne font-bold text-white uppercase flex items-center gap-2">
-                <Edit2 size={16} className="text-[#CAFF00]" /> Editar Cliente
-              </h3>
-              <button onClick={() => setEditingClient(null)} className="text-gray-400 hover:text-white"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/45 p-4 backdrop-blur-sm">
+          <div className="app-panel w-full max-w-xl overflow-hidden rounded-[32px]">
+            <div className="soft-ribbon flex items-center justify-between px-6 py-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">Cadastro</p>
+                <h3 className="flex items-center gap-2 text-xl font-bold text-white"><Edit2 size={16} /> Editar cliente</h3>
+              </div>
+              <button onClick={() => setEditingClient(null)} className="rounded-full bg-white/10 p-2 text-white/72 transition-colors hover:bg-white/16 hover:text-white">
+                <X size={18} />
+              </button>
             </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-1 tracking-wider">Identificador (Não editável)</label>
-                <input type="text" value={editingClient.id} disabled className={`${inputClass} bg-gray-50 opacity-60 text-gray-500`} />
+            <div className="grid gap-4 p-6 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Identificador</label>
+                <input type="text" value={editingClient.id} disabled className={`${inputClass} opacity-60`} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Nome de exibição *</label>
+                <input type="text" value={editForm.displayName} onChange={(e) => setEditForm((form) => ({ ...form, displayName: e.target.value }))} className={inputClass} placeholder="Exemplo SA" />
               </div>
               <div>
-                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-1 tracking-wider">Nome de Exibição *</label>
-                <input
-                  type="text"
-                  value={editForm.displayName}
-                  onChange={e => setEditForm(f => ({ ...f, displayName: e.target.value }))}
-                  className={inputClass}
-                  placeholder="Exemplo S.A."
-                />
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Código do cliente</label>
+                <input type="text" value={editForm.codigo} onChange={(e) => setEditForm((form) => ({ ...form, codigo: e.target.value }))} className={inputClass} placeholder="CLI-001" />
               </div>
               <div>
-                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-1 tracking-wider">Código do Cliente</label>
-                <input
-                  type="text"
-                  value={editForm.codigo}
-                  onChange={e => setEditForm(f => ({ ...f, codigo: e.target.value }))}
-                  className={inputClass}
-                  placeholder="CLI-001"
-                />
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Data do incidente</label>
+                <input type="date" value={editForm.dataIncidente} onChange={(e) => setEditForm((form) => ({ ...form, dataIncidente: e.target.value }))} className={inputClass} />
               </div>
-              <div>
-                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-1 tracking-wider">Data do Incidente</label>
-                <input
-                  type="date"
-                  value={editForm.dataIncidente}
-                  onChange={e => setEditForm(f => ({ ...f, dataIncidente: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-1 tracking-wider">Agente de Tratamento</label>
-                <select
-                  value={editForm.agente}
-                  onChange={e => setEditForm(f => ({ ...f, agente: e.target.value }))}
-                  className={inputClass}
-                >
-                  {AGENTE_OPTS.map(o => <option key={o}>{o}</option>)}
+              <div className="md:col-span-2">
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Agente de tratamento</label>
+                <select value={editForm.agente} onChange={(e) => setEditForm((form) => ({ ...form, agente: e.target.value }))} className={inputClass}>
+                  {AGENTE_OPTS.map((option) => <option key={option}>{option}</option>)}
                 </select>
               </div>
             </div>
-            <div className="px-5 pb-5 flex gap-3">
-              <button onClick={() => setEditingClient(null)} className="flex-1 border border-[#E0E0E0] font-dm text-sm py-3 hover:bg-gray-50 transition-colors">Cancelar</button>
-              <button onClick={saveEdit} className="flex-1 bg-[#111111] text-white font-dm text-sm py-3 hover:bg-[#333] transition-colors border border-black uppercase font-bold tracking-wider">Salvar Alterações</button>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setEditingClient(null)} className="btn-outline flex-1 rounded-full">Cancelar</button>
+              <button onClick={saveEdit} className="btn-primary flex-1 rounded-full">Salvar alteracoes</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Client Modal */}
       {clientToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white border border-[#E0E0E0] w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-[#111111] px-5 py-4 flex items-center justify-between">
-              <h3 className="font-syne font-bold text-white uppercase flex items-center gap-2">
-                <Trash2 size={16} className="text-red-500" /> Excluir Cliente
-              </h3>
-              <button onClick={() => setClientToDelete(null)} className="text-gray-400 hover:text-white"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/45 p-4 backdrop-blur-sm">
+          <div className="app-panel w-full max-w-xl overflow-hidden rounded-[32px] border border-red-200">
+            <div className="flex items-center justify-between border-b border-red-200 bg-red-50/90 px-6 py-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-red-700">Acao sensivel</p>
+                <h3 className="mt-1 flex items-center gap-2 text-xl font-bold text-red-800"><Trash2 size={16} /> Excluir cliente</h3>
+              </div>
+              <button onClick={() => setClientToDelete(null)} className="rounded-full bg-white/70 p-2 text-red-700 transition-colors hover:bg-white">
+                <X size={18} />
+              </button>
             </div>
-            <div className="p-5 space-y-4">
-              <p className="font-dm text-sm text-[#555555]">
-                Tem certeza que deseja excluir <strong>{clientToDelete.displayName || clientToDelete.name}</strong> ({clientToDelete.id})?
+            <div className="space-y-4 p-6">
+              <p className="text-sm leading-6 text-[var(--ink-soft)]">
+                Confirme a exclusão de <strong className="text-[var(--ink)]">{clientToDelete.displayName || clientToDelete.name}</strong> ({clientToDelete.id}).
+                O cliente sairá da visão administrativa e os acessos vinculados serão revogados.
               </p>
-              <div className="bg-amber-50 border border-amber-200 p-3 flex items-start gap-2 text-amber-800">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                <p className="font-mono text-[10px] uppercase leading-relaxed tracking-wider">
-                  Esta ação fará com que o cliente desapareça da visão geral e da gestão de acessos. Se houver incidentes, eles continuarão existindo no histórico lógico.
-                </p>
+              <div className="rounded-[24px] border border-amber-200 bg-amber-50/85 p-4 text-amber-800">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                  <p className="text-sm leading-6">
+                    Os dados do incidente permanecem no historico logico, mas o cliente deixa de aparecer na carteira ativa e em gestao de acessos.
+                  </p>
+                </div>
               </div>
-              <div className="pt-2">
-                <label className="block font-mono text-[10px] uppercase text-[#555555] mb-2 tracking-wider">
-                  Para confirmar, digite <strong>{clientToDelete.id}</strong> ou o nome exato do cliente:
+              <div>
+                <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+                  Digite <strong>{clientToDelete.id}</strong> ou o nome exato para confirmar
                 </label>
-                <input
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={e => setDeleteConfirmText(e.target.value)}
-                  className={inputClass}
-                  placeholder={clientToDelete.id}
-                />
+                <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} className={inputClass} placeholder={clientToDelete.id} />
               </div>
             </div>
-            <div className="px-5 pb-5 flex gap-3">
-              <button onClick={() => { setClientToDelete(null); setDeleteConfirmText(''); }} className="flex-1 border border-[#E0E0E0] font-dm text-sm py-3 hover:bg-gray-50 transition-colors">Cancelar</button>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => { setClientToDelete(null); setDeleteConfirmText(''); }} className="btn-outline flex-1 rounded-full">Cancelar</button>
               <button
                 onClick={confirmDelete}
                 disabled={!(deleteConfirmText === clientToDelete.id || deleteConfirmText === clientToDelete.name || deleteConfirmText === clientToDelete.displayName)}
-                className="flex-1 bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-dm text-sm py-3 hover:bg-red-700 transition-colors uppercase font-bold tracking-wider"
+                className="flex-1 rounded-full bg-red-600 px-5 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Confirmar Exclusão
+                Confirmar exclusão
               </button>
             </div>
           </div>

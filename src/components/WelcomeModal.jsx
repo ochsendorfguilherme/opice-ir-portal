@@ -1,40 +1,52 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, GitBranch, HelpCircle, Scale, BookOpen, X, ChevronRight, ChevronLeft } from 'lucide-react';
+import {
+  Shield,
+  GitBranch,
+  HelpCircle,
+  Scale,
+  BookOpen,
+  X,
+  ChevronRight,
+  ChevronLeft,
+  PanelLeft,
+  Bell,
+  Briefcase,
+} from 'lucide-react';
 import { setStorage, KEYS } from '../utils/storage';
 
 const SLIDES = [
   {
     id: 1,
-    title: 'Bem-vindo ao Portal de Resposta a Incidentes',
-    content: 'Este é o seu centro de comando durante o incidente de segurança. Aqui você acompanha cada etapa do processo, responde perguntas importantes e tem visibilidade total sobre prazos e obrigações regulatórias.',
-    icon: <Shield size={64} className="text-[#CAFF00]" />,
+    title: 'Bem-vindo ao portal de resposta a incidentes',
+    content: 'Este ambiente concentra a coordenação do incidente, os prazos regulatórios e a evolução das tarefas críticas em uma mesma console.',
+    icon: Shield,
   },
   {
     id: 2,
-    title: 'O que você pode fazer',
+    title: 'O que você encontra aqui',
     grid: [
-      { icon: <GitBranch size={32} className="text-[#CAFF00]" />, label: 'Jornada do Incidente', desc: 'Acompanhe todas as etapas e atualize o status das atividades' },
-      { icon: <HelpCircle size={32} className="text-[#CAFF00]" />, label: 'Perguntas', desc: 'Responda às perguntas de investigação para gerar o relatório do incidente' },
-      { icon: <Scale size={32} className="text-[#CAFF00]" />, label: 'ANPD', desc: 'Acompanhe o processo regulatório e os prazos obrigatórios' },
-      { icon: <BookOpen size={32} className="text-[#CAFF00]" />, label: 'Reuniões', desc: 'Registre as reuniões e gere atas automáticas' },
+      { icon: GitBranch, label: 'Jornada do incidente', desc: 'Acompanhe etapas, marcos e entregas do fluxo principal.' },
+      { icon: HelpCircle, label: 'Perguntas', desc: 'Preencha o contexto de investigação e consolide o caso.' },
+      { icon: Scale, label: 'ANPD', desc: 'Monitore processo, SEI e prazos de comunicação regulatória.' },
+      { icon: BookOpen, label: 'Reuniões', desc: 'Registre reuniões, atas e desdobramentos operacionais.' },
     ],
   },
   {
     id: 3,
-    title: 'Como navegar',
+    title: 'Como navegar melhor',
     tips: [
-      { icon: '📋', text: 'Sidebar à esquerda: acesse todas as seções do portal a qualquer momento' },
-      { icon: '🔢', text: 'Siga a ordem: Informações → Perguntas → Jornada para desbloquear as etapas' },
-      { icon: '⚖', text: 'Os prazos ANPD aparecem em tempo real no topo do site' },
-      { icon: '🏗', text: 'Use o PMO para coordenar ações e comunicações internas' },
-      { icon: '🔔', text: 'O ícone de sino no topo mostra alertas importantes em tempo real' },
+      { icon: PanelLeft, title: 'Sidebar sempre ativa', text: 'Use a barra lateral para alternar entre investigação, PMO, ANPD e reuniões.' },
+      { icon: GitBranch, title: 'Fluxo recomendado', text: 'Comece por Informações, avance para Perguntas e depois siga a Jornada.' },
+      { icon: Scale, title: 'Prazos regulatórios', text: 'O countdown ANPD e o estado do SLA aparecem em destaque no dashboard.' },
+      { icon: Bell, title: 'Notificações', text: 'O sino superior centraliza alertas, convites e eventos importantes em tempo real.' },
+      { icon: Briefcase, title: 'Coordenação', text: 'Use PMO e War Room para organizar a resposta quando o caso escalar.' },
     ],
   },
   {
     id: 4,
     title: 'Vamos começar?',
-    content: 'Primeiro, preencha as informações do incidente para desbloquear as demais seções.',
+    content: 'Preencha as informações iniciais do incidente para liberar o restante das seções do portal.',
     cta: true,
   },
 ];
@@ -55,113 +67,146 @@ export default function WelcomeModal({ clientId, clientName, onClose }) {
     navigate('/informacoes');
   };
 
+  const CurrentIcon = current.icon || Shield;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90">
-      <div className="bg-white border-2 border-[#111111] w-full max-w-2xl flex flex-col" style={{ minHeight: 440 }}>
-        {/* Top bar */}
-        <div className="bg-[#111111] px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[#F59E0B] text-xs">TLP:AMBER+STRICT</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15262b]/50 p-4 backdrop-blur-sm">
+      <div className="app-panel flex w-full max-w-4xl flex-col overflow-hidden rounded-[34px] shadow-[0_32px_64px_rgba(21,38,43,0.22)]" style={{ minHeight: 520 }}>
+        <div className="soft-ribbon flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-[#f8d383]">TLP:AMBER+STRICT</span>
+            {clientName && <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white/72">{clientName}</span>}
           </div>
-          <button onClick={dismiss} className="text-gray-500 hover:text-gray-300 font-dm text-xs flex items-center gap-1 transition-colors">
-            <X size={13} /> Pular introdução
+          <button onClick={dismiss} className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/72 transition-colors hover:bg-white/16 hover:text-white">
+            <X size={14} /> Pular
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
-          {current.id === 1 && (
-            <>
-              <div className="w-24 h-24 bg-[#111111] flex items-center justify-center mb-6">
-                {current.icon}
+        <div className="flex flex-1 flex-col justify-between p-6 md:p-8">
+          <div className="grid flex-1 gap-6 md:grid-cols-[0.92fr_1.08fr]">
+            <div className="metric-card highlight flex flex-col justify-between rounded-[30px] p-6 md:p-7">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/58">Boas-vindas</p>
+                <div className="mt-5 flex h-20 w-20 items-center justify-center rounded-[24px] bg-white/10 text-white">
+                  <CurrentIcon size={36} />
+                </div>
+                <h2 className="mt-6 text-3xl font-bold text-white">{current.title}</h2>
+                {'content' in current && current.content && (
+                  <p className="mt-4 text-sm leading-7 text-white/74 md:text-base">{current.content}</p>
+                )}
               </div>
-              <h2 className="font-syne font-extrabold text-[#111111] text-2xl uppercase mb-4 max-w-lg">{current.title}</h2>
-              <p className="font-dm text-[#555555] text-sm leading-relaxed max-w-md">{current.content}</p>
-              {clientName && (
-                <div className="mt-4 bg-[#CAFF00] px-4 py-2">
-                  <span className="font-mono text-xs text-[#111111]">Cliente: <strong>{clientName}</strong></span>
+              <div className="mt-6 rounded-[24px] border border-white/10 bg-white/6 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/52">Passo {slide + 1}</p>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#ecffb0_0%,#d6ff63_48%,#b7ec23_100%)] transition-all duration-500" style={{ width: `${((slide + 1) / SLIDES.length) * 100}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <div className="app-panel rounded-[30px] p-6 md:p-7">
+              {current.id === 1 && (
+                <div className="flex h-full flex-col justify-center">
+                  <p className="section-kicker">Centro de comando</p>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-5">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Visibilidade</div>
+                      <p className="mt-3 text-sm leading-6 text-[var(--ink)]">Dashboard, PMO, ANPD e reuniões ficam disponíveis em uma mesma experiência.</p>
+                    </div>
+                    <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-5">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Orientação</div>
+                      <p className="mt-3 text-sm leading-6 text-[var(--ink)]">Cada etapa indica o que falta preencher para destravar o próximo bloco do portal.</p>
+                    </div>
+                  </div>
                 </div>
               )}
-            </>
-          )}
 
-          {current.id === 2 && (
-            <>
-              <h2 className="font-syne font-extrabold text-[#111111] text-2xl uppercase mb-8">{current.title}</h2>
-              <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
-                {current.grid.map(item => (
-                  <div key={item.label} className="border border-[#E0E0E0] p-5 text-left">
-                    <div className="w-12 h-12 bg-[#111111] flex items-center justify-center mb-3">{item.icon}</div>
-                    <h3 className="font-syne font-bold text-[#111111] text-sm uppercase mb-1">{item.label}</h3>
-                    <p className="font-dm text-xs text-[#555555] leading-relaxed">{item.desc}</p>
+              {current.id === 2 && (
+                <div>
+                  <p className="section-kicker">Mapa funcional</p>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {current.grid.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.label} className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-5">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(214,255,99,0.22)] text-[var(--ink)]">
+                            <Icon size={20} />
+                          </div>
+                          <h3 className="mt-4 text-base font-bold text-[var(--ink)]">{item.label}</h3>
+                          <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.desc}</p>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </div>
+              )}
 
-          {current.id === 3 && (
-            <>
-              <h2 className="font-syne font-extrabold text-[#111111] text-2xl uppercase mb-8">{current.title}</h2>
-              <div className="space-y-3 w-full max-w-md text-left">
-                {current.tips.map((tip, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-gray-50 border border-[#E0E0E0] px-4 py-3">
-                    <span className="text-lg shrink-0">{tip.icon}</span>
-                    <p className="font-dm text-sm text-[#333] leading-relaxed">{tip.text}</p>
+              {current.id === 3 && (
+                <div>
+                  <p className="section-kicker">Boas práticas</p>
+                  <div className="mt-4 space-y-3">
+                    {current.tips.map((tip) => {
+                      const Icon = tip.icon;
+                      return (
+                        <div key={tip.title} className="flex gap-4 rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#173038] text-white">
+                            <Icon size={18} />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-[var(--ink)]">{tip.title}</div>
+                            <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">{tip.text}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </div>
+              )}
 
-          {current.id === 4 && (
-            <>
-              <div className="w-20 h-20 bg-[#CAFF00] flex items-center justify-center mb-6">
-                <Shield size={40} className="text-[#111111]" />
-              </div>
-              <h2 className="font-syne font-extrabold text-[#111111] text-3xl uppercase mb-4">{current.title}</h2>
-              <p className="font-dm text-[#555555] text-sm mb-8 max-w-md leading-relaxed">{current.content}</p>
-              <button
-                onClick={handleStart}
-                className="bg-[#111111] text-white font-syne font-bold px-10 py-4 text-lg uppercase hover:bg-[#CAFF00] hover:text-[#111111] transition-colors"
-              >
-                COMEÇAR →
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <div className="border-t border-[#E0E0E0] px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={() => setSlide(s => s - 1)}
-            disabled={slide === 0}
-            className="flex items-center gap-1 font-dm text-sm text-[#555555] hover:text-[#111111] disabled:opacity-0 transition-colors"
-          >
-            <ChevronLeft size={16} /> Voltar
-          </button>
-
-          {/* Dots */}
-          <div className="flex items-center gap-2">
-            {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setSlide(i)}
-                className={`w-2.5 h-2.5 transition-colors ${i === slide ? 'bg-[#111111]' : 'bg-gray-300 hover:bg-gray-400'}`}
-              />
-            ))}
+              {current.id === 4 && (
+                <div className="flex h-full flex-col items-start justify-center">
+                  <p className="section-kicker">Primeiro passo</p>
+                  <h3 className="mt-4 text-3xl font-bold text-[var(--ink)]">Preencha os dados do incidente</h3>
+                  <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--ink-soft)] md:text-base">
+                    Ao registrar o contexto inicial, o portal consegue destravar a trilha de perguntas, a jornada e os módulos de acompanhamento.
+                  </p>
+                  <button onClick={handleStart} className="btn-primary mt-8 rounded-full px-6 py-3 text-sm uppercase tracking-[0.16em]">
+                    Ir para informações
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {slide < SLIDES.length - 1 ? (
+          <div className="mt-6 flex items-center justify-between border-t border-[rgba(21,38,43,0.08)] pt-5">
             <button
-              onClick={() => setSlide(s => s + 1)}
-              className="flex items-center gap-1 font-dm text-sm text-[#111111] font-medium hover:text-[#555555] transition-colors"
+              onClick={() => setSlide((currentSlide) => currentSlide - 1)}
+              disabled={slide === 0}
+              className="flex items-center gap-2 rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 px-4 py-2 text-sm text-[var(--ink)] transition-colors hover:bg-white disabled:opacity-30"
             >
-              Próximo <ChevronRight size={16} />
+              <ChevronLeft size={16} /> Voltar
             </button>
-          ) : (
-            <span className="w-20" />
-          )}
+
+            <div className="flex items-center gap-2">
+              {SLIDES.map((item, index) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSlide(index)}
+                  className={`h-2.5 w-2.5 rounded-full transition-all ${index === slide ? 'w-8 bg-[#173038]' : 'bg-[rgba(21,38,43,0.16)] hover:bg-[rgba(21,38,43,0.28)]'}`}
+                />
+              ))}
+            </div>
+
+            {slide < SLIDES.length - 1 ? (
+              <button
+                onClick={() => setSlide((currentSlide) => currentSlide + 1)}
+                className="flex items-center gap-2 rounded-full bg-[#173038] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0f2128]"
+              >
+                Próximo <ChevronRight size={16} />
+              </button>
+            ) : (
+              <span className="w-[98px]" />
+            )}
+          </div>
         </div>
       </div>
     </div>

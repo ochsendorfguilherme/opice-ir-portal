@@ -79,32 +79,32 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
     <div className="space-y-6">
       {/* Card 0 — Contexto do Incidente */}
       {infoFilled ? (
-        <div className="border border-[#E0E0E0] p-5">
+        <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
           <div className="flex items-center gap-2 mb-3">
-            <Info size={14} className="text-[#555555]" />
-            <h3 className="font-mono text-xs text-[#555555] uppercase font-semibold tracking-widest">Contexto do Incidente</h3>
+            <Info size={14} className="text-[var(--ink-soft)]" />
+            <h3 className="font-mono text-xs text-[var(--ink-soft)] uppercase font-semibold tracking-widest">Contexto do Incidente</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Cliente</div>
-              <div className="font-medium text-[#111111]">{info.nomeCliente || '—'}</div>
+              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Cliente</div>
+              <div className="font-medium text-[var(--ink)]">{info.nomeCliente || '—'}</div>
             </div>
             <div>
-              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Data do Incidente</div>
-              <div className="font-medium text-[#111111]">{info.dataIncidente || '—'}</div>
+              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Data do Incidente</div>
+              <div className="font-medium text-[var(--ink)]">{info.dataIncidente || '—'}</div>
             </div>
             <div>
-              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Conhecimento (UTC)</div>
-              <div className="font-medium text-[#111111]">{info.dataConhecimento ? new Date(info.dataConhecimento).toLocaleString('pt-BR') : '—'}</div>
+              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Conhecimento (UTC)</div>
+              <div className="font-medium text-[var(--ink)]">{info.dataConhecimento ? new Date(info.dataConhecimento).toLocaleString('pt-BR') : '—'}</div>
             </div>
             <div>
-              <div className="font-mono text-xs text-[#555555] uppercase mb-0.5">Agente</div>
-              <div className="font-medium text-[#111111]">{info.agente || '—'}</div>
+              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Agente</div>
+              <div className="font-medium text-[var(--ink)]">{info.agente || '—'}</div>
             </div>
           </div>
           {info.contexto && (
-            <div className="mt-3 pt-3 border-t border-[#E0E0E0]">
-              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Contexto Geral</div>
+            <div className="mt-3 pt-3 border-t border-[rgba(21,38,43,0.12)]">
+              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Contexto Geral</div>
               <p className="text-sm text-[#333] line-clamp-2">{info.contexto}</p>
             </div>
           )}
@@ -123,9 +123,9 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
       )}
 
       {/* Card 1 — Status + Tempo */}
-      <div className="bg-[#111111] p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="app-panel-dark rounded-[30px] p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <div className="font-mono text-xs text-gray-400 uppercase mb-2">Status Global</div>
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Status Global</div>
           <select
             value={status}
             onChange={e => save({ globalStatus: e.target.value })}
@@ -136,15 +136,15 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
         </div>
 
         <div>
-          <div className="font-mono text-xs text-gray-400 uppercase mb-2">Tempo Decorrido</div>
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Tempo Decorrido</div>
           <div className="font-mono text-3xl font-bold text-white">
             {info.dataConhecimento ? sla.label : '—'}
           </div>
         </div>
 
         <div>
-          <div className="font-mono text-xs text-gray-400 uppercase mb-2 flex items-center gap-1.5">
-            <Shield size={12} className="text-[#CAFF00]" />
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-2 flex items-center gap-1.5">
+            <Shield size={12} className="text-[var(--accent)]" />
             Countdown ANPD
           </div>
           <div className={`font-mono text-2xl font-bold ${anpd?.overdue ? 'text-red-400' :
@@ -155,22 +155,22 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
             {anpd ? formatCountdown(anpd.diffHours) : '—'}
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-gray-400 font-mono text-xs">Prazo ANPD (dias úteis):</span>
+            <span className="text-[var(--ink-soft)] font-mono text-xs">Prazo ANPD (dias úteis):</span>
             <input
               type="number"
               value={anpdDays}
               min={1}
               max={60}
               onChange={e => { setAnpdDays(+e.target.value); save({ anpdDays: +e.target.value }); }}
-              className="w-16 border border-gray-600 bg-gray-800 text-white font-mono text-sm px-2 py-1 focus:outline-none"
+              className="w-16 border border-[rgba(21,38,43,0.16)] bg-[#173038] text-white font-mono text-sm px-2 py-1 focus:outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* NIST Timeline */}
-      <div className="border border-[#E0E0E0] p-5">
-        <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-4">Fases NIST SP 800-61r3</h3>
+      <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+        <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-4">Fases NIST SP 800-61r3</h3>
         <div className="flex gap-2 overflow-x-auto">
           {NIST_PHASES.map((phase, i) => {
             const isActive = phase === nistPhase;
@@ -179,9 +179,9 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
               <button
                 key={phase}
                 onClick={() => save({ nistPhase: phase })}
-                className={`flex-1 min-w-[100px] px-3 py-3 font-mono text-xs text-center transition-all cursor-pointer border ${isActive ? 'bg-[#CAFF00] text-[#111111] font-bold border-[#CAFF00]' :
-                  isDone ? 'bg-[#111111] text-white border-[#111111]' :
-                    'bg-white text-gray-500 border-[#E0E0E0] hover:bg-gray-50'
+                className={`flex-1 min-w-[100px] px-3 py-3 font-mono text-xs text-center transition-all cursor-pointer border ${isActive ? 'bg-[var(--accent)] text-[var(--ink)] font-bold border-[var(--accent)]' :
+                  isDone ? 'bg-[#173038] text-white border-[rgba(21,38,43,0.16)]' :
+                    'bg-white text-[var(--ink-soft)] border-[rgba(21,38,43,0.12)] hover:bg-white/72'
                   }`}
               >
                 {isDone && '✓ '}
@@ -193,10 +193,10 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
       </div>
 
       {/* Card 2 — Briefing C-Level Preview */}
-      <div className={`border p-5 ${!isBriefingFilled ? 'border-amber-300 bg-amber-50 animate-pulse-amber' : 'bg-[#111111] border-[#111111]'}`}>
+      <div className={`rounded-[28px] border p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)] ${!isBriefingFilled ? 'border-amber-300 bg-amber-50 animate-pulse-amber' : 'app-panel-dark border-[rgba(21,38,43,0.16)]'}`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`font-syne font-bold uppercase text-sm flex items-center gap-2 ${!isBriefingFilled ? 'text-amber-800' : 'text-white'}`}>
-            <FileText size={14} className={!isBriefingFilled ? 'text-amber-600' : 'text-[#CAFF00]'} />
+            <FileText size={14} className={!isBriefingFilled ? 'text-amber-600' : 'text-[var(--accent)]'} />
             Briefing C-Level
           </h3>
         </div>
@@ -216,13 +216,13 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
           </div>
         ) : (
           <div>
-            <div className="font-mono text-xs text-gray-400 uppercase mb-1">Preview: O que houve</div>
+            <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Preview: O que houve</div>
             <p className="font-dm text-sm text-gray-200 mb-4 line-clamp-2">
               "{briefingPreview}..."
             </p>
             <button
               onClick={() => onNavigateTab && onNavigateTab('clevel')}
-              className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-gray-600 text-white hover:bg-white hover:text-[#111111] transition-colors"
+              className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.16)] text-white hover:bg-white hover:text-[var(--ink)] transition-colors"
             >
               Ver e Editar Completo <ArrowRight size={13} />
             </button>
@@ -231,28 +231,28 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
       </div>
 
       {/* Card 4 — Mini KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="border border-[#E0E0E0] p-4">
-          <div className="font-mono text-xs text-[#555555] uppercase mb-1">Ações Abertas</div>
-          <div className="font-syne font-bold text-2xl text-[#111111]">{openActions}</div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="app-panel rounded-[24px] p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Ações Abertas</div>
+          <div className="font-syne font-bold text-2xl text-[var(--ink)]">{openActions}</div>
         </div>
-        <div className={`border p-4 ${blockedActions > 0 ? 'border-red-200 bg-red-50' : 'border-[#E0E0E0]'}`}>
-          <div className="font-mono text-xs text-[#555555] uppercase mb-1">Ações Bloqueadas</div>
-          <div className={`font-syne font-bold text-2xl ${blockedActions > 0 ? 'text-red-600' : 'text-[#111111]'}`}>{blockedActions}</div>
+        <div className={`rounded-[24px] border p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)] ${blockedActions > 0 ? 'border-red-200 bg-red-50' : 'app-panel'}`}>
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Ações Bloqueadas</div>
+          <div className={`font-syne font-bold text-2xl ${blockedActions > 0 ? 'text-red-600' : 'text-[var(--ink)]'}`}>{blockedActions}</div>
         </div>
-        <div className={`border p-4 ${pendingComms > 0 ? 'border-amber-200 bg-amber-50' : 'border-[#E0E0E0]'}`}>
-          <div className="font-mono text-xs text-[#555555] uppercase mb-1">Comms Pendentes</div>
-          <div className={`font-syne font-bold text-2xl ${pendingComms > 0 ? 'text-amber-600' : 'text-[#111111]'}`}>{pendingComms}</div>
+        <div className={`rounded-[24px] border p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)] ${pendingComms > 0 ? 'border-amber-200 bg-amber-50' : 'app-panel'}`}>
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Comms Pendentes</div>
+          <div className={`font-syne font-bold text-2xl ${pendingComms > 0 ? 'text-amber-600' : 'text-[var(--ink)]'}`}>{pendingComms}</div>
         </div>
-        <div className="border border-[#E0E0E0] p-4">
-          <div className="font-mono text-xs text-[#555555] uppercase mb-1">Terceiros Ativos</div>
-          <div className="font-syne font-bold text-2xl text-[#111111]">{activeThird}</div>
+        <div className="app-panel rounded-[24px] p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
+          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Terceiros Ativos</div>
+          <div className="font-syne font-bold text-2xl text-[var(--ink)]">{activeThird}</div>
         </div>
       </div>
 
       {/* Post-incident checklist */}
       {showPostChecklist && (
-        <div className="border border-green-200 bg-green-50 p-5">
+        <div className="rounded-[28px] border border-green-200 bg-green-50 p-5 shadow-[0_18px_36px_rgba(52,130,73,0.08)]">
           <h3 className="font-syne font-bold text-green-800 uppercase text-sm mb-4">Checklist Pós-Incidente</h3>
           <div className="space-y-2">
             {POST_CHECKLIST.map(item => (
@@ -263,7 +263,7 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
                   onChange={() => toggleCheck(item)}
                   className="w-4 h-4"
                 />
-                <span className={`font-dm text-sm ${checklist.includes(item) ? 'line-through text-gray-400' : 'text-green-900'}`}>
+                <span className={`font-dm text-sm ${checklist.includes(item) ? 'line-through text-[var(--ink-soft)]' : 'text-green-900'}`}>
                   {item}
                 </span>
               </label>

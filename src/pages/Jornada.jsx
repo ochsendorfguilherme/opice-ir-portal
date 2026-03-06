@@ -31,7 +31,7 @@ const STATUS_STYLE = {
   'Feito': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
   'Em andamento': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
   'Planejado': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-  'Não se aplica': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' },
+  'Não se aplica': { bg: 'bg-white/72', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' },
 };
 
 const STATUS_LEFT = {
@@ -55,10 +55,10 @@ function SLABadge({ dataConhecimento, slaConfig, crisis }) {
     slaConfig?.warnThreshold || 36,
     slaConfig?.critThreshold || 48
   );
-  if (!dataConhecimento) return <span className="text-gray-400 font-mono text-xs">—</span>;
+  if (!dataConhecimento) return <span className="text-[var(--ink-soft)] font-mono text-xs">—</span>;
   if (crisis) return <span className="font-mono text-xs text-amber-600">⏸ Pausado em {label}</span>;
   if (status === 'critical') return (
-    <span className="font-mono text-xs text-white bg-red-600 px-2 py-0.5 animate-pulse-red flex items-center gap-1">
+    <span className="font-mono text-xs text-[#fffdf8] bg-red-600 px-2 py-0.5 animate-pulse-red flex items-center gap-1">
       <AlertTriangle size={10} /> Crítico · {label}
     </span>
   );
@@ -68,7 +68,7 @@ function SLABadge({ dataConhecimento, slaConfig, crisis }) {
     </span>
   );
   return (
-    <span className="font-mono text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 flex items-center gap-1">
+    <span className="font-mono text-xs text-gray-600 bg-white/72 border border-gray-200 px-2 py-0.5 flex items-center gap-1">
       <Clock size={10} /> No Prazo · {label}
     </span>
   );
@@ -95,18 +95,18 @@ function StatusDropdown({ value, onChange }) {
         <ChevronDown size={10} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E0E0E0] shadow-lg z-20 min-w-[140px]">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-[rgba(21,38,43,0.12)] shadow-lg z-20 min-w-[140px]">
           {STATUSES.map(st => {
             const ss = STATUS_STYLE[st];
             return (
               <button
                 key={st}
                 onClick={() => { onChange(st); setOpen(false); }}
-                className={`w-full text-left flex items-center gap-2 px-3 py-2 font-mono text-xs hover:bg-gray-50 transition-colors ${value === st ? 'font-bold' : ''}`}
+                className={`w-full text-left flex items-center gap-2 px-3 py-2 font-mono text-xs hover:bg-white/72 transition-colors ${value === st ? 'font-bold' : ''}`}
               >
                 <span className={`w-2 h-2 rounded-full ${ss.dot}`} />
                 {st}
-                {value === st && <span className="ml-auto text-[#111111]">✓</span>}
+                {value === st && <span className="ml-auto text-[var(--ink)]">✓</span>}
               </button>
             );
           })}
@@ -143,54 +143,54 @@ function CreatePMOActionModal({ activity, effectiveClientId, onClose, onCreated 
     onClose();
   };
 
-  const inputClass = "w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111]";
+  const inputClass = "w-full border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-      <div className="bg-white border border-[#E0E0E0] w-full max-w-md shadow-2xl">
-        <div className="bg-[#111111] px-5 py-3 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#15262b]/45">
+      <div className="app-panel w-full max-w-md rounded-[28px] shadow-[0_24px_48px_rgba(21,38,43,0.18)] overflow-hidden">
+        <div className="soft-ribbon px-5 py-3 flex items-center justify-between rounded-t-[28px]">
           <div>
-            <div className="text-[#CAFF00] font-mono text-xs">CRIAR AÇÃO NO PMO</div>
-            <div className="text-white font-dm text-sm">#{activity.id} — {activity.etapa}</div>
+            <div className="text-[var(--accent)] font-mono text-xs">CRIAR AÇÃO NO PMO</div>
+            <div className="text-[#fffdf8] font-dm text-sm">#{activity.id} — {activity.etapa}</div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={16} /></button>
+          <button onClick={onClose} className="text-[var(--ink-soft)] hover:text-[#fffdf8] p-1"><X size={16} /></button>
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Descrição</label>
+            <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Descrição</label>
             <input type="text" value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} className={inputClass} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Responsável</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Responsável</label>
               <input type="text" value={form.responsavel} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} className={inputClass} />
             </div>
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Área</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Área</label>
               <select value={form.area} onChange={e => setForm(f => ({ ...f, area: e.target.value }))} className={inputClass}>
                 {AREAS.map(a => <option key={a}>{a}</option>)}
               </select>
             </div>
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Status</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Status</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={inputClass}>
                 {['Aberto', 'Em andamento', 'Bloqueado', 'Feito'].map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Prioridade</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Prioridade</label>
               <select value={form.prioridade} onChange={e => setForm(f => ({ ...f, prioridade: e.target.value }))} className={inputClass}>
                 {['Crítica', 'Alta', 'Média', 'Baixa'].map(p => <option key={p}>{p}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block font-mono text-xs uppercase text-[#555555] mb-1">Prazo</label>
+            <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Prazo</label>
             <input type="datetime-local" value={form.prazo} onChange={e => setForm(f => ({ ...f, prazo: e.target.value }))} className={inputClass} />
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={onClose} className="flex-1 border border-[#E0E0E0] text-[#111111] font-dm text-sm py-2.5 hover:bg-gray-50">Cancelar</button>
-            <button onClick={handleCreate} className="flex-1 bg-[#111111] text-white font-dm text-sm py-2.5 hover:bg-[#333] flex items-center justify-center gap-2">
+            <button onClick={onClose} className="flex-1 border border-[rgba(21,38,43,0.12)] text-[var(--ink)] font-dm text-sm py-2.5 hover:bg-white/72">Cancelar</button>
+            <button onClick={handleCreate} className="flex-1 bg-[#173038] text-[#fffdf8] font-dm text-sm py-2.5 hover:bg-[#0f2128] flex items-center justify-center gap-2">
               <ExternalLink size={13} /> Criar no PMO
             </button>
           </div>
@@ -209,8 +209,8 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
 
   const handleSave = () => { onSave(form); onClose(); };
 
-  const inputClass = "w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors";
-  const disabledClass = "w-full border border-[#E0E0E0] px-3 py-2 font-dm text-sm bg-gray-50 text-gray-500 cursor-not-allowed";
+  const inputClass = "w-full border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] transition-colors";
+  const disabledClass = "w-full border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm bg-white/72 text-[var(--ink-soft)] cursor-not-allowed";
 
   // INT-9: comms linked to this activity
   const linkedComms = (comms || []).filter(c => c.actividadeId === activity.id);
@@ -224,28 +224,28 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
         <div className="flex-1 bg-black/40" onClick={onClose} />
         <div className="w-full max-w-md bg-white flex flex-col shadow-2xl overflow-hidden">
           {/* Header */}
-          <div className="bg-[#111111] px-5 py-4 flex items-center justify-between shrink-0">
+          <div className="bg-[#173038] px-5 py-4 flex items-center justify-between shrink-0">
             <div className="flex-1 min-w-0">
-              <div className="font-mono text-[#CAFF00] text-xs">#{activity.id} · {activity.etapa}</div>
-              <div className="text-white font-dm text-sm font-medium mt-0.5 line-clamp-2">{activity.nome}</div>
+              <div className="font-mono text-[var(--accent)] text-xs">#{activity.id} · {activity.etapa}</div>
+              <div className="text-[#fffdf8] font-dm text-sm font-medium mt-0.5 line-clamp-2">{activity.nome}</div>
             </div>
             <div className="flex items-center gap-2 ml-3 shrink-0">
               <button
                 onClick={onWarroom}
-                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 transition-colors ${crisis ? 'bg-red-600 text-white animate-pulse-red' : 'bg-red-700 text-white hover:bg-red-600'
+                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 transition-colors ${crisis ? 'bg-red-600 text-[#fffdf8] animate-pulse-red' : 'bg-red-700 text-[#fffdf8] hover:bg-red-600'
                   }`}
               >
                 {crisis ? <Zap size={11} /> : <Shield size={11} />}
                 {crisis ? '⚡ WARROOM ATIVA' : '🚨 WarRoom'}
               </button>
-              <button onClick={onClose} className="text-gray-400 hover:text-white p-1">
+              <button onClick={onClose} className="text-[var(--ink-soft)] hover:text-[#fffdf8] p-1">
                 <X size={18} />
               </button>
             </div>
           </div>
 
           {/* INT-3: Create PMO Action button */}
-          <div className="border-b border-[#E0E0E0] px-5 py-2.5 flex items-center justify-between bg-gray-50">
+          <div className="border-b border-[rgba(21,38,43,0.12)] px-5 py-2.5 flex items-center justify-between bg-white/72">
             {linkedPMOAction ? (
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5">
@@ -263,7 +263,7 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
               ) : (
                 <button
                   onClick={() => setShowPMOModal(true)}
-                  className="flex items-center gap-1.5 font-mono text-xs text-[#111111] border border-[#E0E0E0] px-3 py-1.5 hover:bg-white hover:border-[#111111] transition-colors"
+                  className="flex items-center gap-1.5 font-mono text-xs text-[var(--ink)] border border-[rgba(21,38,43,0.12)] px-3 py-1.5 hover:bg-white hover:border-[rgba(21,38,43,0.16)] transition-colors"
                 >
                   <ExternalLink size={11} /> Criar Ação no PMO ↗
                 </button>
@@ -274,43 +274,43 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {/* Status */}
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Status</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">Status</label>
               <StatusDropdown value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} />
             </div>
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Data Início</label>
+                <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">Data Início</label>
                 <input type="date" value={form.dataInicio || ''} onChange={e => setForm(f => ({ ...f, dataInicio: e.target.value }))} className={inputClass} />
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Data Fim</label>
+                <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">Data Fim</label>
                 <input type="date" value={form.dataFim || ''} onChange={e => setForm(f => ({ ...f, dataFim: e.target.value }))} className={inputClass} />
               </div>
             </div>
 
             {/* Responsável & Revisão */}
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Responsável</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">Responsável</label>
               <input type="text" value={form.responsavel || ''} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} className={inputClass} placeholder="Nome do responsável" />
             </div>
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Revisão</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">Revisão</label>
               <input type="text" value={form.revisao || ''} onChange={e => setForm(f => ({ ...f, revisao: e.target.value }))} className={inputClass} placeholder="Revisado por" />
             </div>
 
             {/* Obs Cliente */}
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">Observações Cliente</label>
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">Observações Cliente</label>
               <textarea value={form.observacoes || ''} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} rows={3} className={`${inputClass} resize-none`} placeholder="Notas do cliente..." />
             </div>
 
             {/* Obs Opice — admin only */}
             <div>
-              <label className="block font-mono text-xs uppercase text-[#555555] mb-1.5">
+              <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1.5">
                 Observações Opice
-                {!isAdmin && <span className="ml-2 text-gray-400">(Apenas uso interno)</span>}
+                {!isAdmin && <span className="ml-2 text-[var(--ink-soft)]">(Apenas uso interno)</span>}
               </label>
               {isAdmin ? (
                 <textarea value={form.observacoesOpice || ''} onChange={e => setForm(f => ({ ...f, observacoesOpice: e.target.value }))} rows={3} className={`${inputClass} resize-none`} placeholder="Notas internas Opice Blum..." />
@@ -320,11 +320,11 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
             </div>
 
             {/* Fundamento Legal */}
-            <div className="bg-gray-50 border border-[#E0E0E0] p-3">
-              <div className="font-mono text-xs text-[#555555] uppercase mb-1">Fundamento Legal</div>
+            <div className="bg-white/72 border border-[rgba(21,38,43,0.12)] p-3">
+              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Fundamento Legal</div>
               <p className="font-dm text-xs text-[#333]">{activity.fundamento}</p>
               {activity.observacoes && (
-                <p className="font-dm text-xs text-[#555555] mt-1 italic">{activity.observacoes}</p>
+                <p className="font-dm text-xs text-[var(--ink-soft)] mt-1 italic">{activity.observacoes}</p>
               )}
             </div>
 
@@ -332,7 +332,7 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
             {[13, 14, 15, 16, 23, 24].includes(activity.id) && (
               <button
                 onClick={() => window.location.href = '/anpd'}
-                className="w-full flex items-center gap-2 border border-[#E0E0E0] px-4 py-2.5 font-mono text-xs text-blue-700 hover:bg-blue-50 transition-colors"
+                className="w-full flex items-center gap-2 border border-[rgba(21,38,43,0.12)] px-4 py-2.5 font-mono text-xs text-blue-700 hover:bg-blue-50 transition-colors"
               >
                 <Scale size={13} /> Ver no ANPD → (Atividade vinculada ao processo regulatório)
               </button>
@@ -354,14 +354,14 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
 
             {/* INT-9: Linked communications */}
             {COMM_ACTIVITY_IDS.includes(activity.id) && (
-              <div className="border border-[#E0E0E0]">
-                <div className="bg-[#111111] px-3 py-2 flex items-center gap-2">
-                  <MessageSquare size={12} className="text-[#CAFF00]" />
-                  <span className="font-mono text-xs text-white uppercase">Comunicações Registradas</span>
-                  <span className="font-mono text-xs text-[#CAFF00] ml-auto">{linkedComms.length}</span>
+              <div className="border border-[rgba(21,38,43,0.12)]">
+                <div className="bg-[#173038] px-3 py-2 flex items-center gap-2">
+                  <MessageSquare size={12} className="text-[var(--accent)]" />
+                  <span className="font-mono text-xs text-[#fffdf8] uppercase">Comunicações Registradas</span>
+                  <span className="font-mono text-xs text-[var(--accent)] ml-auto">{linkedComms.length}</span>
                 </div>
                 {linkedComms.length === 0 ? (
-                  <div className="p-3 text-center text-gray-400 font-dm text-xs">Nenhuma comunicação vinculada</div>
+                  <div className="p-3 text-center text-[var(--ink-soft)] font-dm text-xs">Nenhuma comunicação vinculada</div>
                 ) : (
                   <div className="divide-y divide-[#F0F0F0]">
                     {linkedComms.map(c => (
@@ -369,11 +369,11 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`font-mono text-xs px-1.5 py-0.5 border ${c.statusAprovacao === 'Enviado' ? 'bg-green-50 text-green-700 border-green-200' :
                             c.statusAprovacao === 'Aprovado' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                              'bg-gray-100 text-gray-600 border-gray-200'
+                              'bg-white/70 text-gray-600 border-gray-200'
                             }`}>{c.statusAprovacao}</span>
-                          <span className="font-mono text-xs text-[#555555]">{c.publico} · {c.canal}</span>
+                          <span className="font-mono text-xs text-[var(--ink-soft)]">{c.publico} · {c.canal}</span>
                         </div>
-                        <p className="font-dm text-xs text-[#111111] line-clamp-2">{c.mensagem}</p>
+                        <p className="font-dm text-xs text-[var(--ink)] line-clamp-2">{c.mensagem}</p>
                       </div>
                     ))}
                   </div>
@@ -383,16 +383,16 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
           </div>
 
           {/* Footer */}
-          <div className="border-t border-[#E0E0E0] p-4 flex gap-3 shrink-0">
+          <div className="border-t border-[rgba(21,38,43,0.12)] p-4 flex gap-3 shrink-0">
             <button
               onClick={onClose}
-              className="flex-1 border border-[#E0E0E0] text-[#111111] font-dm text-sm py-2.5 hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-[rgba(21,38,43,0.12)] text-[var(--ink)] font-dm text-sm py-2.5 hover:bg-white/72 transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 bg-[#111111] text-white font-dm text-sm py-2.5 hover:bg-[#333] transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-[#173038] text-[#fffdf8] font-dm text-sm py-2.5 hover:bg-[#0f2128] transition-colors flex items-center justify-center gap-2"
             >
               <Save size={14} />
               Salvar
@@ -426,7 +426,7 @@ function KanbanCard({ activity, onClick, dataConhecimento, slaConfig, crisis }) 
   return (
     <div
       onClick={() => onClick(activity)}
-      className={`bg-white p-3 cursor-pointer hover:shadow-md transition-shadow ${isCritical ? 'border-2 border-red-500 bg-red-50' : isWarning ? 'border-l-4 border-l-amber-500 border border-amber-100' : 'border border-[#E0E0E0]'
+      className={`bg-white p-3 cursor-pointer hover:shadow-md transition-shadow ${isCritical ? 'border-2 border-red-500 bg-red-50' : isWarning ? 'border-l-4 border-l-amber-500 border border-amber-100' : 'border border-[rgba(21,38,43,0.12)]'
         }`}
     >
       {crisis && (
@@ -434,10 +434,10 @@ function KanbanCard({ activity, onClick, dataConhecimento, slaConfig, crisis }) 
           <Zap size={9} /> CRISE
         </div>
       )}
-      <div className="font-dm text-xs text-[#111111] line-clamp-2 mb-2">{activity.nome}</div>
+      <div className="font-dm text-xs text-[var(--ink)] line-clamp-2 mb-2">{activity.nome}</div>
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[#555555]">{activity.etapa}</span>
-        <span className={`font-mono text-xs flex items-center gap-1 ${isCritical ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-gray-500'
+        <span className="font-mono text-xs text-[var(--ink-soft)]">{activity.etapa}</span>
+        <span className={`font-mono text-xs flex items-center gap-1 ${isCritical ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-[var(--ink-soft)]'
           }`}>
           <Clock size={9} />
           {dataConhecimento ? slaLabel : '—'}
@@ -573,23 +573,23 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
 
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-      <div className="p-6 md:p-10">
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
 
         {/* Barra de prazos críticos */}
         {showDeadlineBar && deadlineBarOpen && (
           <div className="mb-4 border border-red-300 bg-red-50">
             <div className="flex items-center justify-between px-4 py-2 bg-red-600">
-              <span className="font-mono text-xs text-white font-bold uppercase tracking-widest">⚖ Prazos Regulatórios Ativos</span>
-              <button onClick={() => setDeadlineBarOpen(false)} className="text-red-200 hover:text-white font-mono text-xs">Recolher ↑</button>
+              <span className="font-mono text-xs text-[#fffdf8] font-bold uppercase tracking-widest">⚖ Prazos Regulatórios Ativos</span>
+              <button onClick={() => setDeadlineBarOpen(false)} className="text-red-200 hover:text-[#fffdf8] font-mono text-xs">Recolher ↑</button>
             </div>
             <div className="divide-y divide-red-100">
               {criticalDeadlines.map((d, i) => (
                 <div key={i} className="flex items-center gap-4 px-4 py-2.5">
                   <span className="font-mono text-xs text-red-800 flex-1">{d.label}</span>
-                  <span className={`font-mono text-xs px-2 py-0.5 font-bold ${d.overdue ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'}`}>
+                  <span className={`font-mono text-xs px-2 py-0.5 font-bold ${d.overdue ? 'bg-red-600 text-[#fffdf8]' : 'bg-red-100 text-red-700'}`}>
                     {d.overdue ? 'VENCIDO' : `Vence em ${formatSLALabel(d.hours)}`}
                   </span>
-                  <span className={`font-mono text-xs px-2 py-0.5 ${d.overdue ? 'bg-red-700 text-white' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`font-mono text-xs px-2 py-0.5 ${d.overdue ? 'bg-red-700 text-[#fffdf8]' : 'bg-amber-100 text-amber-700'}`}>
                     {d.overdue ? '⛔ VENCIDO' : '🔴 CRÍTICO'}
                   </span>
                 </div>
@@ -600,7 +600,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase mb-4">
+          <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase mb-4">
             Jornada do Incidente
           </h1>
 
@@ -608,11 +608,11 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
           <div className="flex items-center gap-4 mb-4">
             <div className="flex-1">
               <div className="flex justify-between mb-1.5">
-                <span className="font-dm text-sm text-[#555555]">{done} de {total} atividades concluídas</span>
-                <span className="font-mono text-sm font-medium text-[#111111]">{pct}% Feito</span>
+                <span className="font-dm text-sm text-[var(--ink-soft)]">{done} de {total} atividades concluídas</span>
+                <span className="font-mono text-sm font-medium text-[var(--ink)]">{pct}% Feito</span>
               </div>
               <div className="w-full h-2 bg-[#E5E5E5]">
-                <div className="h-2 bg-[#CAFF00] transition-all duration-700" style={{ width: `${pct}%` }} />
+                <div className="h-2 bg-[var(--accent)] transition-all duration-700" style={{ width: `${pct}%` }} />
               </div>
             </div>
           </div>
@@ -620,22 +620,22 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-3">
             {/* View toggle */}
-            <div className="flex border border-[#E0E0E0]">
+            <div className="flex border border-[rgba(21,38,43,0.12)]">
               <button
                 onClick={() => setView('table')}
-                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'table' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
+                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'table' ? 'bg-[#173038] text-[#fffdf8]' : 'bg-white text-[var(--ink-soft)] hover:bg-white/72'}`}
               >
                 <List size={13} /> Tabela
               </button>
               <button
                 onClick={() => setView('kanban')}
-                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'kanban' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
+                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'kanban' ? 'bg-[#173038] text-[#fffdf8]' : 'bg-white text-[var(--ink-soft)] hover:bg-white/72'}`}
               >
                 <Columns size={13} /> Kanban
               </button>
               <button
                 onClick={() => setView('timeline')}
-                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'timeline' ? 'bg-[#111111] text-white' : 'bg-white text-[#555555] hover:bg-gray-50'}`}
+                className={`flex items-center gap-1.5 px-3 py-2 font-mono text-xs transition-colors ${view === 'timeline' ? 'bg-[#173038] text-[#fffdf8]' : 'bg-white text-[var(--ink-soft)] hover:bg-white/72'}`}
               >
                 <GitBranch size={13} /> Timeline
               </button>
@@ -645,7 +645,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
             {Object.values(colFilters).some(v => v) && (
               <button
                 onClick={() => setColFilters({})}
-                className="flex items-center gap-1.5 px-3 py-2 font-mono text-xs border border-[#CAFF00] bg-[#CAFF00] text-[#111111] hover:bg-lime-300 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 font-mono text-xs border border-[var(--accent)] bg-[var(--accent)] text-[var(--ink)] hover:bg-lime-300 transition-colors"
               >
                 <Filter size={11} /> Limpar filtros
               </button>
@@ -655,23 +655,23 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
 
         {/* TABLE VIEW */}
         {view === 'table' && (
-          <div className="overflow-x-auto border border-[#E0E0E0]">
+          <div className="overflow-x-auto border border-[rgba(21,38,43,0.12)]">
             <table className="w-full min-w-[900px]">
               <thead>
-                <tr className="bg-[#111111]">
+                <tr className="bg-[#173038]">
                   {TABLE_COLUMNS.map(col => {
                     const hasFilter = col.type != null;
                     const isActive = !!(col.key && colFilters[col.key]);
                     const isOpen = activeFilterCol === col.key;
                     return (
-                      <th key={col.h} className="px-4 py-3 text-left font-mono text-xs text-white uppercase whitespace-nowrap relative">
+                      <th key={col.h} className="px-4 py-3 text-left font-mono text-xs text-[#fffdf8] uppercase whitespace-nowrap relative">
                         <div className="flex items-center gap-1.5">
                           {col.type === 'checkbox' ? (
                             <input
                               type="checkbox"
                               checked={selectedIds.length > 0 && selectedIds.length === filtered.length}
                               onChange={toggleSelectAll}
-                              className="w-3 h-3 accent-[#CAFF00] cursor-pointer"
+                              className="w-3 h-3 accent-[#d6ff63] cursor-pointer"
                             />
                           ) : (
                             <span>{col.h}</span>
@@ -679,7 +679,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                           {hasFilter && (
                             <button
                               onClick={e => { e.stopPropagation(); setActiveFilterCol(isOpen ? null : col.key); }}
-                              className={`p-0.5 rounded transition-colors ${isActive ? 'text-[#CAFF00]' : 'text-gray-400 hover:text-white'}`}
+                              className={`p-0.5 rounded transition-colors ${isActive ? 'text-[var(--accent)]' : 'text-[var(--ink-soft)] hover:text-[#fffdf8]'}`}
                               title="Filtrar coluna"
                             >
                               <Filter size={10} />
@@ -696,7 +696,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                                 autoFocus
                                 value={colFilters[col.key] || ''}
                                 onChange={e => setColFilters(f => ({ ...f, [col.key]: e.target.value }))}
-                                className="w-full text-xs font-mono text-[#111111] border border-gray-200 rounded px-2 py-1"
+                                className="w-full text-xs font-mono text-[var(--ink)] border border-gray-200 rounded px-2 py-1"
                               >
                                 <option value="">Todos</option>
                                 {col.options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -708,7 +708,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                                 value={colFilters[col.key] || ''}
                                 onChange={e => setColFilters(f => ({ ...f, [col.key]: e.target.value }))}
                                 placeholder="Filtrar..."
-                                className="w-full text-xs font-mono text-[#111111] border border-gray-200 rounded px-2 py-1"
+                                className="w-full text-xs font-mono text-[var(--ink)] border border-gray-200 rounded px-2 py-1"
                               />
                             )}
                             {colFilters[col.key] && (
@@ -747,11 +747,11 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                           type="checkbox"
                           checked={selectedIds.includes(a.id)}
                           onChange={() => toggleSelect(a.id)}
-                          className="w-3 h-3 accent-[#111111] cursor-pointer"
+                          className="w-3 h-3 accent-[#173038] cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">{a.id}</td>
-                      <td className="px-4 py-3 font-dm text-sm text-[#111111] max-w-[200px]">
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">{a.id}</td>
+                      <td className="px-4 py-3 font-dm text-sm text-[var(--ink)] max-w-[200px]">
                         <div className="flex items-center gap-1.5">
                           {crisis && <Zap size={10} className="text-red-500 shrink-0 animate-pulse" />}
                           {a.anpdVinculado && (
@@ -782,18 +782,18 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                           <SLABadge dataConhecimento={info.dataConhecimento} slaConfig={slaConfig} crisis={crisis} />
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">{a.etapa}</td>
-                      <td className="px-4 py-3 font-dm text-xs text-[#555555]">{a.responsavel || '—'}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">{a.etapa}</td>
+                      <td className="px-4 py-3 font-dm text-xs text-[var(--ink-soft)]">{a.responsavel || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">
                         {a.dataInicio ? new Date(a.dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-[#555555] whitespace-nowrap">
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">
                         {a.dataFim ? new Date(a.dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                       </td>
-                      <td className="px-4 py-3 font-dm text-xs text-[#555555] max-w-[150px]">
+                      <td className="px-4 py-3 font-dm text-xs text-[var(--ink-soft)] max-w-[150px]">
                         <span className="line-clamp-2">{a.observacoes || '—'}</span>
                       </td>
-                      <td className="px-4 py-3 font-dm text-xs text-[#555555] max-w-[150px]">
+                      <td className="px-4 py-3 font-dm text-xs text-[var(--ink-soft)] max-w-[150px]">
                         <span className="line-clamp-2">{a.fundamento}</span>
                       </td>
                     </tr>
@@ -828,7 +828,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                       />
                     ))}
                     {colActs.length === 0 && (
-                      <div className="border border-dashed border-[#E0E0E0] p-6 text-center text-gray-400 font-dm text-xs">
+                      <div className="border border-dashed border-[rgba(21,38,43,0.12)] p-6 text-center text-[var(--ink-soft)] font-dm text-xs">
                         Nenhuma atividade
                       </div>
                     )}
@@ -844,17 +844,17 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
       {view === 'timeline' && (
         <div>
           {/* Progress bar */}
-          <div className="mb-6 border border-[#E0E0E0] p-4">
+          <div className="mb-6 border border-[rgba(21,38,43,0.12)] p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-xs text-[#555555] uppercase">Progresso da Jornada</span>
-              <span className="font-mono text-xs font-bold text-[#111111]">{pct}%</span>
+              <span className="font-mono text-xs text-[var(--ink-soft)] uppercase">Progresso da Jornada</span>
+              <span className="font-mono text-xs font-bold text-[var(--ink)]">{pct}%</span>
             </div>
             <div className="relative w-full h-2 bg-[#E5E5E5]">
-              <div className="h-2 bg-[#CAFF00] transition-all duration-700" style={{ width: `${pct}%` }} />
+              <div className="h-2 bg-[var(--accent)] transition-all duration-700" style={{ width: `${pct}%` }} />
               {['Etapa 1', 'Etapa 2', 'Etapa 3'].map((stage, i) => {
                 const stagePct = Math.round(activities.findIndex(a => a.etapa === stage) / activities.length * 100);
                 return (
-                  <div key={i} className="absolute top-4 transform -translate-x-1/2 font-mono text-[10px] text-[#555555]" style={{ left: `${stagePct}%` }}>
+                  <div key={i} className="absolute top-4 transform -translate-x-1/2 font-mono text-[10px] text-[var(--ink-soft)]" style={{ left: `${stagePct}%` }}>
                     {stage}
                   </div>
                 );
@@ -874,11 +874,11 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                 <div key={stage} className="mb-2">
                   {/* Stage separator */}
                   <div className="relative flex items-center mb-4 ml-0">
-                    <div className="z-10 w-12 h-12 bg-[#111111] flex items-center justify-center shrink-0">
-                      <span className="font-mono text-[#CAFF00] text-[10px] font-bold">{stage.replace('Etapa ', 'E')}</span>
+                    <div className="z-10 w-12 h-12 bg-[#173038] flex items-center justify-center shrink-0">
+                      <span className="font-mono text-[var(--accent)] text-[10px] font-bold">{stage.replace('Etapa ', 'E')}</span>
                     </div>
-                    <div className="ml-4 bg-[#111111] px-4 py-2">
-                      <span className="font-mono text-white text-xs uppercase">{stage}</span>
+                    <div className="ml-4 bg-[#173038] px-4 py-2">
+                      <span className="font-mono text-[#fffdf8] text-xs uppercase">{stage}</span>
                     </div>
                   </div>
 
@@ -899,15 +899,15 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                         <div
                           className={`ml-4 flex-1 border cursor-pointer hover:shadow-md transition-shadow p-4 ${a.status === 'Feito' ? 'border-green-200 bg-green-50/30' :
                             a.status === 'Em andamento' ? 'border-amber-200 bg-amber-50/30' :
-                              'border-[#E0E0E0] bg-white'
+                              'border-[rgba(21,38,43,0.12)] bg-white'
                             }`}
                           onClick={() => setSelected(a)}
                         >
                           <div className="flex items-start gap-3 flex-wrap">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono text-xs text-[#555555]">#{a.id}</span>
-                                <span className="font-dm text-sm text-[#111111] font-medium">{a.nome}</span>
+                                <span className="font-mono text-xs text-[var(--ink-soft)]">#{a.id}</span>
+                                <span className="font-dm text-sm text-[var(--ink)] font-medium">{a.nome}</span>
                                 {isAnpd && <Scale size={12} className="text-amber-500 shrink-0" title="Vinculado ao processo ANPD" />}
                                 {crisis && <span className="font-mono text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5">⚡ WARROOM</span>}
                                 {isPMOBlocked && <AlertTriangle size={11} className="text-red-500" title="Ação bloqueada no PMO" />}
@@ -915,15 +915,15 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                               <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                                 <span className={`font-mono text-xs px-2 py-0.5 border ${s.bg} ${s.text} ${s.border}`}>{a.status}</span>
                                 {a.dataInicio || a.dataFim ? (
-                                  <span className="font-mono text-xs text-[#555555]">
+                                  <span className="font-mono text-xs text-[var(--ink-soft)]">
                                     {a.dataInicio ? new Date(a.dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                                     {' → '}
                                     {a.dataFim ? new Date(a.dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '?'}
                                   </span>
                                 ) : (
-                                  <span className="font-mono text-xs text-gray-400">— → —</span>
+                                  <span className="font-mono text-xs text-[var(--ink-soft)]">— → —</span>
                                 )}
-                                {a.responsavel && <span className="font-dm text-xs text-[#555555]">{a.responsavel}</span>}
+                                {a.responsavel && <span className="font-dm text-xs text-[var(--ink-soft)]">{a.responsavel}</span>}
                               </div>
                               {isAnpd && info.dataConhecimento && (
                                 <div className="mt-1.5 flex items-center gap-1">
@@ -964,21 +964,21 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
       {/* Bulk Action Bar */}
       {selectedIds.length > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-[#111111] border border-[#CAFF00] shadow-2xl px-6 py-4 flex items-center gap-8 ring-8 ring-black/10">
+          <div className="bg-[#173038] border border-[var(--accent)] shadow-2xl px-6 py-4 flex items-center gap-8 ring-8 ring-black/10">
             <div className="flex flex-col">
-              <span className="font-mono text-[10px] text-[#CAFF00] uppercase tracking-widest">Ações em Lote</span>
-              <span className="font-dm text-sm text-white font-bold">{selectedIds.length} selecionados</span>
+              <span className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-widest">Ações em Lote</span>
+              <span className="font-dm text-sm text-[#fffdf8] font-bold">{selectedIds.length} selecionados</span>
             </div>
 
             <div className="h-8 w-px bg-gray-700" />
 
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-gray-400 uppercase mr-1">Mudar Status:</span>
+              <span className="font-mono text-[10px] text-[var(--ink-soft)] uppercase mr-1">Mudar Status:</span>
               {STATUSES.map(st => (
                 <button
                   key={st}
                   onClick={() => handleBulkStatusUpdate(st)}
-                  className="bg-transparent border border-gray-700 text-gray-300 px-3 py-1.5 font-mono text-[10px] uppercase hover:bg-white hover:text-black hover:border-white transition-all"
+                  className="bg-transparent border border-[rgba(21,38,43,0.16)] text-gray-300 px-3 py-1.5 font-mono text-[10px] uppercase hover:bg-white hover:text-black hover:border-white transition-all"
                 >
                   {st}
                 </button>
@@ -989,7 +989,7 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
 
             <button
               onClick={() => setSelectedIds([])}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-[var(--ink-soft)] hover:text-[#fffdf8] transition-colors"
               title="Cancelar seleção"
             >
               <X size={18} />

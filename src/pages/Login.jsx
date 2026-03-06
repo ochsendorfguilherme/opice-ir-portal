@@ -1,140 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Lock, AlertCircle, ShieldCheck, RefreshCw } from 'lucide-react';
-import { getStorage, setStorage, KEYS } from '../utils/storage';
+import { AlertCircle, ArrowRight, Lock, ShieldCheck } from 'lucide-react';
+import { getStorage, KEYS } from '../utils/storage';
 import OpiceLogo from '../components/OpiceLogo';
-
-function maskEmail(email) {
-  if (!email) return '—';
-  const [local, domain] = email.split('@');
-  if (!domain) return email;
-  return `${local.slice(0, 2)}***@${domain}`;
-}
-
-function MFAInput({ onVerify, email, onBack }) {
-  const [digits, setDigits] = useState(['', '', '', '', '', '']);
-  const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(300); // 5 min
-  const [resendCooldown, setResendCooldown] = useState(60);
-  const refs = useRef([]);
-
-  useEffect(() => {
-    refs.current[0]?.focus();
-    const iv = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 0), 1000);
-    return () => clearInterval(iv);
-  }, []);
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const iv = setInterval(() => setResendCooldown(c => c > 0 ? c - 1 : 0), 1000);
-    return () => clearInterval(iv);
-  }, [resendCooldown]);
-
-  const handleDigit = (i, val) => {
-    const v = val.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[i] = v;
-    setDigits(next);
-    if (v && i < 5) refs.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i, e) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) refs.current[i - 1]?.focus();
-  };
-
-  const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pasted.length === 6) {
-      setDigits(pasted.split(''));
-      refs.current[5]?.focus();
-    }
-  };
-
-  const allFilled = digits.every(d => d !== '');
-
-  const handleVerify = async () => {
-    if (!allFilled) return;
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    setLoading(false);
-    const expiry = Date.now() + 8 * 60 * 60 * 1000; // 8h
-    setStorage(KEYS.mfaVerified(email), { verified: true, expiry });
-    onVerify();
-  };
-
-  const mins = Math.floor(countdown / 60);
-  const secs = countdown % 60;
-
-  return (
-    <div className="w-full max-w-sm">
-      <div className="flex flex-col items-center mb-8">
-        <div className="w-16 h-16 bg-[#CAFF00] flex items-center justify-center mb-4">
-          <ShieldCheck size={32} className="text-[#111111]" />
-        </div>
-        <h2 className="font-syne font-extrabold text-[#111111] text-2xl uppercase text-center">
-          Verificação de Segurança
-        </h2>
-        <p className="text-[#555555] font-dm text-sm text-center mt-2">
-          Um código de 6 dígitos foi enviado para<br />
-          <span className="font-medium text-[#111111]">{maskEmail(email)}</span>
-        </p>
-      </div>
-
-      {/* 6-digit inputs */}
-      <div className="flex gap-2 justify-center mb-4" onPaste={handlePaste}>
-        {digits.map((d, i) => (
-          <input
-            key={i}
-            ref={el => refs.current[i] = el}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={d}
-            onChange={e => handleDigit(i, e.target.value)}
-            onKeyDown={e => handleKeyDown(i, e)}
-            className={`w-11 h-14 text-center border-2 font-mono text-xl focus:outline-none transition-colors ${d ? 'border-[#111111] bg-[#CAFF00] text-[#111111] font-bold' : 'border-[#E0E0E0] text-[#111111] focus:border-[#111111]'
-              }`}
-          />
-        ))}
-      </div>
-
-      {/* Countdown */}
-      <div className="text-center mb-6">
-        <span className="font-mono text-sm text-[#555555]">
-          Código expira em: <span className={`font-bold ${countdown < 60 ? 'text-red-600' : 'text-[#111111]'}`}>
-            {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-          </span>
-        </span>
-      </div>
-
-      <button
-        onClick={handleVerify}
-        disabled={!allFilled || loading}
-        className="w-full bg-[#111111] text-white font-dm font-medium py-3.5 text-sm hover:bg-[#333] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4 flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <><RefreshCw size={14} className="animate-spin" /> Verificando...</>
-        ) : 'Verificar →'}
-      </button>
-
-      <div className="flex items-center justify-between">
-        <button onClick={onBack} className="font-dm text-xs text-[#555555] hover:text-[#111111] transition-colors">
-          ← Usar outras credenciais
-        </button>
-        {resendCooldown <= 0 ? (
-          <button onClick={() => setResendCooldown(60)} className="font-dm text-xs text-blue-600 hover:underline">
-            Reenviar código
-          </button>
-        ) : (
-          <span className="font-mono text-xs text-gray-400">Reenviar em {resendCooldown}s</span>
-        )}
-      </div>
-
-      <p className="text-center mt-6 font-mono text-xs text-gray-300">[MODO TESTE] Use qualquer 6 dígitos</p>
-    </div>
-  );
-}
 
 export default function Login() {
   const { user, login, authStep } = useAuth();
@@ -164,108 +33,131 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
-    // Pequeno delay para UX
-    await new Promise(r => setTimeout(r, 600));
-
+    await new Promise((r) => setTimeout(r, 600));
     const result = login(email.trim(), password);
     setLoading(false);
-
     if (result.success) {
-      if (result.needsMFA) {
-        navigate('/mfa');
-      }
+      if (result.needsMFA) navigate('/mfa');
     } else {
       setError(result.error);
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left — Black panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#111111] flex-col justify-between p-12">
-        <div>
-          <OpiceLogo />
-          <div className="mt-4 flex items-center gap-1.5">
-            <Lock size={10} className="text-[#F59E0B]" />
-            <span className="font-mono text-xs text-[#F59E0B]">TLP:AMBER+STRICT</span>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.14),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece7dc_100%)] text-[var(--ink)] lg:grid lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="relative overflow-hidden bg-[linear-gradient(160deg,rgba(23,48,56,0.98)_0%,rgba(15,33,40,0.98)_100%)] px-8 py-10 text-white lg:flex lg:min-h-screen lg:flex-col lg:justify-between lg:px-12 lg:py-12">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,255,99,0.14),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(248,211,131,0.12),transparent_22%)]" />
+        <div className="relative z-10 flex items-start justify-between">
+          <div>
+            <OpiceLogo />
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2">
+              <Lock size={12} className="text-[#f8d383]" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#f8d383]">TLP:AMBER+STRICT</span>
+            </div>
           </div>
         </div>
-        <div>
-          <h1 className="font-syne font-extrabold text-white text-5xl leading-tight uppercase">
-            Incident<br />Response<br />Portal
+
+        <div className="relative z-10 mt-20 max-w-xl lg:mt-0">
+          <p className="section-kicker text-white/60">Ambiente control room</p>
+          <h1 className="mt-5 font-syne text-5xl font-extrabold uppercase leading-[0.92] tracking-[-0.04em] text-white md:text-6xl">
+            Incident
+            <br />
+            response
+            <br />
+            portal
           </h1>
-          <p className="text-gray-400 font-dm mt-6 text-base max-w-xs">
-            Gestão centralizada de resposta a incidentes cibernéticos. Seguro. Auditável. Regulatório.
+          <p className="mt-8 max-w-md font-dm text-base leading-7 text-white/72 md:text-lg">
+            Gestão centralizada da resposta a incidentes cibernéticos com trilha auditável,
+            coordenação jurídica e governança operacional.
           </p>
-        </div>
-        <div>
-          <div className="bg-white/5 border border-white/10 p-4">
-            <p className="text-gray-500 font-mono text-xs">
-              Sistema de uso restrito. Acesso não autorizado é crime nos termos da Lei nº 12.737/2012.
-            </p>
-          </div>
-        </div>
-      </div>
 
-      {/* Right — Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-8">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
-            <OpiceLogo light />
-          </div>
-          <div className="mb-8">
-            <h2 className="font-syne font-extrabold text-[#111111] text-3xl uppercase">Acesso ao Portal</h2>
-            <p className="text-[#555555] font-dm mt-1 text-sm">Entre com suas credenciais para continuar</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                placeholder="seu@email.com.br"
-                className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors"
-                autoComplete="email"
-              />
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-5 backdrop-blur-sm">
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#f8d383]">Camada segura</div>
+              <div className="mt-3 font-syne text-2xl font-bold text-white">MFA + trilha de auditoria</div>
+              <p className="mt-2 font-dm text-sm leading-6 text-white/60">Fluxo protegido para acesso administrativo e clientes.</p>
             </div>
-            <div>
-              <label className="block font-mono text-xs font-medium uppercase text-[#111111] mb-1.5">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                className="w-full border border-[#E0E0E0] px-4 py-3 font-dm text-sm focus:outline-none focus:border-[#111111] transition-colors"
-                autoComplete="current-password"
-              />
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-5 backdrop-blur-sm">
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#f8d383]">Operação guiada</div>
+              <div className="mt-3 font-syne text-2xl font-bold text-white">Dashboard, PMO e War Room</div>
+              <p className="mt-2 font-dm text-sm leading-6 text-white/60">Ambiente único para coordenar a crise ponta a ponta.</p>
             </div>
+          </div>
+        </div>
 
-            {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-4 py-3 text-red-700 font-dm text-sm">
-                <AlertCircle size={15} />
-                {error}
+        <div className="relative z-10 mt-12 rounded-[24px] border border-white/10 bg-white/6 p-4 font-mono text-[11px] leading-5 text-white/45 backdrop-blur-sm lg:mt-0">
+          Sistema de uso restrito. Acesso não autorizado é crime nos termos da Lei nº 12.737/2012.
+        </div>
+      </section>
+
+      <section className="flex items-center justify-center px-6 py-10 lg:px-12">
+        <div className="w-full max-w-[30rem]">
+          <div className="app-panel rounded-[32px] p-7 shadow-[0_28px_64px_rgba(21,38,43,0.12)] md:p-9">
+            <div className="mb-8 flex items-start justify-between gap-4">
+              <div>
+                <p className="section-kicker">Acesso ao portal</p>
+                <h2 className="mt-3 font-syne text-3xl font-extrabold uppercase tracking-[-0.04em] text-[var(--ink)] md:text-4xl">
+                  Entrar
+                </h2>
+                <p className="mt-3 max-w-sm font-dm text-sm leading-6 text-[var(--ink-soft)]">
+                  Use suas credenciais para continuar no ambiente de resposta ao incidente.
+                </p>
               </div>
-            )}
+              <div className="hidden h-12 w-12 items-center justify-center rounded-[18px] bg-[rgba(214,255,99,0.18)] text-[#6e8617] md:flex">
+                <ShieldCheck size={20} />
+              </div>
+            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#111111] text-white font-dm font-medium py-3.5 text-sm hover:bg-[#333] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Verificando credenciais...' : 'Entrar no Portal →'}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="seu@email.com.br"
+                  className="w-full rounded-[20px] border border-[rgba(21,38,43,0.1)] bg-white px-4 py-3.5 font-dm text-sm text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] focus:border-[rgba(183,236,35,0.42)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,255,99,0.12)]"
+                  autoComplete="email"
+                />
+              </div>
 
-          <div className="mt-8 pt-6 border-t border-[#E0E0E0]">
-            <p className="text-[#555555] font-dm text-xs">Problemas de acesso? Contate o time Opice Blum.</p>
+              <div>
+                <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Senha</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder=""
+                  className="w-full rounded-[20px] border border-[rgba(21,38,43,0.1)] bg-white px-4 py-3.5 font-sans text-sm text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] focus:border-[rgba(183,236,35,0.42)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,255,99,0.12)]"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-start gap-3 rounded-[20px] border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-700">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <span className="font-dm leading-6">{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? 'Verificando credenciais...' : <>Entrar no portal <ArrowRight size={16} /></>}
+              </button>
+            </form>
+
+            <div className="mt-8 rounded-[22px] border border-[rgba(21,38,43,0.08)] bg-white/55 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">Suporte</p>
+              <p className="mt-2 font-dm text-sm leading-6 text-[var(--ink-soft)]">Problemas de acesso? Contate o time Opice Blum para validação do usuário e do cliente vinculado.</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

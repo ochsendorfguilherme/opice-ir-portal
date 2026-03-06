@@ -41,7 +41,7 @@ function CopyButton({ text }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="flex items-center gap-1 text-xs font-mono text-[#555555] hover:text-[#111111] transition-colors"
+      className="flex items-center gap-1 text-xs font-mono rounded-full text-[var(--ink-soft)] hover:bg-white hover:text-[var(--ink)] transition-colors"
     >
       {copied ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
       {copied ? 'Copiado' : 'Copiar'}
@@ -69,6 +69,13 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
   const [result, setResult] = useState(null);
 
   const slaHours = info?.dataConhecimento ? calcSLAHours(info.dataConhecimento) : 0;
+  const quickFeedTemplates = [
+    'Atualizacao tecnica registrada',
+    'Escalonamento juridico solicitado',
+    'Comunicação executiva enviada',
+    'Evidencias preservadas e validadas',
+  ];
+  const presentMembers = members.filter((m) => m.present).length;
 
   // Step 2: simulate sequential notification
   const runNotification = () => {
@@ -98,19 +105,19 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.9), rgba(80,0,0,0.5))' }} />
+      <div className="absolute inset-0 bg-[#15262b]/38 backdrop-blur-md" />
       <div className="relative w-full max-w-lg">
 
         {/* STEP 1 */}
         {step === 1 && (
-          <div style={{ background: 'linear-gradient(135deg, #1a0000, #3d0000, #1a0000)' }} className="border border-red-800 p-8">
+          <div className="rounded-[30px] border border-red-200 bg-[linear-gradient(135deg,rgba(255,247,245,0.98),rgba(255,237,234,0.96))] p-8 shadow-[0_28px_80px_rgba(172,55,48,0.16)]">
             <div className="flex justify-center mb-6">
               <AlertOctagon size={56} className="text-red-400 animate-siren" />
             </div>
-            <h2 className="font-syne font-extrabold text-white text-3xl uppercase text-center mb-2">
+            <h2 className="font-syne font-extrabold text-red-950 text-3xl uppercase text-center mb-2">
               DECLARAR ESTADO DE CRISE
             </h2>
-            <p className="text-red-300 font-mono text-xs text-center mb-6">
+            <p className="text-red-700 font-mono text-xs text-center mb-6">
               Esta ação ativará o Comitê de Resposta a Incidentes imediatamente
             </p>
 
@@ -119,13 +126,13 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
                 '✉ E-mail de convocação aos 5 membros do CRI',
                 '📹 Link de sala virtual Microsoft Teams gerado',
                 '🔐 Hash SHA-256 de auditoria registrado',
-                '🏷 Badge WARROOM ATIVA aplicado ao incidente',
+                '🏷 Badge WAR ROOM ATIVA aplicado ao incidente',
                 '📋 Log inserido na Timeline Mestre',
                 '⏱ SLA pausado e marcado como "Crise Declarada"',
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 text-gray-200 font-dm text-sm animate-fade-in-left"
+                  className="flex items-center gap-3 text-[var(--ink)] font-dm text-sm animate-fade-in-left"
                   style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'both' }}
                 >
                   <span>{item}</span>
@@ -133,19 +140,19 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
               ))}
             </div>
 
-            <div className="bg-black/40 border border-red-900 p-3 mb-6 font-mono text-xs text-gray-300 space-y-1">
+            <div className="rounded-[22px] bg-white/80 border border-red-100 p-4 mb-6 font-mono text-xs text-red-900/80 space-y-1">
               <div>Cliente: {info?.nomeCliente || clientId}</div>
               <div>SLA Atual: {formatSLALabel(slaHours)}</div>
               <div>Status: Em crise</div>
             </div>
 
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 border border-gray-600 text-gray-300 font-dm py-3 hover:bg-white/5 transition-colors text-sm">
+              <button onClick={onClose} className="flex-1 rounded-full border border-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] font-dm py-3 hover:bg-white transition-colors text-sm">
                 Cancelar
               </button>
               <button
                 onClick={runNotification}
-                className="flex-1 bg-red-700 text-white font-syne font-bold py-3 hover:bg-red-600 transition-colors text-sm uppercase tracking-wide"
+                className="flex-1 rounded-full bg-red-700 text-white font-syne font-bold py-3 hover:bg-red-600 transition-colors text-sm uppercase tracking-wide"
               >
                 CONFIRMAR DECLARAÇÃO
               </button>
@@ -155,12 +162,12 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
 
         {/* STEP 2 */}
         {step === 2 && (
-          <div className="bg-[#111111] border border-gray-700 p-8">
+          <div className="app-panel rounded-[28px] p-8 shadow-[0_22px_56px_rgba(21,38,43,0.12)]">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
             </div>
-            <h2 className="font-syne font-bold text-white text-xl text-center uppercase mb-6">
-              Notificando Membros do CRI...
+            <h2 className="font-syne font-bold text-[var(--ink)] text-xl text-center uppercase mb-6">
+              Notificando membros do CRI...
             </h2>
 
             <div className="w-full h-2 bg-gray-700 mb-6">
@@ -177,10 +184,10 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
                       m.state === 'sending' ? 'bg-amber-400 animate-pulse' :
                         'bg-gray-600'
                     }`} />
-                  <span className="font-dm text-sm text-gray-200 flex-1">{m.role}</span>
+                  <span className="font-dm text-sm text-[var(--ink)] flex-1">{m.role}</span>
                   {m.state === 'sending' && <span className="font-mono text-xs text-amber-400">Enviando...</span>}
                   {m.state === 'done' && <span className="font-mono text-xs text-green-400 flex items-center gap-1"><Check size={11} /> Notificado</span>}
-                  {m.state === 'pending' && <span className="font-mono text-xs text-gray-600">Pendente</span>}
+                  {m.state === 'pending' && <span className="font-mono text-xs text-white/45">Pendente</span>}
                 </div>
               ))}
             </div>
@@ -189,28 +196,28 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
 
         {/* STEP 3 */}
         {step === 3 && result && (
-          <div style={{ background: 'linear-gradient(135deg, #001a00, #003d00, #001a00)' }} className="border border-green-800 p-8">
+          <div className="rounded-[30px] border border-green-200 bg-[linear-gradient(135deg,rgba(245,255,245,0.98),rgba(235,250,238,0.96))] p-8 shadow-[0_28px_80px_rgba(52,130,73,0.14)]">
             <div className="flex justify-center mb-4">
               <ShieldCheck size={56} className="text-green-400 animate-bounce-in" />
             </div>
-            <h2 className="font-syne font-extrabold text-white text-2xl uppercase text-center mb-6">
+            <h2 className="font-syne font-extrabold text-green-950 text-2xl uppercase text-center mb-6">
               CRISE DECLARADA COM SUCESSO
             </h2>
 
             <div className="space-y-3 mb-6">
-              <div className="bg-black/40 border border-green-900 p-3">
+              <div className="rounded-[22px] bg-white/80 border border-green-100 p-4">
                 <div className="font-mono text-xs text-green-400 mb-1">SALA TEAMS</div>
-                <div className="font-mono text-xs text-gray-300 break-all">{result.teamsLink}</div>
+                <div className="font-mono text-xs text-[var(--ink-soft)] break-all">{result.teamsLink}</div>
                 <div className="mt-1"><CopyButton text={result.teamsLink} /></div>
               </div>
 
-              <div className="bg-black/40 border border-green-900 p-3">
+              <div className="rounded-[22px] bg-white/80 border border-green-100 p-4">
                 <div className="font-mono text-xs text-green-400 mb-1">HASH SHA-256 DE AUDITORIA</div>
-                <div className="font-mono text-xs text-gray-300 break-all">{result.hash}</div>
+                <div className="font-mono text-xs text-[var(--ink-soft)] break-all">{result.hash}</div>
                 <div className="mt-1"><CopyButton text={result.hash} /></div>
               </div>
 
-              <div className="bg-black/40 border border-green-900 p-3 font-mono text-xs text-gray-300 space-y-1">
+              <div className="rounded-[22px] bg-white/80 border border-green-100 p-4 font-mono text-xs text-[var(--ink-soft)] space-y-1">
                 <div>5/5 membros notificados ✓</div>
                 <div>Crisis ID: {result.crisisId}</div>
                 <div>Sala Teams: criada ✓</div>
@@ -221,7 +228,7 @@ function DeclarationModal({ onClose, onConfirm, clientId, info }) {
 
             <button
               onClick={() => onConfirm(result)}
-              className="w-full bg-green-600 text-white font-syne font-bold py-3 hover:bg-green-500 transition-colors uppercase tracking-wide"
+              className="w-full rounded-full bg-green-600 text-white font-syne font-bold py-3 hover:bg-green-500 transition-colors uppercase tracking-wide"
             >
               RETORNAR AO INCIDENTE
             </button>
@@ -247,7 +254,8 @@ function CloseModal({ crisis, onClose, onConfirm, activities }) {
     setActivityUpdates(active.map(a => ({ ...a, selected: false })));
   }, [activities]);
 
-  const allChecked = checklist.length === CLOSE_CHECKLIST.length && motivo.trim().length >= 50;
+  const allChecked = checklist.length >= 1 && motivo.trim().length >= 20;
+  const closeHelper = checklist.length >= 1 ? 'Ao menos um critério foi marcado.' : 'Marque pelo menos um critério para encerrar a War Room.';
 
   const toggle = (item) => {
     setChecklist(prev => prev.includes(item) ? prev.filter(c => c !== item) : [...prev, item]);
@@ -266,53 +274,53 @@ function CloseModal({ crisis, onClose, onConfirm, activities }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80" />
+      <div className="absolute inset-0 bg-[#15262b]/45" />
       <div className="relative w-full max-w-md">
         {step === 1 && (
-          <div style={{ background: 'linear-gradient(135deg, #0a0a1a, #1a1a2e)' }} className="border border-gray-700 p-6 max-h-[90vh] overflow-y-auto">
+          <div className="app-panel rounded-[30px] p-6 max-h-[90vh] overflow-y-auto shadow-[0_28px_80px_rgba(21,38,43,0.16)]">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-syne font-bold text-white text-xl uppercase">Encerrar Crise</h2>
-              <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={18} /></button>
+              <h2 className="font-syne font-bold text-[var(--ink)] text-xl uppercase">Encerrar Crise</h2>
+              <button onClick={onClose} className="text-[var(--ink-soft)] hover:text-[var(--ink)]"><X size={18} /></button>
             </div>
 
             <div className="space-y-2 mb-5">
               {CLOSE_CHECKLIST.map(item => (
                 <label key={item} className="flex items-center gap-3 cursor-pointer">
                   <input type="checkbox" checked={checklist.includes(item)} onChange={() => toggle(item)} className="w-4 h-4" />
-                  <span className={`font-dm text-sm ${checklist.includes(item) ? 'text-green-300 line-through' : 'text-gray-200'}`}>{item}</span>
+                  <span className={`font-dm text-sm ${checklist.includes(item) ? 'text-green-700 line-through' : 'text-[var(--ink)]'}`}>{item}</span>
                 </label>
               ))}
             </div>
 
             <div className="mb-5">
-              <label className="block font-mono text-xs text-gray-400 uppercase mb-2">
+              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">
                 Motivo / Resumo da Resolução * (mín. 50 chars)
               </label>
               <textarea
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
                 rows={4}
-                className="w-full bg-gray-800 text-white border border-gray-600 px-3 py-2 font-dm text-sm resize-none focus:outline-none"
+                className="w-full rounded-[22px] bg-white/80 text-[var(--ink)] border border-[rgba(21,38,43,0.12)] px-4 py-3 font-dm text-sm resize-none focus:outline-none focus:border-[var(--accent)]"
                 placeholder="Descreva como a crise foi resolvida..."
               />
-              <div className={`text-xs font-mono mt-1 ${motivo.length >= 50 ? 'text-green-400' : 'text-gray-500'}`}>
-                {motivo.length}/50 caracteres mínimos
+              <div className={`text-xs font-mono mt-1 ${motivo.length >= 50 ? 'text-green-400' : 'text-[var(--ink-soft)]'}`}>
+                {motivo.length}/20 caracteres mínimos
               </div>
             </div>
 
             {/* INT-4: Activity update selection */}
             {activityUpdates.length > 0 && (
               <div className="mb-5">
-                <label className="block font-mono text-xs text-gray-400 uppercase mb-2">
+                <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">
                   Atualizar status das atividades vinculadas? (marcar como Feito)
                 </label>
                 <div className="space-y-1.5 max-h-36 overflow-y-auto">
                   {activityUpdates.map(a => (
                     <label key={a.id} className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={a.selected} onChange={() => toggleActivityUpdate(a.id)} className="w-3.5 h-3.5" />
-                      <span className={`font-dm text-xs ${a.selected ? 'text-green-300' : 'text-gray-400'}`}>
+                      <span className={`font-dm text-xs ${a.selected ? 'text-green-700' : 'text-[var(--ink-soft)]'}`}>
                         #{a.id} {a.nome}
-                        <span className="ml-1 font-mono text-[10px] text-gray-500">({a.status})</span>
+                        <span className="ml-1 font-mono text-[10px] text-[var(--ink-soft)]">({a.status})</span>
                       </span>
                     </label>
                   ))}
@@ -323,7 +331,7 @@ function CloseModal({ crisis, onClose, onConfirm, activities }) {
             <button
               onClick={confirm}
               disabled={!allChecked}
-              className={`w-full font-syne font-bold py-3 uppercase tracking-wide transition-colors ${allChecked ? 'bg-green-600 text-white hover:bg-green-500 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              className={`w-full font-syne font-bold py-3 uppercase tracking-wide transition-colors ${allChecked ? 'rounded-full bg-green-600 text-white hover:bg-green-500 cursor-pointer' : 'rounded-full bg-[rgba(21,38,43,0.12)] text-[var(--ink-soft)] cursor-not-allowed'
                 }`}
             >
               CONFIRMAR ENCERRAMENTO
@@ -332,15 +340,15 @@ function CloseModal({ crisis, onClose, onConfirm, activities }) {
         )}
 
         {step === 2 && (
-          <div style={{ background: 'linear-gradient(135deg, #001a00, #003d00, #001a00)' }} className="border border-green-800 p-8 text-center">
+          <div className="rounded-[30px] border border-green-200 bg-[linear-gradient(135deg,rgba(245,255,245,0.98),rgba(235,250,238,0.96))] p-8 text-center shadow-[0_28px_80px_rgba(52,130,73,0.14)]">
             <ShieldCheck size={56} className="text-green-400 mx-auto mb-4 animate-bounce-in" />
-            <h2 className="font-syne font-extrabold text-white text-2xl uppercase mb-2">CRISE ENCERRADA</h2>
-            <div className="bg-black/40 border border-green-900 p-4 font-mono text-xs text-gray-300 text-left space-y-1 mb-6">
+            <h2 className="font-syne font-extrabold text-green-950 text-2xl uppercase mb-2">CRISE ENCERRADA</h2>
+            <div className="rounded-[22px] bg-white/80 border border-green-100 p-4 font-mono text-xs text-[var(--ink-soft)] text-left space-y-1 mb-6">
               <div>Duração: {elapsed}</div>
               <div>Membros presentes: {members.filter(m => m.present).length}/5</div>
               <div>Timestamp: {new Date().toISOString()}</div>
             </div>
-            <button onClick={onClose} className="w-full bg-[#CAFF00] text-[#111111] font-syne font-bold py-3 uppercase tracking-wide hover:bg-[#b8e600]">
+            <button onClick={onClose} className="btn-lime w-full rounded-full font-syne text-sm uppercase tracking-wide">
               RETORNAR AO PMO →
             </button>
           </div>
@@ -350,7 +358,7 @@ function CloseModal({ crisis, onClose, onConfirm, activities }) {
   );
 }
 
-// ——— MAIN WARROOM PAGE ———
+// ——— MAIN WAR ROOM PAGE ———
 export default function WarRoom({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack }) {
   const { user } = useAuth();
   const effectiveClientId = propClientId || user?.clientId;
@@ -504,7 +512,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
       datetime: new Date().toISOString().slice(0, 16),
       fase: 'Contenção',
       evento: feedInput,
-      fonte: user?.email || 'WarRoom',
+      fonte: user?.email || 'War Room',
       evidencia: `Crisis ID: ${crisis?.crisisId}`,
     });
     setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, timeline });
@@ -525,30 +533,30 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
 
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-      <div className="p-6 md:p-10">
+      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
         {/* Crisis active banner */}
         {crisis && (
-          <div className="bg-red-600 text-white px-6 py-3 mb-6 flex items-center gap-3 w-full -mx-6 md:-mx-10 mt-[-40px] mb-8 px-10 animate-pulse-red">
+          <div className="mb-8 flex w-full items-center gap-3 rounded-[28px] border border-red-200 bg-red-50/90 px-6 py-4 text-red-800 shadow-[0_18px_34px_rgba(212,90,88,0.12)] animate-pulse-red">
             <Zap size={18} />
             <span className="font-syne font-bold uppercase text-sm">
-              ⚡ WARROOM ATIVA — {crisis.crisisId} — Em crise desde: {new Date(crisis.crisisTimestamp).toLocaleString('pt-BR')} — {elapsed}
+              ⚡ WAR ROOM ATIVA — {crisis.crisisId} — Em crise desde: {new Date(crisis.crisisTimestamp).toLocaleString('pt-BR')} — {elapsed}
             </span>
           </div>
         )}
 
-        <h1 className="font-syne font-extrabold text-[#111111] text-4xl uppercase mb-2">
-          WARROOM — Comitê de Crise
+        <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase mb-2">
+          WAR ROOM — Comitê de Crise
         </h1>
 
         {!crisis ? (
           /* NOT ACTIVE */
           <div className="flex flex-col items-center justify-center py-24">
-            <Shield size={80} className="text-gray-200 mb-6" />
-            <h2 className="font-syne font-bold text-[#111111] text-2xl uppercase mb-2">Nenhuma Crise Ativa</h2>
-            <p className="text-[#555555] font-dm text-sm mb-8">Declare uma crise para ativar o Comitê de Resposta a Incidentes</p>
+            <Shield size={80} className="text-[var(--ink)] mb-6" />
+            <h2 className="font-syne font-bold text-[var(--ink)] text-2xl uppercase mb-2">Nenhuma crise ativa</h2>
+            <p className="text-[var(--ink-soft)] font-dm text-sm mb-8">Declare uma crise para ativar o Comitê de Resposta a Incidentes</p>
             <button
               onClick={() => setShowDeclareModal(true)}
-              className="bg-red-700 text-white font-syne font-bold px-10 py-4 uppercase text-lg hover:bg-red-600 transition-colors flex items-center gap-3"
+              className="rounded-full bg-red-700 px-10 py-4 font-syne text-lg font-bold uppercase text-white transition-colors hover:bg-red-600 flex items-center gap-3"
             >
               <AlertOctagon size={22} />
               🚨 Declarar Crise
@@ -564,11 +572,11 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
             {/* Left panel — 60% */}
             <div className="lg:col-span-3 space-y-5">
               {/* Teams Card */}
-              <div className="border border-[#E0E0E0] p-5">
-                <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-3 flex items-center gap-2">
+              <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+                <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-3 flex items-center gap-2">
                   📹 Sala Virtual Teams
                 </h3>
-                <div className="bg-gray-50 border border-[#E0E0E0] px-4 py-3 font-mono text-xs text-[#555555] break-all mb-2">
+                <div className="bg-white/72 border border-[rgba(21,38,43,0.12)] px-4 py-3 font-mono text-xs text-[var(--ink-soft)] break-all mb-2">
                   {crisis.crisisTeamsLink}
                 </div>
                 <div className="flex gap-3">
@@ -580,33 +588,33 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
               </div>
 
               {/* Hash Card */}
-              <div className="border border-[#E0E0E0] p-5">
-                <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-3 flex items-center gap-2">
+              <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+                <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-3 flex items-center gap-2">
                   🔐 Hash de Auditoria SHA-256
                 </h3>
-                <div className="bg-gray-50 border border-[#E0E0E0] px-4 py-3 font-mono text-xs text-[#555555] break-all mb-2">
+                <div className="bg-white/72 border border-[rgba(21,38,43,0.12)] px-4 py-3 font-mono text-xs text-[var(--ink-soft)] break-all mb-2">
                   {crisis.crisisHash}
                 </div>
                 <CopyButton text={crisis.crisisHash} />
               </div>
 
               {/* CRI Members */}
-              <div className="border border-[#E0E0E0] p-5">
-                <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-3 flex items-center gap-2">
+              <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+                <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-3 flex items-center gap-2">
                   <Users size={15} /> Membros do CRI
                 </h3>
                 <div className="space-y-2">
                   {members.map(m => (
                     <div key={m.id} className="flex items-center justify-between">
                       <div>
-                        <span className="font-dm text-sm text-[#111111]">{m.role}</span>
-                        <span className="text-gray-400 font-dm text-xs ml-2">{m.name}</span>
+                        <span className="font-dm text-sm text-[var(--ink)]">{m.role}</span>
+                        <span className="text-[var(--ink-soft)] font-dm text-xs ml-2">{m.name}</span>
                       </div>
                       <button
                         onClick={() => toggleMember(m.id)}
-                        className={`font-mono text-xs px-3 py-1 border transition-colors ${m.present
+                        className={`rounded-full font-mono text-xs px-3 py-1 border transition-colors ${m.present
                             ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                            : 'bg-white/72 text-[var(--ink-soft)] border-gray-200 hover:bg-white/70'
                           }`}
                       >
                         {m.present ? '✓ Presente' : 'Ausente'}
@@ -617,14 +625,14 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
               </div>
 
               {/* Immediate Actions */}
-              <div className="border border-[#E0E0E0] p-5">
-                <h3 className="font-syne font-bold text-[#111111] uppercase text-sm mb-3">Ações Imediatas</h3>
+              <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+                <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-3">Ações Imediatas</h3>
                 <div className="space-y-2">
                   {actions.map(a => (
                     <label key={a.id} className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={a.done} onChange={() => toggleAction(a.id)} className="w-4 h-4" />
-                      <span className="font-mono text-xs text-gray-500 shrink-0">{a.id}</span>
-                      <span className={`font-dm text-sm ${a.done ? 'line-through text-gray-400' : 'text-[#111111]'}`}>{a.label}</span>
+                      <span className="font-mono text-xs text-[var(--ink-soft)] shrink-0">{a.id}</span>
+                      <span className={`font-dm text-sm ${a.done ? 'line-through text-[var(--ink-soft)]' : 'text-[var(--ink)]'}`}>{a.label}</span>
                     </label>
                   ))}
                 </div>
@@ -633,7 +641,7 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
               {/* Close button */}
               <button
                 onClick={() => setShowCloseModal(true)}
-                className="flex items-center gap-2 border border-[#111111] text-[#111111] font-dm font-medium px-6 py-3 hover:bg-[#CAFF00] transition-colors"
+                className="inline-flex items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/75 text-[var(--ink)] font-dm font-medium px-6 py-3 hover:bg-[var(--accent)] transition-colors"
               >
                 <ShieldOff size={16} />
                 Encerrar Crise
@@ -642,41 +650,49 @@ export default function WarRoom({ clientId: propClientId, isAdmin = false, admin
 
             {/* Right panel — feed — 40% */}
             <div className="lg:col-span-2">
-              <div className="border border-[#E0E0E0] h-full flex flex-col">
-                <div className="bg-[#111111] px-4 py-3">
-                  <h3 className="font-syne font-bold text-white text-sm uppercase">Feed da WarRoom</h3>
+              <div className="app-panel rounded-[28px] h-full flex flex-col overflow-hidden shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+                <div className="soft-ribbon rounded-t-[24px] px-4 py-3">
+                  <h3 className="font-syne font-bold text-[var(--ink)] text-sm uppercase">Feed da War Room</h3>
                 </div>
 
                 {/* Input */}
-                <div className="p-3 border-b border-[#E0E0E0] flex gap-2">
+                <div className="p-3 border-b border-[rgba(21,38,43,0.12)] flex gap-2">
                   <input
                     type="text"
                     value={feedInput}
                     onChange={e => setFeedInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addFeedEntry()}
                     placeholder="Registrar atualização..."
-                    className="flex-1 border border-[#E0E0E0] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[#111111]"
+                    className="flex-1 rounded-full border border-[rgba(21,38,43,0.12)] bg-white px-4 py-2 font-dm text-sm focus:outline-none focus:border-[var(--accent)]"
                   />
-                  <button onClick={addFeedEntry} className="bg-[#111111] text-white px-4 font-mono text-xs hover:bg-[#333] transition-colors">
+                  <button onClick={addFeedEntry} className="btn-primary px-4 py-2 rounded-full font-mono text-xs uppercase">
                     +
                   </button>
                 </div>
 
+                <div className="flex flex-wrap gap-2 border-b border-[rgba(21,38,43,0.12)] px-3 pb-3">
+                  {quickFeedTemplates.map((item) => (
+                    <button key={item} onClick={() => setFeedInput(item)} className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-3 py-1.5 font-mono text-[10px] uppercase text-[var(--ink-soft)] hover:border-[rgba(183,236,35,0.34)] hover:bg-[rgba(214,255,99,0.12)] hover:text-[#6e8617]">
+                      {item}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Feed */}
-                <div className="flex-1 overflow-y-auto divide-y divide-[#E0E0E0]" style={{ maxHeight: '400px' }}>
+                <div className="flex-1 overflow-y-auto divide-y divide-[rgba(21,38,43,0.08)]" style={{ maxHeight: '400px' }}>
                   {feed.length === 0 && (
-                    <div className="p-6 text-center text-gray-400 font-dm text-sm">Nenhuma atualização</div>
+                    <div className="p-6 text-center text-[var(--ink-soft)] font-dm text-sm">Nenhuma atualização</div>
                   )}
                   {feed.map(f => (
                     <div key={f.id} className="px-4 py-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <Clock size={10} className="text-gray-400" />
-                        <span className="font-mono text-xs text-[#555555]">
+                        <Clock size={10} className="text-[var(--ink-soft)]" />
+                        <span className="font-mono text-xs text-[var(--ink-soft)]">
                           {new Date(f.timestamp).toLocaleTimeString('pt-BR')}
                         </span>
-                        <span className="font-mono text-xs text-gray-400 truncate">{f.user}</span>
+                        <span className="font-mono text-xs text-[var(--ink-soft)] truncate">{f.user}</span>
                       </div>
-                      <p className="font-dm text-sm text-[#111111]">{f.text}</p>
+                      <p className="font-dm text-sm text-[var(--ink)]">{f.text}</p>
                     </div>
                   ))}
                 </div>

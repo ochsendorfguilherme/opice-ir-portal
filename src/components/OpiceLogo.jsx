@@ -1,17 +1,17 @@
 export default function OpiceLogo({ light = false }) {
   return (
-    <div className="flex items-baseline gap-1">
+    <div className="flex items-baseline gap-1.5">
       <span
-        className="font-syne font-extrabold text-xl tracking-tight"
-        style={{ color: light ? '#111111' : '#FFFFFF' }}
+        className="font-syne text-xl font-bold tracking-[-0.06em]"
+        style={{ color: light ? '#15262b' : '#fffdf8' }}
       >
         Opice
       </span>
       <span
-        className="font-syne font-normal text-sm tracking-widest"
-        style={{ color: light ? '#555555' : 'rgba(255,255,255,0.6)' }}
+        className="font-mono text-[11px] uppercase tracking-[0.28em]"
+        style={{ color: light ? 'rgba(21,38,43,0.58)' : 'rgba(255,253,248,0.64)' }}
       >
-        BLUM
+        Blum
       </span>
     </div>
   );
