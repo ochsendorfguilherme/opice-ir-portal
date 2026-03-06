@@ -1,5 +1,5 @@
-﻿import { useState, useEffect, useRef } from 'react';
-import { Menu, Bell, X, CheckCheck, LayoutGrid, ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, Bell, X, CheckCheck, LayoutGrid, ArrowLeft, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TLPBanner from './TLPBanner';
@@ -161,29 +161,38 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
       )}
 
       <div className="relative flex min-h-screen flex-1 flex-col md:ml-72">
-        <div className="shell-topbar sticky top-0 z-20">
-          <div className="flex items-stretch border-b border-[rgba(21,38,43,0.08)]">
-            <div className="flex-1">
+        <div className="sticky top-3 z-20 px-4 pt-3">
+          <div className="mx-auto flex w-full max-w-[1700px] items-center gap-4 rounded-[30px] border border-[rgba(21,38,43,0.1)] bg-[rgba(255,251,244,0.62)] px-4 py-3 shadow-[0_18px_42px_rgba(21,38,43,0.1)] backdrop-blur-[18px]">
+            <div className="min-w-0 flex-1">
               <TLPBanner />
             </div>
-            <div className="flex items-center gap-3 px-4">
+            <div className="flex shrink-0 items-center gap-3">
               {user?.role === 'admin' && (
-                isAdmin && adminClientName ? (
+                <>
+                  {isAdmin && adminClientName ? (
+                    <button
+                      onClick={onAdminBack}
+                      className="flex h-11 items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/78 px-4 font-dm text-xs font-semibold uppercase tracking-[0.16em] text-[#173038] shadow-[0_12px_24px_rgba(21,38,43,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white"
+                    >
+                      <ArrowLeft size={15} /> Voltar ao Admin
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => navigate('/admin/modulos')}
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-[#173038] text-[#fffdf8] shadow-[0_12px_28px_rgba(15,33,40,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#0f2128]"
+                      title="Painel Admin"
+                    >
+                      <LayoutGrid size={18} />
+                    </button>
+                  )}
                   <button
-                    onClick={onAdminBack}
-                    className="flex h-11 items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/75 px-4 font-dm text-xs font-semibold uppercase tracking-[0.16em] text-[#173038] shadow-[0_12px_24px_rgba(21,38,43,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white"
+                    onClick={() => navigate('/admin/acessos')}
+                    className="flex h-11 items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/78 px-4 font-dm text-xs font-semibold uppercase tracking-[0.16em] text-[#173038] shadow-[0_12px_24px_rgba(21,38,43,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white"
+                    title={"Gest\u00e3o de acessos"}
                   >
-                    <ArrowLeft size={15} /> Voltar ao Admin
+                    <Users size={15} /> Acessos
                   </button>
-                ) : (
-                  <button
-                    onClick={() => navigate('/admin')}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#173038] text-[#fffdf8] shadow-[0_12px_28px_rgba(15,33,40,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#0f2128]"
-                    title="Painel Admin"
-                  >
-                    <LayoutGrid size={18} />
-                  </button>
-                )
+                </>
               )}
               <NotificationBell effectiveClientId={effectiveClientId} />
             </div>

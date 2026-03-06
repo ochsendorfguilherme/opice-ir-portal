@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AlertCircle, ArrowRight, Lock, RefreshCw, ShieldCheck } from 'lucide-react';
@@ -13,7 +13,7 @@ export default function ChangePassword() {
   const [loading, setLoading] = useState(false);
 
   if (!user || !user.forcePasswordChange) {
-    navigate('/dashboard', { replace: true });
+    navigate(user.role === 'admin' ? '/admin/modulos' : '/dashboard', { replace: true });
     return null;
   }
 
@@ -41,7 +41,7 @@ export default function ChangePassword() {
     const success = changePassword(password);
     setLoading(false);
 
-    if (success) navigate('/dashboard', { replace: true });
+    if (success) navigate(user.role === 'admin' ? '/admin/modulos' : '/dashboard', { replace: true });
     else setError('Ocorreu um erro ao alterar a senha. Tente novamente.');
   };
 

@@ -15,7 +15,7 @@ function AlertCircle({ size, className }) {
 }
 
 export default function MFAPage() {
-  const { pendingUser, verifyMFA, cancelMFA, authStep } = useAuth();
+  const { pendingUser, verifyMFA, cancelMFA, authStep, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -25,11 +25,11 @@ export default function MFAPage() {
 
   useEffect(() => {
     if (authStep === 'AUTHENTICATED') {
-      navigate('/dashboard');
+      navigate(user?.role === 'admin' ? '/admin/modulos' : '/dashboard');
     } else if (authStep === 'UNAUTHENTICATED') {
       navigate('/login');
     }
-  }, [authStep, navigate]);
+  }, [authStep, navigate, user]);
 
   const handleChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
@@ -57,7 +57,7 @@ export default function MFAPage() {
     setTimeout(() => {
       const res = verifyMFA(fullCode);
       if (res.success) {
-        const destination = location.state?.from?.pathname || (res.user.role === 'admin' ? '/admin' : '/dashboard');
+        const destination = location.state?.from?.pathname || (res.user.role === 'admin' ? '/admin/modulos' : '/dashboard');
         navigate(destination);
       } else {
         setError(res.error);

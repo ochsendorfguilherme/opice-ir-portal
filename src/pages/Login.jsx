@@ -16,7 +16,7 @@ export default function Login() {
   useEffect(() => {
     if (authStep === 'AUTHENTICATED') {
       if (user.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin/modulos');
       } else {
         const info = getStorage(KEYS.info(user.clientId));
         const hasInfo = info?.nomeCliente && info?.dataIncidente && info?.dataConhecimento && info?.codigoCliente && info?.contexto?.length >= 30;

@@ -1,4 +1,4 @@
-﻿import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart2,
   ClipboardList,
@@ -16,6 +16,7 @@ import {
   Users,
   MessageSquare,
   FileText,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStorage, KEYS, createInvite } from '../utils/storage';
@@ -43,6 +44,7 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
   const effectiveClientId = clientId || user?.clientId;
   const basePath = isAdmin && clientId ? `/admin/cliente/${clientId}` : '';
+  const isAdminStandalone = user?.role === 'admin' && !isAdmin && !effectiveClientId;
 
   useEffect(() => {
     if (!effectiveClientId) return;
@@ -149,10 +151,18 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3">
-        {!effectiveClientId && isAdmin ? (
+        {(!effectiveClientId && isAdmin) || isAdminStandalone ? (
           <div className="flex h-full flex-col items-center justify-center px-7 text-center">
             <Users size={42} className="mb-4 text-white/30" />
             <p className="text-sm text-white/60">Selecione um cliente no painel admin para navegar.</p>
+            {isAdminStandalone && (
+              <button
+                onClick={() => navigate('/admin/modulos')}
+                className="mt-4 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition-colors hover:bg-white/6 hover:text-white"
+              >
+                Voltar aos m?dulos
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -213,12 +223,17 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
 
               <NavLink to={`${basePath}/anpd/comunicacao-titulares`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
                 <MessageSquare size={14} />
-                <span className="flex-1 text-xs">Comunicação (titulares)</span>
+                <span className="flex-1 text-xs">Comunicação Titulares</span>
               </NavLink>
 
               <NavLink to={`${basePath}/anpd/registro-incidente`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
                 <FileText size={14} />
-                <span className="flex-1 text-xs">Registro (art. 10)</span>
+                <span className="flex-1 text-xs">Registro do Incidente</span>
+              </NavLink>
+
+              <NavLink to={`${basePath}/anpd/formulario-cis`} onClick={onClose} className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}>
+                <ClipboardCheck size={14} />
+                <span className="flex-1 text-xs">Formulário CIS</span>
               </NavLink>
 
               <NavLink to={`${basePath}/pmo`} onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive(`${basePath}/pmo`) ? 'active' : ''}`}>
@@ -231,12 +246,14 @@ export default function Sidebar({ clientId, isAdmin = false, adminClientName = n
                 )}
               </NavLink>
 
-              {isAdmin && (
-                <NavLink to="/admin/acessos" onClick={onClose} className={({ isActive: active }) => `sidebar-link ${active || isActive('/admin/acessos') ? 'active' : ''}`}>
-                  <Users size={16} />
-                  <span className="flex-1">Gestão de acessos</span>
-                </NavLink>
-              )}
+              <NavLink
+                to={`${basePath}/pmo/resumo-c-level`}
+                onClick={onClose}
+                className={({ isActive: active }) => `sidebar-link pl-10 ${active ? 'active' : ''}`}
+              >
+                <ClipboardCheck size={14} />
+                <span className="flex-1 text-xs">Resumo C-Level</span>
+              </NavLink>
 
               <NavLink
                 to={`${basePath}/pmo/warroom`}

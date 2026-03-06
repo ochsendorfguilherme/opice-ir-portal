@@ -1,281 +1,291 @@
-import { useState, useEffect } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { getStorage, setStorage, KEYS } from '../../utils/storage';
-import { Copy, FileDown, Clock, RotateCcw } from 'lucide-react';
+import { Copy, FileDown, RotateCcw, Sparkles } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 const MAX_HISTORY = 10;
+const IMPACT_AREAS = [
+  { key: 'Financeiro', placeholder: 'Perdas, custos de resposta, multas potenciais e impacto financeiro direto.' },
+  { key: 'Operacional', placeholder: 'Sistemas, processos e serviços afetados ou degradados.' },
+  { key: 'Reputacional', placeholder: 'Exposição, clientes sensíveis, imprensa e confiança do mercado.' },
+  { key: 'Legal e regulatório', placeholder: 'LGPD, ANPD, contratos, litígios e obrigação de reporte.' },
+];
+
+function TopMetric({ label, value, helper }) {
+  return (
+    <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/80 p-4 shadow-[0_12px_24px_rgba(21,38,43,0.04)]">
+      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">{label}</div>
+      <div className="mt-3 font-syne text-3xl font-bold text-[var(--ink)]">{value}</div>
+      <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{helper}</p>
+    </div>
+  );
+}
 
 export default function TabCLevel({ effectiveClientId }) {
-    const [data, setData] = useState({});
-    const [info, setInfo] = useState({});
-    const [copyFeedback, setCopyFeedback] = useState(false);
-    const [history, setHistory] = useState([]);
+  const [data, setData] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}));
+  const [info] = useState(() => getStorage(KEYS.info(effectiveClientId), {}));
+  const [copyFeedback, setCopyFeedback] = useState(false);
+  const [history, setHistory] = useState(() => getStorage(`opice_ir_clevel_history_${effectiveClientId}`, []));
 
-    useEffect(() => {
-        setData(getStorage(KEYS.pmo(effectiveClientId), {}));
-        setInfo(getStorage(KEYS.info(effectiveClientId), {}));
-        setHistory(getStorage(`opice_ir_clevel_history_${effectiveClientId}`, []));
-    }, [effectiveClientId]);
+  const save = (update) => {
+    const updated = { ...data, ...update };
+    setData(updated);
+    setStorage(KEYS.pmo(effectiveClientId), updated);
+  };
 
-    const save = (update) => {
-        const updated = { ...data, ...update };
-        setData(updated);
-        setStorage(KEYS.pmo(effectiveClientId), updated);
+  const saveHistorySnapshot = (currentData, sourceLabel = 'Usuário local') => {
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      user: sourceLabel,
+      content: {
+        oQueHouve: currentData.oQueHouve || '',
+        impacto: currentData.impacto || '',
+        oQueFazendo: currentData.oQueFazendo || '',
+      },
+    };
+    const updatedHistory = [snapshot, ...history].slice(0, MAX_HISTORY);
+    setHistory(updatedHistory);
+    setStorage(`opice_ir_clevel_history_${effectiveClientId}`, updatedHistory);
+  };
+
+  const briefingText = useMemo(() => {
+    const dateStr = new Date().toLocaleString('pt-BR');
+    const clientName = info.nomeCliente || 'Cliente';
+    return [
+      `BRIEFING EXECUTIVO | ${dateStr}`,
+      `Cliente: ${clientName}`,
+      'TLP:AMBER+STRICT',
+      '',
+      'O QUE HOUVE',
+      data.oQueHouve || 'Não preenchido.',
+      '',
+      'IMPACTO',
+      data.impacto || 'Não preenchido.',
+      '',
+      'O QUE ESTAMOS FAZENDO',
+      data.oQueFazendo || 'Não preenchido.',
+    ].join('\n');
+  }, [data.impacto, data.oQueFazendo, data.oQueHouve, info.nomeCliente]);
+
+  const completion = [data.oQueHouve, data.impacto, data.oQueFazendo].filter((value) => String(value || '').trim()).length;
+  const totalChars = [data.oQueHouve, data.impacto, data.oQueFazendo].reduce((sum, value) => sum + String(value || '').trim().length, 0);
+  const impacts = data.impacts || {};
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(briefingText);
+    setCopyFeedback(true);
+    saveHistorySnapshot(data, 'Cópia do briefing');
+    setTimeout(() => setCopyFeedback(false), 1800);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ format: 'a4', unit: 'mm' });
+    const clientName = info.nomeCliente || 'Cliente';
+    const generatedAt = new Date().toLocaleString('pt-BR');
+
+    doc.setFillColor(23, 48, 56);
+    doc.roundedRect(12, 12, 186, 26, 6, 6, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('Resumo Executivo C-Level', 20, 23);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Cliente: ${clientName} | Gerado em: ${generatedAt}`, 20, 31);
+
+    let y = 48;
+    const renderSection = (title, content) => {
+      doc.setFillColor(245, 247, 241);
+      doc.roundedRect(12, y, 186, 10, 4, 4, 'F');
+      doc.setTextColor(23, 38, 43);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(title, 18, y + 6.5);
+      y += 15;
+      const lines = doc.splitTextToSize(content || 'Não preenchido.', 174);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text(lines, 18, y);
+      y += lines.length * 5.4 + 10;
     };
 
-    const saveHistorySnapshot = (currentData, currentUser) => {
-        const timestamp = new Date().toISOString();
-        const snapshot = {
-            timestamp,
-            user: currentUser?.email || 'Usuário Local',
-            content: {
-                oQueHouve: currentData.oQueHouve || '',
-                impacto: currentData.impacto || '',
-                oQueFazendo: currentData.oQueFazendo || ''
-            }
-        };
-        const newHistory = [snapshot, ...history].slice(0, MAX_HISTORY);
-        setHistory(newHistory);
-        setStorage(`opice_ir_clevel_history_${effectiveClientId}`, newHistory);
-    };
+    renderSection('O que houve', data.oQueHouve);
+    renderSection('Impacto', data.impacto);
+    renderSection('O que estamos fazendo', data.oQueFazendo);
 
-    const getBriefingText = () => {
-        const dateStr = new Date().toLocaleString('pt-BR');
-        const clientName = info.nomeCliente || 'Cliente';
-        return `BRIEFING EXECUTIVO — ${dateStr}
-Cliente: ${clientName} | TLP:AMBER+STRICT
+    if (y > 220) {
+      doc.addPage();
+      y = 20;
+    }
 
-O QUE HOUVE:
-${data.oQueHouve || '—'}
+    doc.setFillColor(23, 48, 56);
+    doc.roundedRect(12, y, 186, 12, 4, 4, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Áreas de impacto', 18, y + 7.5);
+    y += 18;
 
-IMPACTO:
-${data.impacto || '—'}
+    IMPACT_AREAS.forEach((area) => {
+      const lines = doc.splitTextToSize(impacts[area.key] || 'Não preenchido.', 174);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(23, 38, 43);
+      doc.text(area.key, 18, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.text(lines, 18, y);
+      y += lines.length * 5.2 + 6;
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+    });
 
-O QUE ESTAMOS FAZENDO:
-${data.oQueFazendo || '—'}`;
-    };
+    doc.setFontSize(8);
+    doc.setTextColor(120, 129, 133);
+    doc.text('Gerado pelo IR-PMO | TLP:AMBER+STRICT', 18, 288);
+    doc.save(`OPICE_CLevel_${clientName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    saveHistorySnapshot(data, 'Exportação PDF');
+  };
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(getBriefingText());
-        setCopyFeedback(true);
-        setTimeout(() => setCopyFeedback(false), 2000);
-        saveHistorySnapshot(data, { email: 'Usuário (Sistema)' }); // We'd ideally pull from AuthContext if we needed the real user
-    };
+  const handleRestore = (snapshot) => {
+    save({
+      oQueHouve: snapshot.content.oQueHouve,
+      impacto: snapshot.content.impacto,
+      oQueFazendo: snapshot.content.oQueFazendo,
+    });
+  };
 
-    const handleExportPDF = () => {
-        const doc = new jsPDF({ format: 'a4' });
-        const dateStr = new Date().toLocaleString('pt-BR');
-        const clientName = info.nomeCliente || 'Cliente';
+  const textareaClass = 'min-h-[150px] w-full rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white px-4 py-4 text-sm leading-7 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] transition focus:border-[rgba(21,38,43,0.18)] focus:outline-none';
 
-        // Headers
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.text("OPICE BLUM — BRIEFING EXECUTIVO", 20, 20);
+  return (
+    <div className="space-y-6">
+      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.9fr)]">
+        <div className="app-panel-dark rounded-[32px] p-6 shadow-[0_22px_44px_rgba(21,38,43,0.12)]">
+          <div className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--accent)]">Resumo executivo</div>
+          <h2 className="mt-3 font-syne text-3xl font-bold text-white md:text-4xl">Narrativa para diretoria</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#d7e0e3]">
+            Estruture a mensagem de forma objetiva para facilitar reporte, alinhamento jurídico e posicionamento de liderança.
+          </p>
 
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Data/Hora: ${dateStr}`, 20, 30);
-        doc.text(`Cliente: ${clientName}`, 20, 36);
-
-        doc.setTextColor(255, 0, 0); // Red for TLP AMBER+STRICT
-        doc.text("TLP: AMBER+STRICT", 20, 42);
-
-        doc.setTextColor(0);
-        let y = 55;
-
-        // Helper to print sections
-        const printSection = (title, content) => {
-            doc.setFont("helvetica", "bold");
-            doc.text(title, 20, y);
-            y += 6;
-            doc.setFont("helvetica", "normal");
-
-            const splitContent = doc.splitTextToSize(content || '—', 170);
-            doc.text(splitContent, 20, y);
-            y += (splitContent.length * 5) + 8;
-        };
-
-        printSection("O QUE HOUVE:", data.oQueHouve);
-        printSection("IMPACTO:", data.impacto);
-        printSection("O QUE ESTAMOS FAZENDO:", data.oQueFazendo);
-
-        // Footer
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text("Gerado por Opice Blum Incident Response PMO", 20, 285);
-
-        doc.save(`OPICE_Briefing_CLevel_${clientName.replace(/\s+/g, '')}_${new Date().toISOString().slice(0, 10)}.pdf`);
-
-        saveHistorySnapshot(data, { email: 'Usuário (Sistema)' });
-    };
-
-    const handleRestore = (snapshot) => {
-        save({
-            oQueHouve: snapshot.content.oQueHouve,
-            impacto: snapshot.content.impacto,
-            oQueFazendo: snapshot.content.oQueFazendo
-        });
-    };
-
-    const impacts = data.impacts || {};
-    const taClass = "border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)] w-full resize-none transition-colors";
-
-    const charsOQueHouve = (data.oQueHouve || '').length;
-
-    return (
-        <div className="space-y-6">
-            {/* Tab Header Info */}
-            <div className="mb-8">
-                <h2 className="font-syne font-bold text-[var(--ink)] text-2xl uppercase">Resumo Executivo — C-Level</h2>
-                <p className="text-[var(--ink-soft)] font-dm mt-1 max-w-2xl">
-                    Briefing objetivo para apresentação à diretoria e stakeholders.
-                    Mantenha este resumo atualizado a cada evolução relevante do incidente.
-                </p>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Completude</div>
+              <div className="mt-2 font-syne text-3xl font-bold text-white">{completion}/3</div>
+              <p className="mt-2 text-xs leading-5 text-[#c6d0d4]">Blocos principais preenchidos.</p>
             </div>
-
-            {/* BLOCO 1 — BRIEFING ATUAL */}
-            <div className="bg-white border-l-4 border-l-[var(--accent)] shadow-sm">
-                <div className="p-6 space-y-5">
-                    {/* Campo 1 */}
-                    <div>
-                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[var(--ink)] mb-2">
-                            O QUE HOUVE:
-                        </label>
-                        <textarea
-                            value={data.oQueHouve || ''}
-                            onChange={e => save({ oQueHouve: e.target.value })}
-                            rows={3}
-                            placeholder="Descreva o incidente em 1-2 frases objetivas para um executivo não técnico."
-                            className={taClass}
-                        />
-                        <div className={`text-right mt-1 font-mono text-[10px] ${charsOQueHouve > 280 ? 'text-red-500' : 'text-[var(--ink-soft)]'}`}>
-                            {charsOQueHouve} / 280
-                        </div>
-                    </div>
-
-                    {/* Campo 2 */}
-                    <div>
-                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[var(--ink)] mb-2">
-                            IMPACTO:
-                        </label>
-                        <textarea
-                            value={data.impacto || ''}
-                            onChange={e => save({ impacto: e.target.value })}
-                            rows={3}
-                            placeholder="Quais sistemas, dados ou operações foram afetados e em que grau?"
-                            className={taClass}
-                        />
-                    </div>
-
-                    {/* Campo 3 */}
-                    <div>
-                        <label className="block font-inter font-semibold text-[11px] uppercase tracking-[0.08em] text-[var(--ink)] mb-2">
-                            O QUE ESTAMOS FAZENDO:
-                        </label>
-                        <textarea
-                            value={data.oQueFazendo || ''}
-                            onChange={e => save({ oQueFazendo: e.target.value })}
-                            rows={3}
-                            placeholder="Ações de contenção, investigação e comunicação em curso."
-                            className={taClass}
-                        />
-                    </div>
-                </div>
-
-                {/* Footer Actions */}
-                <div className="bg-white/72 border-t border-[rgba(21,38,43,0.12)] px-6 py-4 flex flex-wrap gap-3 justify-end items-center">
-                    <button
-                        onClick={handleCopy}
-                        className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.12)] text-[var(--ink)] hover:border-[rgba(21,38,43,0.16)] hover:bg-white transition-colors"
-                    >
-                        <Copy size={13} />
-                        {copyFeedback ? 'Copiado!' : 'Copiar Briefing'}
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-[#173038] text-[#fffdf8] hover:bg-[#0f2128] transition-colors"
-                    >
-                        <FileDown size={13} />
-                        Exportar PDF
-                    </button>
-                </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Densidade</div>
+              <div className="mt-2 font-syne text-3xl font-bold text-white">{totalChars}</div>
+              <p className="mt-2 text-xs leading-5 text-[#c6d0d4]">Caracteres disponíveis para narrar o caso.</p>
             </div>
-
-            {/* BLOCO 2 — IMPACTO DETALHADO */}
-            <div className="border border-[rgba(21,38,43,0.12)] bg-white p-6">
-                <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-5">Avaliação de Impacto</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                        { cat: '💰 Financeiro', placeholder: 'Estimativa de perdas, custos de resposta, multas potenciais' },
-                        { cat: '⚙ Operacional', placeholder: 'Sistemas offline, processos interrompidos, SLAs afetados' },
-                        { cat: '📰 Reputacional', placeholder: 'Exposição pública, impacto com clientes e parceiros' },
-                        { cat: '⚖ Legal / Regulatório', placeholder: 'Obrigações LGPD, ANPD, contratos, litígios potenciais' },
-                    ].map(({ cat, placeholder }) => {
-                        const val = impacts[cat] || '';
-                        const isFilled = !!val.trim();
-                        return (
-                            <div key={cat} className="flex flex-col h-full">
-                                <div className="font-mono text-xs text-[var(--ink-soft)] font-semibold uppercase mb-2">{cat}</div>
-                                <textarea
-                                    value={val}
-                                    onChange={e => save({ impacts: { ...impacts, [cat]: e.target.value } })}
-                                    rows={4}
-                                    className={`flex-1 border-x border-t border-b-4 bg-white/72 px-3 py-2 font-dm text-sm focus:outline-none focus:bg-white transition-all
-                    ${isFilled ? 'border-b-green-500 border-x-[#E0E0E0] border-t-[#E0E0E0]' : 'border-b-[#E0E0E0] border-x-[#E0E0E0] border-t-[#E0E0E0] focus:border-b-[var(--accent)]'}
-                  `}
-                                    placeholder={placeholder}
-                                />
-                            </div>
-                        );
-                    })}
-                </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Histórico</div>
+              <div className="mt-2 font-syne text-3xl font-bold text-white">{history.length}</div>
+              <p className="mt-2 text-xs leading-5 text-[#c6d0d4]">Snapshots de cópia ou exportação já salvos.</p>
             </div>
-
-            {/* BLOCO 3 — HISTÓRICO DE VERSÕES */}
-            <div className="border border-[rgba(21,38,43,0.12)] bg-white">
-                <div className="bg-[#173038] px-5 py-3">
-                    <h3 className="font-syne font-bold text-[#fffdf8] uppercase text-sm flex items-center gap-2">
-                        <Clock size={14} className="text-[var(--accent)]" />
-                        Histórico de Atualizações
-                    </h3>
-                </div>
-
-                <div className="p-0">
-                    {history.length === 0 ? (
-                        <div className="p-6 text-center text-[var(--ink-soft)] font-dm text-sm">
-                            Nenhuma versão salva ainda. O histórico é gerado automaticamente ao copiar ou exportar o briefing.
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-[#E0E0E0]">
-                            {history.map((snap, i) => (
-                                <div key={i} className="px-5 py-4 hover:bg-white/72 transition-colors flex flex-col md:flex-row md:items-center gap-4">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <span className="font-mono text-xs font-bold text-[var(--ink)]">
-                                                {new Date(snap.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                                            </span>
-                                            <span className="font-mono text-[10px] text-[var(--ink-soft)] bg-gray-200 px-1.5 py-0.5 uppercase">
-                                                {snap.user}
-                                            </span>
-                                        </div>
-                                        <div className="font-dm text-sm text-[var(--ink-soft)] truncate">
-                                            {snap.content.oQueHouve ? `"${snap.content.oQueHouve.slice(0, 80)}..."` : '(Vazio)'}
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => handleRestore(snap)}
-                                        className="shrink-0 flex items-center gap-1.5 font-mono text-xs text-[var(--ink)] px-3 py-1.5 border border-[rgba(21,38,43,0.12)] hover:bg-gray-200 transition-colors"
-                                    >
-                                        <RotateCcw size={12} />
-                                        Restaurar versão
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+          </div>
         </div>
-    );
+
+        <div className="space-y-4">
+          <TopMetric label="Cliente em foco" value={info.nomeCliente || effectiveClientId || 'Caso atual'} helper="Identificação usada na capa do briefing e no PDF executivo." />
+          <TopMetric label="Próximo uso" value={completion === 3 ? 'Pronto' : 'Em preparo'} helper={completion === 3 ? 'Já pode ser usado em reporte para diretoria.' : 'Faltam blocos para um resumo executivo fechado.'} />
+        </div>
+      </section>
+
+      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.95fr)]">
+        <div className="space-y-6">
+          <div className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Edição</div>
+                <h3 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Mensagem principal</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={handleCopy} className="btn-outline inline-flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.18em]">{copyFeedback ? 'Copiado' : 'Copiar'} <Copy size={13} /></button>
+                <button onClick={handleExportPDF} className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.18em]">Exportar PDF <FileDown size={13} /></button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-5">
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">O que houve</label>
+                <textarea value={data.oQueHouve || ''} onChange={(event) => save({ oQueHouve: event.target.value })} rows={5} className={textareaClass} placeholder="Explique o incidente em linguagem simples, sem perder a precisão para a liderança." />
+              </div>
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Impacto</label>
+                <textarea value={data.impacto || ''} onChange={(event) => save({ impacto: event.target.value })} rows={5} className={textareaClass} placeholder="Mostre sistemas, dados, operação, clientes e riscos regulatórios afetados." />
+              </div>
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">O que estamos fazendo</label>
+                <textarea value={data.oQueFazendo || ''} onChange={(event) => save({ oQueFazendo: event.target.value })} rows={5} className={textareaClass} placeholder="Liste as principais frentes de contenção, investigação, comunicação e próximos passos." />
+              </div>
+            </div>
+          </div>
+
+          <div className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Impacto detalhado</div>
+            <h3 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Camadas para decisão</h3>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {IMPACT_AREAS.map((area) => (
+                <div key={area.key} className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/78 p-4">
+                  <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">{area.key}</label>
+                  <textarea
+                    value={impacts[area.key] || ''}
+                    onChange={(event) => save({ impacts: { ...impacts, [area.key]: event.target.value } })}
+                    rows={5}
+                    className="min-h-[130px] w-full rounded-[20px] border border-[rgba(21,38,43,0.08)] bg-white px-4 py-3 text-sm leading-7 text-[var(--ink)] focus:border-[rgba(21,38,43,0.18)] focus:outline-none"
+                    placeholder={area.placeholder}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="app-panel-dark rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.08)]">
+            <div className="flex items-center gap-2 text-[var(--accent)]"><Sparkles size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.24em]">Prévia</span></div>
+            <h3 className="mt-3 font-syne text-2xl font-bold text-white">Como o briefing será lido</h3>
+            <div className="mt-5 rounded-[24px] border border-white/10 bg-white/6 p-5 text-sm leading-7 text-[#edf3f5] whitespace-pre-line">
+              {briefingText}
+            </div>
+          </div>
+
+          <div className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Histórico</div>
+                <h3 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Snapshots recentes</h3>
+              </div>
+            </div>
+            {history.length === 0 ? (
+              <div className="mt-5 rounded-[24px] border border-dashed border-[rgba(21,38,43,0.12)] p-6 text-sm leading-7 text-[var(--ink-soft)]">
+                O histórico é criado automaticamente ao copiar ou exportar o briefing.
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {history.map((snapshot, index) => (
+                  <div key={`${snapshot.timestamp}-${index}`} className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/78 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">{new Date(snapshot.timestamp).toLocaleString('pt-BR')}</div>
+                        <p className="mt-2 text-sm leading-6 text-[var(--ink)]">{snapshot.user}</p>
+                      </div>
+                      <button onClick={() => handleRestore(snapshot)} className="btn-outline inline-flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.18em]">
+                        Restaurar <RotateCcw size={13} />
+                      </button>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)] line-clamp-3">
+                      {snapshot.content.oQueHouve || 'Sem resumo salvo nesse snapshot.'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

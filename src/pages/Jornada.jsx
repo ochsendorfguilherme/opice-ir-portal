@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { getStorage, setStorage, KEYS } from '../utils/storage';
 import { DEFAULT_ACTIVITIES } from '../data/activities';
-import { useSLATimer, getSLAStatus, calcSLAHours, formatSLALabel } from '../hooks/useSLA';
+import { getSLAStatus, calcSLAHours, formatSLALabel } from '../hooks/useSLA';
 import { businessDaysRemaining, formatCountdown } from '../utils/businessDays';
 import {
   Clock, AlertTriangle, Scale, ChevronDown, X, Save,
@@ -18,7 +18,6 @@ const TABLE_COLUMNS = [
   { h: '#', key: 'id', type: 'text' },
   { h: 'ATIVIDADE', key: 'nome', type: 'text' },
   { h: 'STATUS', key: 'status', type: 'select', options: ['Planejado', 'Em andamento', 'Feito', 'Não se aplica'] },
-  { h: 'SLA', key: null, type: null },
   { h: 'ETAPA', key: 'etapa', type: 'select', options: ['Etapa 1', 'Etapa 2', 'Etapa 3'] },
   { h: 'RESPONSÁVEL', key: 'responsavel', type: 'text' },
   { h: 'DATA INÍCIO', key: 'dataInicio', type: 'date' },
@@ -47,31 +46,6 @@ const COMM_ACTIVITY_IDS = [17, 18, 19, 20, 21];
 function nextPMOId(actions) {
   const nums = actions.map(a => parseInt(a.id?.replace('#', '') || 0)).filter(Boolean);
   return `#${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`;
-}
-
-function SLABadge({ dataConhecimento, slaConfig, crisis }) {
-  const { hours, status, label } = useSLATimer(
-    dataConhecimento,
-    slaConfig?.warnThreshold || 36,
-    slaConfig?.critThreshold || 48
-  );
-  if (!dataConhecimento) return <span className="text-[var(--ink-soft)] font-mono text-xs">—</span>;
-  if (crisis) return <span className="font-mono text-xs text-amber-600">⏸ Pausado em {label}</span>;
-  if (status === 'critical') return (
-    <span className="font-mono text-xs text-[#fffdf8] bg-red-600 px-2 py-0.5 animate-pulse-red flex items-center gap-1">
-      <AlertTriangle size={10} /> Crítico · {label}
-    </span>
-  );
-  if (status === 'warning') return (
-    <span className="font-mono text-xs text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 animate-pulse-amber flex items-center gap-1">
-      <Clock size={10} /> Aviso · {label}
-    </span>
-  );
-  return (
-    <span className="font-mono text-xs text-gray-600 bg-white/72 border border-gray-200 px-2 py-0.5 flex items-center gap-1">
-      <Clock size={10} /> No Prazo · {label}
-    </span>
-  );
 }
 
 function StatusDropdown({ value, onChange }) {
@@ -414,34 +388,24 @@ function SlideOver({ activity, onClose, onSave, isAdmin, dataConhecimento, crisi
   );
 }
 
-function KanbanCard({ activity, onClick, dataConhecimento, slaConfig, crisis }) {
-  const { status, label: slaLabel } = useSLATimer(
-    dataConhecimento,
-    slaConfig?.warnThreshold || 36,
-    slaConfig?.critThreshold || 48
-  );
-  const isCritical = status === 'critical';
-  const isWarning = status === 'warning';
-
+function KanbanCard({ activity, onClick, crisis, isDragging, onDragStart, onDragEnd }) {
   return (
     <div
+      draggable
+      onDragStart={(e) => onDragStart(e, activity.id)}
+      onDragEnd={onDragEnd}
       onClick={() => onClick(activity)}
-      className={`bg-white p-3 cursor-pointer hover:shadow-md transition-shadow ${isCritical ? 'border-2 border-red-500 bg-red-50' : isWarning ? 'border-l-4 border-l-amber-500 border border-amber-100' : 'border border-[rgba(21,38,43,0.12)]'
-        }`}
+      className={`cursor-grab border border-[rgba(21,38,43,0.12)] bg-white p-3 transition-all hover:shadow-md active:cursor-grabbing ${isDragging ? 'opacity-45 scale-[0.985] shadow-none' : 'opacity-100'}`}
     >
       {crisis && (
-        <div className="font-mono text-xs text-red-600 mb-1 flex items-center gap-1">
+        <div className="mb-1 flex items-center gap-1 font-mono text-xs text-red-600">
           <Zap size={9} /> CRISE
         </div>
       )}
-      <div className="font-dm text-xs text-[var(--ink)] line-clamp-2 mb-2">{activity.nome}</div>
+      <div className="mb-2 font-dm text-xs text-[var(--ink)] line-clamp-2">{activity.nome}</div>
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[var(--ink-soft)]">{activity.etapa}</span>
-        <span className={`font-mono text-xs flex items-center gap-1 ${isCritical ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-[var(--ink-soft)]'
-          }`}>
-          <Clock size={9} />
-          {dataConhecimento ? slaLabel : '—'}
-        </span>
+        <span className="font-mono text-xs text-[var(--ink-soft)]">#{activity.id}</span>
       </div>
     </div>
   );
@@ -462,6 +426,8 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const [activeFilterCol, setActiveFilterCol] = useState(null);
   const [selected, setSelected] = useState(null);
   const [flashRow, setFlashRow] = useState(null);
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
   const [pmoActions, setPmoActions] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [comms, setComms] = useState([]);
@@ -497,6 +463,30 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
     const newActs = activities.map(a => a.id === updated.id ? updated : a);
     setActivities(newActs);
     setStorage(KEYS.activities(effectiveClientId), newActs);
+  };
+
+  const handleKanbanDragStart = (event, id) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(id));
+    setDraggingId(id);
+  };
+
+  const handleKanbanDragEnd = () => {
+    setDraggingId(null);
+    setDragOverCol(null);
+  };
+
+  const handleKanbanDrop = (status) => {
+    if (draggingId == null) return;
+    const activity = activities.find((item) => item.id === draggingId);
+    if (!activity || activity.status === status) {
+      setDraggingId(null);
+      setDragOverCol(null);
+      return;
+    }
+    updateStatus(draggingId, status);
+    setDraggingId(null);
+    setDragOverCol(null);
   };
 
   const handleBulkStatusUpdate = (newStatus) => {
@@ -554,7 +544,6 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
   const pct = total ? Math.round(done / total * 100) : 0;
 
   const slaHours = calcSLAHours(info.dataConhecimento || new Date().toISOString());
-  const globalSlaStatus = getSLAStatus(slaHours, slaConfig?.warnThreshold || 36, slaConfig?.critThreshold || 48);
 
   const handleWarroom = () => {
     navigate(isAdmin ? `/admin/cliente/${effectiveClientId}/pmo/warroom` : '/pmo/warroom');
@@ -600,6 +589,9 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
 
         {/* Header */}
         <div className="mb-6">
+          <div className="inline-flex rounded-full bg-[var(--accent-glow)] px-3 py-1.5 mb-3">
+            <span className="font-mono text-xs font-medium uppercase">Etapa 3 de 3</span>
+          </div>
           <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase mb-4">
             Jornada do Incidente
           </h1>
@@ -775,13 +767,6 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
                           onChange={v => updateStatus(a.id, v)}
                         />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {crisis ? (
-                          <span className="font-mono text-xs text-amber-600">⏸ Pausado</span>
-                        ) : (
-                          <SLABadge dataConhecimento={info.dataConhecimento} slaConfig={slaConfig} crisis={crisis} />
-                        )}
-                      </td>
                       <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">{a.etapa}</td>
                       <td className="px-4 py-3 font-dm text-xs text-[var(--ink-soft)]">{a.responsavel || '—'}</td>
                       <td className="px-4 py-3 font-mono text-xs text-[var(--ink-soft)] whitespace-nowrap">
@@ -811,20 +796,28 @@ export default function Jornada({ clientId: propClientId, isAdmin = false, admin
               const colActs = filtered.filter(a => a.status === col);
               const s = STATUS_STYLE[col];
               return (
-                <div key={col} className="flex flex-col">
+                <div
+                  key={col}
+                  className={`flex flex-col rounded-[24px] border border-transparent p-2 transition-all ${dragOverCol === col ? 'border-[var(--accent)] bg-[rgba(214,255,99,0.08)] shadow-[0_0_0_1px_rgba(214,255,99,0.18)]' : ''}`}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnter={() => setDragOverCol(col)}
+                  onDragLeave={() => dragOverCol === col && setDragOverCol(null)}
+                  onDrop={() => handleKanbanDrop(col)}
+                >
                   <div className={`px-3 py-2 mb-3 flex items-center justify-between border ${s.bg} ${s.border}`}>
                     <span className={`font-mono text-xs font-medium uppercase ${s.text}`}>{col}</span>
                     <span className={`font-mono text-xs ${s.text}`}>{colActs.length}</span>
                   </div>
-                  <div className="space-y-2 flex-1">
+                  <div className={`space-y-2 flex-1 rounded-[20px] p-1 transition-colors ${dragOverCol === col ? 'bg-white/48' : ''}`}>
                     {colActs.map(a => (
                       <KanbanCard
                         key={a.id}
                         activity={a}
                         onClick={setSelected}
-                        dataConhecimento={info.dataConhecimento}
-                        slaConfig={slaConfig}
                         crisis={crisis}
+                        isDragging={draggingId === a.id}
+                        onDragStart={handleKanbanDragStart}
+                        onDragEnd={handleKanbanDragEnd}
                       />
                     ))}
                     {colActs.length === 0 && (

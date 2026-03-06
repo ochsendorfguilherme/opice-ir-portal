@@ -1,45 +1,51 @@
-import { useState, useEffect } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStorage, setStorage, KEYS } from '../../utils/storage';
 import { useSLATimer } from '../../hooks/useSLA';
 import { businessDaysRemaining, formatCountdown } from '../../utils/businessDays';
-import { Clock, Shield, AlertTriangle, CheckSquare, Copy, Info, ExternalLink, FileText, ArrowRight } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BriefcaseBusiness, CheckSquare, Clock3, Info, Shield, Siren } from 'lucide-react';
 
 const NIST_PHASES = ['Detecção', 'Análise', 'Contenção', 'Erradicação', 'Recuperação'];
-const STATUSES_GLOBAL = ['CRÍTICO', 'ALTO', 'MÉDIO', 'CONTIDO', 'ERRADICADO'];
-
-const STATUS_COLORS = {
-  'CRÍTICO': 'bg-red-600 text-white',
-  'ALTO': 'bg-orange-500 text-white',
-  'MÉDIO': 'bg-amber-500 text-black',
-  'CONTIDO': 'bg-blue-600 text-white',
-  'ERRADICADO': 'bg-green-600 text-white',
+const STATUSES_GLOBAL = ['Crítico', 'Alto', 'Médio', 'Contido', 'Erradicado'];
+const STATUS_HELPERS = {
+  'Crítico': 'Exige priorização máxima, cadência curta e comunicação ativa.',
+  Alto: 'Risco elevado, com impacto importante e coordenação intensa.',
+  'Médio': 'Caso estabilizado, porém ainda requer acompanhamento próximo.',
+  Contido: 'Vetor interrompido e foco em saneamento, comunicação e retorno.',
+  Erradicado: 'Incidente neutralizado, com frentes de fechamento e aprendizado.',
 };
+const STATUS_COLORS = {
+  Crítico: 'border-red-200 bg-red-50 text-red-700',
+  Alto: 'border-orange-200 bg-orange-50 text-orange-700',
+  Médio: 'border-amber-200 bg-amber-50 text-amber-700',
+  Contido: 'border-blue-200 bg-blue-50 text-blue-700',
+  Erradicado: 'border-green-200 bg-green-50 text-green-700',
+};
+const POST_CHECKLIST = ['Hotwash agendado', 'Relatório ANPD finalizado', 'POA&M criado', 'Playbooks atualizados', 'Simulação agendada'];
 
-const IMPACT_ICONS = { '💰 Financeiro': '💰', '⚙ Operacional': '⚙', '📰 Reputacional': '📰', '⚖ Legal': '⚖' };
+function MetricCard({ label, value, helper, tone = 'neutral' }) {
+  const toneClass = {
+    neutral: 'border-[rgba(21,38,43,0.08)] bg-white/76',
+    accent: 'border-[rgba(214,255,99,0.36)] bg-[rgba(214,255,99,0.16)]',
+    danger: 'border-red-200 bg-red-50',
+    warning: 'border-amber-200 bg-amber-50',
+  }[tone];
 
-const POST_CHECKLIST = [
-  'Hotwash agendado',
-  'Relatório ANPD finalizado',
-  'POA&M criado',
-  'Playbooks atualizados',
-  'Simulação agendada',
-];
+  return (
+    <div className={`rounded-[26px] border p-4 shadow-[0_14px_30px_rgba(21,38,43,0.05)] ${toneClass}`}>
+      <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">{label}</div>
+      <div className="mt-3 font-syne text-3xl font-bold text-[var(--ink)]">{value}</div>
+      {helper && <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{helper}</p>}
+    </div>
+  );
+}
 
-export default function TabDashboard({ effectiveClientId, isAdmin = false, onNavigateTab }) {
+export default function TabDashboard({ effectiveClientId, onNavigateTab }) {
   const navigate = useNavigate();
-  const [data, setData] = useState({});
-  const [info, setInfo] = useState({});
-  const [anpdDays, setAnpdDays] = useState(3);
-  const [checklist, setChecklist] = useState([]);
-
-  useEffect(() => {
-    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-    setData(pmoData);
-    setAnpdDays(pmoData.anpdDays || 3);
-    setChecklist(pmoData.postChecklist || []);
-    setInfo(getStorage(KEYS.info(effectiveClientId), {}));
-  }, [effectiveClientId]);
+  const [data, setData] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}));
+  const [info] = useState(() => getStorage(KEYS.info(effectiveClientId), {}));
+  const [anpdDays, setAnpdDays] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}).anpdDays || 3);
+  const [checklist, setChecklist] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}).postChecklist || []);
 
   const save = (update) => {
     const updated = { ...data, ...update };
@@ -49,228 +55,360 @@ export default function TabDashboard({ effectiveClientId, isAdmin = false, onNav
 
   const sla = useSLATimer(info.dataConhecimento || null);
   const anpd = info.dataConhecimento ? businessDaysRemaining(new Date(info.dataConhecimento), anpdDays) : null;
-
-  const status = data.globalStatus || 'CRÍTICO';
-  const isPulsing = status === 'CRÍTICO' || status === 'ALTO';
-  const showPostChecklist = status === 'CONTIDO' || status === 'ERRADICADO';
-
-  const isBriefingFilled = !!(data.oQueHouve && data.impacto && data.oQueFazendo);
-  const briefingPreview = data.oQueHouve ? data.oQueHouve.slice(0, 80) : '';
-
-  const actions = data.actions || [];
-  const openActions = actions.filter(a => a.status !== 'Feito').length;
-  const blockedActions = actions.filter(a => a.status === 'Bloqueado').length;
-  const pendingComms = (data.commsLog || []).filter(c => c.statusAprovacao === 'Pendente Jurídico').length;
-  const activeThird = (data.terceiros || []).filter(t => t.status !== 'Concluído').length;
-
+  const status = data.globalStatus || 'Crítico';
   const nistPhase = data.nistPhase || 'Detecção';
+  const isBriefingFilled = !!(data.oQueHouve && data.impacto && data.oQueFazendo);
+  const briefingPreview = data.oQueHouve ? data.oQueHouve.slice(0, 160) : '';
+  const actions = data.actions || [];
+  const comms = data.commsLog || [];
+  const terceiros = data.terceiros || [];
+  const timeline = data.timeline || [];
+  const now = new Date();
+
+  const openActions = actions.filter((item) => item.status !== 'Feito');
+  const blockedActions = actions.filter((item) => item.status === 'Bloqueado');
+  const overdueActions = actions.filter((item) => item.prazo && new Date(item.prazo) < now && item.status !== 'Feito');
+  const pendingComms = comms.filter((item) => item.statusAprovacao === 'Pendente Jurídico');
+  const activeThird = terceiros.filter((item) => item.status !== 'Concluído');
+
+  const summary = {
+    openActions: openActions.length,
+    blockedActions: blockedActions.length,
+    overdueActions: overdueActions.length,
+    pendingComms: pendingComms.length,
+    activeThird: activeThird.length,
+    timelineCount: timeline.length,
+  };
+
+  const completionStages = [
+    { label: 'Informações', done: !!info.nomeCliente },
+    { label: 'Resumo C-Level', done: isBriefingFilled },
+    { label: 'Timeline', done: timeline.length > 0 },
+    { label: 'Ações', done: actions.length > 0 },
+    { label: 'Comms', done: comms.length > 0 },
+    { label: 'Terceiros', done: terceiros.length > 0 },
+  ];
+  const completion = {
+    stages: completionStages,
+    done: completionStages.filter((stage) => stage.done).length,
+    total: completionStages.length,
+  };
+
+  const quickActions = [
+    {
+      label: 'Atualizar resumo executivo',
+      helper: isBriefingFilled ? 'Revisar briefing antes de nova rodada de reporte.' : 'Ainda faltam campos do briefing C-Level.',
+      tab: 'clevel',
+      tone: isBriefingFilled ? 'neutral' : 'warning',
+    },
+    {
+      label: 'Registrar marco na timeline',
+      helper: 'Anexe o próximo evento relevante para manter a narrativa consolidada.',
+      tab: 'timeline',
+      tone: 'neutral',
+    },
+    {
+      label: 'Tratar bloqueios da matriz',
+      helper: summary.blockedActions > 0 ? `${summary.blockedActions} item(ns) aguardando destravamento.` : 'Sem bloqueios abertos no momento.',
+      tab: 'matriz',
+      tone: summary.blockedActions > 0 ? 'danger' : 'neutral',
+    },
+    {
+      label: 'Preparar comunicação',
+      helper: summary.pendingComms > 0 ? `${summary.pendingComms} comunicação(ões) pendentes de jurídico.` : 'Nenhum gargalo crítico em comunicações.',
+      tab: 'comms',
+      tone: summary.pendingComms > 0 ? 'warning' : 'neutral',
+    },
+  ];
+
+  const infoPath = effectiveClientId ? `/admin/cliente/${effectiveClientId}/informacoes` : '/informacoes';
   const nistIndex = NIST_PHASES.indexOf(nistPhase);
+  const showPostChecklist = status === 'Contido' || status === 'Erradicado';
+  const executiveSummary = data.executiveSummary
+    || [data.oQueHouve, data.impacto, data.oQueFazendo].filter(Boolean).join(' ');
 
   const toggleCheck = (item) => {
-    const updated = checklist.includes(item) ? checklist.filter(c => c !== item) : [...checklist, item];
+    const updated = checklist.includes(item) ? checklist.filter((entry) => entry !== item) : [...checklist, item];
     setChecklist(updated);
     save({ postChecklist: updated });
   };
 
-  const infoPath = isAdmin ? `/admin/cliente/${effectiveClientId}/informacoes` : '/informacoes';
-  const infoFilled = !!(info.nomeCliente);
-
   return (
     <div className="space-y-6">
-      {/* Card 0 — Contexto do Incidente */}
-      {infoFilled ? (
-        <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
-          <div className="flex items-center gap-2 mb-3">
-            <Info size={14} className="text-[var(--ink-soft)]" />
-            <h3 className="font-mono text-xs text-[var(--ink-soft)] uppercase font-semibold tracking-widest">Contexto do Incidente</h3>
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
+        <section className="app-panel-dark rounded-[32px] p-6 shadow-[0_24px_50px_rgba(21,38,43,0.12)]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--accent)]">Painel executivo</div>
+              <h2 className="mt-3 font-syne text-3xl font-bold text-white md:text-4xl">Situação operacional do caso</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-[#d7e0e3]">
+                Visão consolidada do incidente para dar ritmo às frentes de resposta, comunicação e governança.
+              </p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4 sm:min-w-[240px]">
+              <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--accent)]">Situação operacional</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {STATUSES_GLOBAL.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => save({ globalStatus: option })}
+                    className={`rounded-full border px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] transition-all ${status === option ? STATUS_COLORS[option] : 'border-white/10 bg-white/8 text-white hover:bg-white/14'}`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-sm leading-6 text-[#d7e0e3]">{STATUS_HELPERS[status]}</p>
+            </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Cliente</div>
-              <div className="font-medium text-[var(--ink)]">{info.nomeCliente || '—'}</div>
-            </div>
-            <div>
-              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Data do Incidente</div>
-              <div className="font-medium text-[var(--ink)]">{info.dataIncidente || '—'}</div>
-            </div>
-            <div>
-              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Conhecimento (UTC)</div>
-              <div className="font-medium text-[var(--ink)]">{info.dataConhecimento ? new Date(info.dataConhecimento).toLocaleString('pt-BR') : '—'}</div>
-            </div>
-            <div>
-              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-0.5">Agente</div>
-              <div className="font-medium text-[var(--ink)]">{info.agente || '—'}</div>
-            </div>
-          </div>
-          {info.contexto && (
-            <div className="mt-3 pt-3 border-t border-[rgba(21,38,43,0.12)]">
-              <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Contexto Geral</div>
-              <p className="text-sm text-[#333] line-clamp-2">{info.contexto}</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="border border-amber-300 bg-amber-50 p-4 flex items-center gap-3">
-          <AlertTriangle size={16} className="text-amber-600 shrink-0" />
-          <span className="text-amber-800 text-sm">Informações do incidente não preenchidas.</span>
-          <button
-            onClick={() => navigate(infoPath)}
-            className="ml-auto flex items-center gap-1 text-amber-700 font-mono text-xs underline hover:no-underline"
-          >
-            <ExternalLink size={11} /> Preencher Informações
-          </button>
-        </div>
-      )}
 
-      {/* Card 1 — Status + Tempo */}
-      <div className="app-panel-dark rounded-[30px] p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Status Global</div>
-          <select
-            value={status}
-            onChange={e => save({ globalStatus: e.target.value })}
-            className={`font-mono text-sm px-3 py-2 font-bold ${STATUS_COLORS[status]} border-0 cursor-pointer ${isPulsing ? 'animate-pulse-red' : ''}`}
-          >
-            {STATUSES_GLOBAL.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="flex items-center gap-2 text-[var(--accent)]"><Clock3 size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.24em]">Tempo decorrido</span></div>
+              <div className="mt-3 font-syne text-3xl font-bold text-white">{info.dataConhecimento ? sla.label : '—'}</div>
+              <p className="mt-2 text-sm text-[#c6d0d4]">Contado a partir da ciência do incidente.</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="flex items-center gap-2 text-[var(--accent)]"><Shield size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.24em]">Prazo ANPD</span></div>
+              <div className={`mt-3 font-syne text-3xl font-bold ${anpd?.overdue ? 'text-red-300' : anpd && anpd.diffHours < 24 ? 'text-red-300' : anpd && anpd.diffHours < 48 ? 'text-amber-300' : 'text-white'}`}>
+                {anpd ? formatCountdown(anpd.diffHours) : '—'}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#c6d0d4]">Meta</span>
+                <input
+                  type="number"
+                  value={anpdDays}
+                  min={1}
+                  max={60}
+                  onChange={(event) => {
+                    const next = Number(event.target.value) || 3;
+                    setAnpdDays(next);
+                    save({ anpdDays: next });
+                  }}
+                  className="w-16 rounded-full border border-white/10 bg-white/10 px-3 py-1 font-mono text-xs text-white focus:outline-none"
+                />
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#c6d0d4]">dias úteis</span>
+              </div>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="flex items-center gap-2 text-[var(--accent)]"><BriefcaseBusiness size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.24em]">Resumo C-Level</span></div>
+              <div className="mt-3 font-syne text-3xl font-bold text-white">{completion.done}/{completion.total}</div>
+              <p className="mt-2 text-sm text-[#c6d0d4]">Blocos essenciais já preenchidos para conduzir reporte.</p>
+            </div>
+          </div>
 
-        <div>
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Tempo Decorrido</div>
-          <div className="font-mono text-3xl font-bold text-white">
-            {info.dataConhecimento ? sla.label : '—'}
+          <div className="mt-6 rounded-[28px] border border-white/10 bg-white/6 p-5">
+            <div className="flex items-center gap-2 text-white"><Info size={14} className="text-[var(--accent)]" /><span className="font-syne text-lg font-bold">Contexto do incidente</span></div>
+            {info.nomeCliente ? (
+              <div className="mt-4 grid gap-4 md:grid-cols-4">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#c6d0d4]">Cliente</div>
+                  <div className="mt-2 text-sm font-medium text-white">{info.nomeCliente || '—'}</div>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#c6d0d4]">Incidente</div>
+                  <div className="mt-2 text-sm font-medium text-white">{info.dataIncidente || '—'}</div>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#c6d0d4]">Ciência (UTC)</div>
+                  <div className="mt-2 text-sm font-medium text-white">{info.dataConhecimento ? new Date(info.dataConhecimento).toLocaleString('pt-BR') : '—'}</div>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#c6d0d4]">Agente</div>
+                  <div className="mt-2 text-sm font-medium text-white">{info.agente || '—'}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-amber-400/30 bg-amber-500/10 p-4 text-amber-100">
+                <AlertTriangle size={16} />
+                <span className="text-sm">As informações do incidente ainda não foram preenchidas.</span>
+                <button onClick={() => navigate(infoPath)} className="ml-auto inline-flex items-center gap-2 rounded-full border border-amber-300/30 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] hover:bg-white/10">
+                  Preencher agora <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
           </div>
-        </div>
 
-        <div>
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-2 flex items-center gap-1.5">
-            <Shield size={12} className="text-[var(--accent)]" />
-            Countdown ANPD
+          <div className="mt-6 rounded-[28px] border border-white/10 bg-white/6 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-white">
+                  <BriefcaseBusiness size={14} className="text-[var(--accent)]" />
+                  <span className="font-syne text-lg font-bold">{'Resumo executivo do incidente'}</span>
+                </div>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c6d0d4]">
+                  {'Use este bloco para consolidar a leitura executiva do caso em poucas linhas, sem precisar sair do dashboard.'}
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigateTab?.('clevel')}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white transition-all hover:bg-white/14"
+              >
+                {'Abrir Resumo C-Level'}
+                <ArrowRight size={13} />
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)]">
+              <div>
+                <textarea
+                  value={executiveSummary}
+                  onChange={(event) => save({ executiveSummary: event.target.value })}
+                  rows={6}
+                  placeholder={'Descreva, em linguagem executiva, o que aconteceu, o impacto atual e o foco das proximas acoes.'}
+                  className="w-full rounded-[24px] border border-white/10 bg-[#102a31] px-4 py-4 text-sm leading-7 text-white placeholder:text-[#8ea1a8] focus:border-[rgba(214,255,99,0.45)] focus:outline-none"
+                />
+                <p className="mt-3 text-xs leading-5 text-[#9fb1b7]">
+                  {'Este resumo fica salvo no PMO e pode ser reaproveitado como base para reportes rapidos.'}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--accent)]">{'Leitura sugerida'}</div>
+                  <p className="mt-3 text-sm leading-6 text-[#d7e0e3]">
+                    {'Estruture em tres partes: evento, impacto atual e proxima decisao necessaria.'}
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--accent)]">{'Uso recomendado'}</div>
+                  <p className="mt-3 text-sm leading-6 text-[#d7e0e3]">
+                    {'Ideal para update de diretoria, kick-off de war room e alinhamento rapido com juridico ou lideranca.'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className={`font-mono text-2xl font-bold ${anpd?.overdue ? 'text-red-400' :
-            anpd && anpd.diffHours < 24 ? 'text-red-400' :
-              anpd && anpd.diffHours < 48 ? 'text-amber-400' :
-                'text-green-400'
-            }`}>
-            {anpd ? formatCountdown(anpd.diffHours) : '—'}
+        </section>
+
+        <section className="space-y-4">
+          <div className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Ritmo de resposta</div>
+            <h3 className="mt-3 font-syne text-2xl font-bold text-[var(--ink)]">Próximos movimentos</h3>
+            <div className="mt-4 space-y-3">
+              {quickActions.map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => onNavigateTab?.(action.tab)}
+                  className={`w-full rounded-[24px] border p-4 text-left transition-all ${action.tone === 'danger'
+                    ? 'border-red-200 bg-red-50 hover:bg-red-100/60'
+                    : action.tone === 'warning'
+                      ? 'border-amber-200 bg-amber-50 hover:bg-amber-100/60'
+                      : 'border-[rgba(21,38,43,0.08)] bg-white/72 hover:bg-white'
+                    }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-syne text-lg font-bold text-[var(--ink)]">{action.label}</span>
+                    <ArrowRight size={16} className="text-[var(--ink-soft)]" />
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{action.helper}</p>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-[var(--ink-soft)] font-mono text-xs">Prazo ANPD (dias úteis):</span>
-            <input
-              type="number"
-              value={anpdDays}
-              min={1}
-              max={60}
-              onChange={e => { setAnpdDays(+e.target.value); save({ anpdDays: +e.target.value }); }}
-              className="w-16 border border-[rgba(21,38,43,0.16)] bg-[#173038] text-white font-mono text-sm px-2 py-1 focus:outline-none"
-            />
+
+          <div className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Cobertura do PMO</div>
+            <h3 className="mt-3 font-syne text-2xl font-bold text-[var(--ink)]">Completude por frente</h3>
+            <div className="mt-5 space-y-3">
+              {completion.stages.map((stage) => (
+                <div key={stage.label} className="flex items-center justify-between gap-4 rounded-[20px] border border-[rgba(21,38,43,0.08)] bg-white/80 px-4 py-3">
+                  <span className="text-sm font-medium text-[var(--ink)]">{stage.label}</span>
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] ${stage.done ? 'bg-[rgba(214,255,99,0.18)] text-[var(--ink)]' : 'bg-white/70 text-[var(--ink-soft)]'}`}>
+                    {stage.done ? 'Completo' : 'Pendente'}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* NIST Timeline */}
-      <div className="app-panel rounded-[28px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
-        <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-sm mb-4">Fases NIST SP 800-61r3</h3>
-        <div className="flex gap-2 overflow-x-auto">
-          {NIST_PHASES.map((phase, i) => {
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Ações abertas" value={summary.openActions} helper="Itens ainda em execução na matriz." tone={summary.openActions > 0 ? 'warning' : 'neutral'} />
+        <MetricCard label="Bloqueadas" value={summary.blockedActions} helper="Precisam de decisão, fornecedor ou destravamento." tone={summary.blockedActions > 0 ? 'danger' : 'neutral'} />
+        <MetricCard label="Comms pendentes" value={summary.pendingComms} helper="Peças em revisão jurídica ou aguardando disparo." tone={summary.pendingComms > 0 ? 'warning' : 'neutral'} />
+        <MetricCard label="Terceiros ativos" value={summary.activeThird} helper="Parceiros em atuação, retorno ou validação." tone="neutral" />
+      </section>
+
+      <section className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Fase NIST</div>
+            <h3 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Jornada técnica da resposta</h3>
+          </div>
+          <div className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white/72 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-soft)]">
+            Fase atual: {nistPhase}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {NIST_PHASES.map((phase, index) => {
             const isActive = phase === nistPhase;
-            const isDone = i < nistIndex;
+            const isDone = index < nistIndex;
             return (
               <button
                 key={phase}
                 onClick={() => save({ nistPhase: phase })}
-                className={`flex-1 min-w-[100px] px-3 py-3 font-mono text-xs text-center transition-all cursor-pointer border ${isActive ? 'bg-[var(--accent)] text-[var(--ink)] font-bold border-[var(--accent)]' :
-                  isDone ? 'bg-[#173038] text-white border-[rgba(21,38,43,0.16)]' :
-                    'bg-white text-[var(--ink-soft)] border-[rgba(21,38,43,0.12)] hover:bg-white/72'
+                className={`rounded-[24px] border p-4 text-left transition-all ${isActive
+                  ? 'border-[rgba(214,255,99,0.55)] bg-[linear-gradient(135deg,rgba(214,255,99,0.16),rgba(20,54,62,0.08))]'
+                  : isDone
+                    ? 'border-[rgba(21,38,43,0.08)] bg-white'
+                    : 'border-[rgba(21,38,43,0.08)] bg-white/72 hover:bg-white'
                   }`}
               >
-                {isDone && '✓ '}
-                {phase}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">Etapa {index + 1}</span>
+                  {isDone ? <CheckSquare size={15} className="text-green-600" /> : isActive ? <Siren size={15} className="text-[var(--ink)]" /> : null}
+                </div>
+                <div className="mt-4 font-syne text-xl font-bold text-[var(--ink)]">{phase}</div>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Card 2 — Briefing C-Level Preview */}
-      <div className={`rounded-[28px] border p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)] ${!isBriefingFilled ? 'border-amber-300 bg-amber-50 animate-pulse-amber' : 'app-panel-dark border-[rgba(21,38,43,0.16)]'}`}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`font-syne font-bold uppercase text-sm flex items-center gap-2 ${!isBriefingFilled ? 'text-amber-800' : 'text-white'}`}>
-            <FileText size={14} className={!isBriefingFilled ? 'text-amber-600' : 'text-[var(--accent)]'} />
-            Briefing C-Level
-          </h3>
-        </div>
-
-        {!isBriefingFilled ? (
-          <div>
-            <p className="font-dm text-sm text-amber-800 mb-3">
-              ⚠ Resumo executivo não preenchido completamente. <br />
-              É fundamental manter o relato atualizado para reportar à diretoria.
-            </p>
+      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.8fr)]">
+        <div className={`rounded-[30px] border p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)] ${isBriefingFilled ? 'app-panel-dark border-[rgba(21,38,43,0.14)]' : 'border-amber-200 bg-amber-50'}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className={`font-mono text-[11px] uppercase tracking-[0.24em] ${isBriefingFilled ? 'text-[var(--accent)]' : 'text-amber-700'}`}>Narrativa executiva</div>
+              <h3 className={`mt-3 font-syne text-2xl font-bold ${isBriefingFilled ? 'text-white' : 'text-amber-900'}`}>Resumo C-Level</h3>
+            </div>
             <button
-              onClick={() => onNavigateTab && onNavigateTab('clevel')}
-              className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+              onClick={() => onNavigateTab?.('clevel')}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] ${isBriefingFilled ? 'border border-white/10 text-white hover:bg-white/10' : 'bg-amber-600 text-white hover:bg-amber-700'}`}
             >
-              Preencher Resumo Executivo <ArrowRight size={13} />
+              Abrir briefing <ArrowRight size={13} />
             </button>
           </div>
-        ) : (
-          <div>
-            <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Preview: O que houve</div>
-            <p className="font-dm text-sm text-gray-200 mb-4 line-clamp-2">
-              "{briefingPreview}..."
-            </p>
-            <button
-              onClick={() => onNavigateTab && onNavigateTab('clevel')}
-              className="flex items-center gap-1.5 font-mono text-xs uppercase px-4 py-2 border border-[rgba(21,38,43,0.16)] text-white hover:bg-white hover:text-[var(--ink)] transition-colors"
-            >
-              Ver e Editar Completo <ArrowRight size={13} />
-            </button>
+          {!isBriefingFilled ? (
+            <div className="mt-4 rounded-[22px] border border-amber-200 bg-white/70 p-4 text-sm leading-7 text-amber-900">
+              O resumo executivo ainda não está completo. Preencha o que aconteceu, impacto e ações em andamento para manter a comunicação com diretoria pronta.
+            </div>
+          ) : (
+            <div className="mt-5 rounded-[24px] border border-white/10 bg-white/6 p-5">
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">Prévia do briefing</div>
+              <p className="mt-3 text-sm leading-7 text-[#edf3f5]">{briefingPreview}...</p>
+            </div>
+          )}
+        </div>
+
+        {showPostChecklist && (
+          <div className="rounded-[30px] border border-green-200 bg-green-50 p-5 shadow-[0_18px_36px_rgba(52,130,73,0.08)]">
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-green-700">Encerramento</div>
+            <h3 className="mt-3 font-syne text-2xl font-bold text-green-900">Checklist pós-incidente</h3>
+            <div className="mt-5 space-y-3">
+              {POST_CHECKLIST.map((item) => (
+                <label key={item} className="flex items-center gap-3 rounded-[20px] border border-green-200 bg-white/75 px-4 py-3">
+                  <input type="checkbox" checked={checklist.includes(item)} onChange={() => toggleCheck(item)} className="h-4 w-4 accent-[var(--accent-deep)]" />
+                  <span className={`text-sm ${checklist.includes(item) ? 'text-[var(--ink-soft)] line-through' : 'text-green-900'}`}>{item}</span>
+                </label>
+              ))}
+            </div>
           </div>
         )}
-      </div>
-
-      {/* Card 4 — Mini KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="app-panel rounded-[24px] p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Ações Abertas</div>
-          <div className="font-syne font-bold text-2xl text-[var(--ink)]">{openActions}</div>
-        </div>
-        <div className={`rounded-[24px] border p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)] ${blockedActions > 0 ? 'border-red-200 bg-red-50' : 'app-panel'}`}>
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Ações Bloqueadas</div>
-          <div className={`font-syne font-bold text-2xl ${blockedActions > 0 ? 'text-red-600' : 'text-[var(--ink)]'}`}>{blockedActions}</div>
-        </div>
-        <div className={`rounded-[24px] border p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)] ${pendingComms > 0 ? 'border-amber-200 bg-amber-50' : 'app-panel'}`}>
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Comms Pendentes</div>
-          <div className={`font-syne font-bold text-2xl ${pendingComms > 0 ? 'text-amber-600' : 'text-[var(--ink)]'}`}>{pendingComms}</div>
-        </div>
-        <div className="app-panel rounded-[24px] p-4 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
-          <div className="font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Terceiros Ativos</div>
-          <div className="font-syne font-bold text-2xl text-[var(--ink)]">{activeThird}</div>
-        </div>
-      </div>
-
-      {/* Post-incident checklist */}
-      {showPostChecklist && (
-        <div className="rounded-[28px] border border-green-200 bg-green-50 p-5 shadow-[0_18px_36px_rgba(52,130,73,0.08)]">
-          <h3 className="font-syne font-bold text-green-800 uppercase text-sm mb-4">Checklist Pós-Incidente</h3>
-          <div className="space-y-2">
-            {POST_CHECKLIST.map(item => (
-              <label key={item} className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={checklist.includes(item)}
-                  onChange={() => toggleCheck(item)}
-                  className="w-4 h-4"
-                />
-                <span className={`font-dm text-sm ${checklist.includes(item) ? 'line-through text-[var(--ink-soft)]' : 'text-green-900'}`}>
-                  {item}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
+      </section>
     </div>
   );
 }

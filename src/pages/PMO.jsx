@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import TabDashboard from '../components/pmo/TabDashboard';
@@ -10,80 +9,225 @@ import TabComms from '../components/pmo/TabComms';
 import TabTerceiros from '../components/pmo/TabTerceiros';
 import TabSLA from '../components/pmo/TabSLA';
 import { getStorage, KEYS } from '../utils/storage';
+import { AlertTriangle, BriefcaseBusiness, CalendarRange, LayoutDashboard, MessageSquareText, Network, ShieldAlert, TimerReset } from 'lucide-react';
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard Executivo' },
-  { id: 'clevel', label: 'Resumo C-Level' },
-  { id: 'timeline', label: 'Timeline Mestre' },
-  { id: 'matriz', label: 'Matriz de Ações' },
-  { id: 'comms', label: 'Comms Log' },
-  { id: 'terceiros', label: 'Terceiros' },
-  { id: 'sla', label: 'SLA & Prazos' },
+  {
+    id: 'dashboard',
+    label: 'Dashboard Executivo',
+    description: 'Pulso geral do caso, contexto e atalhos do PMO.',
+    icon: LayoutDashboard,
+  },
+  {
+    id: 'clevel',
+    label: 'Resumo C-Level',
+    description: 'Briefing executivo para diretoria e stakeholders.',
+    icon: BriefcaseBusiness,
+  },
+  {
+    id: 'timeline',
+    label: 'Timeline Mestre',
+    description: 'Registro cronológico das decisões e evidências.',
+    icon: CalendarRange,
+  },
+  {
+    id: 'matriz',
+    label: 'Matriz de Ações',
+    description: 'Execução operacional, bloqueios e próximos responsáveis.',
+    icon: ShieldAlert,
+  },
+  {
+    id: 'comms',
+    label: 'Comms Log',
+    description: 'Comunicações externas, aprovações e publicações.',
+    icon: MessageSquareText,
+  },
+  {
+    id: 'terceiros',
+    label: 'Terceiros',
+    description: 'Monitoramento de parceiros, POCs e SLAs combinados.',
+    icon: Network,
+  },
+  {
+    id: 'sla',
+    label: 'SLA & Prazos',
+    description: 'Marcos regulatórios, deadlines internos e alertas.',
+    icon: TimerReset,
+  },
 ];
+
+function StatPill({ label, value, tone = 'neutral' }) {
+  const toneClass = {
+    neutral: 'border-[rgba(21,38,43,0.1)] bg-white/70 text-[var(--ink)]',
+    accent: 'border-[rgba(214,255,99,0.35)] bg-[rgba(214,255,99,0.16)] text-[var(--ink)]',
+    danger: 'border-red-200 bg-red-50 text-red-700',
+    warning: 'border-amber-200 bg-amber-50 text-amber-700',
+  }[tone];
+
+  return (
+    <div className={`rounded-full border px-3 py-2 ${toneClass}`}>
+      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">{label}</div>
+      <div className="font-syne text-lg font-bold leading-none">{value}</div>
+    </div>
+  );
+}
 
 export default function PMO({ clientId: propClientId, isAdmin = false, adminClientName, onAdminBack, initialTab }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const effectiveClientId = propClientId || user?.clientId;
   const [activeTab, setActiveTab] = useState(initialTab || 'dashboard');
 
-  const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-  const actions = pmoData.actions || [];
-  const now = new Date();
-  const alertCount = actions.filter(a => {
-    return a.status === 'Bloqueado' || (a.prazo && new Date(a.prazo) < now && a.status !== 'Feito');
-  }).length;
 
-  const getBriefingBadge = () => {
-    const { oQueHouve, impacto, oQueFazendo } = pmoData;
-    const filledCount = [oQueHouve, impacto, oQueFazendo].filter(v => !!(v || '').trim()).length;
-    if (filledCount === 3) return 'bg-green-500';
-    if (filledCount > 0) return 'bg-amber-500';
-    return 'bg-gray-300';
-  };
+  const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
+  const info = getStorage(KEYS.info(effectiveClientId), {});
+
+  const summary = useMemo(() => {
+    const actions = pmoData.actions || [];
+    const comms = pmoData.commsLog || [];
+    const terceiros = pmoData.terceiros || [];
+    const timeline = pmoData.timeline || [];
+    const now = new Date();
+    const blocked = actions.filter((item) => item.status === 'Bloqueado').length;
+    const overdue = actions.filter((item) => item.prazo && new Date(item.prazo) < now && item.status !== 'Feito').length;
+    const briefingFilled = [pmoData.oQueHouve, pmoData.impacto, pmoData.oQueFazendo].filter((value) => String(value || '').trim()).length;
+    const pendingLegal = comms.filter((item) => item.statusAprovacao === 'Pendente Jurídico').length;
+    const activeThirdParties = terceiros.filter((item) => item.status !== 'Concluído').length;
+
+    return {
+      actionsOpen: actions.filter((item) => item.status !== 'Feito').length,
+      blocked,
+      overdue,
+      briefingFilled,
+      pendingLegal,
+      activeThirdParties,
+      timelineCount: timeline.length,
+    };
+  }, [pmoData]);
+
+  const activeTabMeta = TABS.find((tab) => tab.id === activeTab) || TABS[0];
 
   return (
     <Layout clientId={propClientId} isAdmin={isAdmin} adminClientName={adminClientName} onAdminBack={onAdminBack}>
-      <div className="px-6 pb-8 pt-6 md:px-10 md:pt-10">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <h1 className="font-syne font-extrabold text-[var(--ink)] text-4xl uppercase">
-            IR-PMO
-          </h1>
-          <p className="text-[var(--ink-soft)] font-dm text-sm mt-1">Incident Response Project Management Office</p>
-        </div>
+      <div className="px-6 pb-10 pt-6 md:px-10 md:pt-10">
+        <section className="app-panel relative overflow-hidden rounded-[36px] p-6 shadow-[0_24px_48px_rgba(21,38,43,0.08)] md:p-8">
+          <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_top_right,rgba(214,255,99,0.22),transparent_62%)] lg:block" />
+          <div className="relative grid gap-6 2xl:grid-cols-[minmax(0,1.5fr)_minmax(360px,0.9fr)]">
+            <div>
+              <div className="section-kicker mb-4">IR-PMO</div>
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <h1 className="font-syne text-4xl font-extrabold uppercase text-[var(--ink)] md:text-5xl">{'Central de coordena\u00e7\u00e3o do caso'}</h1>
+                  <p className="mt-3 max-w-3xl font-dm text-base leading-7 text-[var(--ink-soft)]">{'Painel de PMO para coordenar execu\u00e7\u00e3o, narrativa executiva, marcos regulat\u00f3rios e parceiros no mesmo contexto operacional.'}</p>
+                </div>
+              </div>
 
-        {/* Tab nav */}
-        <div className="mb-8 app-panel rounded-[28px] p-2 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 font-mono text-xs uppercase transition-colors relative px-4 py-2.5 ${activeTab === tab.id
-                  ? 'rounded-full bg-[#173038] text-white shadow-[0_12px_24px_rgba(23,48,56,0.22)]'
-                  : 'rounded-full text-[var(--ink-soft)] hover:bg-white hover:text-[var(--ink)]'
-                }`}
-            >
-              {tab.label}
-              {tab.id === 'matriz' && alertCount > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center bg-red-600 text-[#fffdf8] font-mono text-xs w-4 h-4 animate-pulse-red">
-                  {alertCount}
-                </span>
-              )}
-              {tab.id === 'clevel' && (
-                <span className={`ml-1.5 inline-block h-2 w-2 rounded-full ${getBriefingBadge()}`} title="Status de preenchimento do Briefing" />
-              )}
-            </button>
-          ))}
-        </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <StatPill label="Cliente" value={info.nomeCliente || adminClientName || effectiveClientId || 'Caso ativo'} tone="accent" />
+                <StatPill label="Ações abertas" value={summary.actionsOpen} tone={summary.actionsOpen > 0 ? 'warning' : 'neutral'} />
+                <StatPill label="Bloqueios" value={summary.blocked} tone={summary.blocked > 0 ? 'danger' : 'neutral'} />
+                <StatPill label="Marcos na timeline" value={summary.timelineCount} tone="neutral" />
+              </div>
+            </div>
 
-        {/* Tab content */}
-        {activeTab === 'dashboard' && <TabDashboard effectiveClientId={effectiveClientId} onNavigateTab={setActiveTab} />}
-        {activeTab === 'clevel' && <TabCLevel effectiveClientId={effectiveClientId} />}
-        {activeTab === 'timeline' && <TabTimeline effectiveClientId={effectiveClientId} />}
-        {activeTab === 'matriz' && <TabMatriz effectiveClientId={effectiveClientId} />}
-        {activeTab === 'comms' && <TabComms effectiveClientId={effectiveClientId} />}
-        {activeTab === 'terceiros' && <TabTerceiros effectiveClientId={effectiveClientId} />}
-        {activeTab === 'sla' && <TabSLA effectiveClientId={effectiveClientId} />}
+            <div className="app-panel-dark rounded-[30px] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--accent)]">Janela ativa</div>
+                  <div className="mt-2 font-syne text-2xl font-bold text-white">{activeTabMeta.label}</div>
+                </div>
+                {(summary.blocked > 0 || summary.overdue > 0) && (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/15 px-3 py-1 text-red-200">
+                    <AlertTriangle size={14} />
+                    <span className="font-mono text-[11px] uppercase tracking-[0.18em]">{summary.blocked + summary.overdue} alertas</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="mt-3 text-sm leading-6 text-[#d8e1e4]">{activeTabMeta.description}</p>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Resumo executivo</div>
+                  <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.briefingFilled}/3</div>
+                  <p className="mt-2 text-xs leading-5 text-[#c6d1d5]">Blocos do briefing preenchidos para atualização de diretoria.</p>
+                </div>
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Comms pendentes</div>
+                  <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.pendingLegal}</div>
+                  <p className="mt-2 text-xs leading-5 text-[#c6d1d5]">Itens em validação jurídica ou aguardando disparo.</p>
+                </div>
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Terceiros ativos</div>
+                  <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.activeThirdParties}</div>
+                  <p className="mt-2 text-xs leading-5 text-[#c6d1d5]">Parceiros ou forense ainda em acompanhamento.</p>
+                </div>
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Ações vencidas</div>
+                  <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.overdue}</div>
+                  <p className="mt-2 text-xs leading-5 text-[#c6d1d5]">Itens que exigem redistribuição ou reforço imediato.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.26em] text-[var(--ink-soft)]">Navegação PMO</div>
+              <h2 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Blocos de trabalho</h2>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              const badge = tab.id === 'matriz'
+                ? summary.blocked + summary.overdue
+                : tab.id === 'clevel'
+                  ? summary.briefingFilled
+                  : null;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`group rounded-[28px] border p-4 text-left transition-all ${isActive
+                    ? 'border-[rgba(214,255,99,0.55)] bg-[linear-gradient(135deg,rgba(214,255,99,0.16),rgba(20,54,62,0.08))] shadow-[0_18px_36px_rgba(21,38,43,0.08)]'
+                    : 'border-[rgba(21,38,43,0.08)] bg-white/72 hover:border-[rgba(21,38,43,0.16)] hover:bg-white'
+                    }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border ${isActive ? 'border-[rgba(214,255,99,0.4)] bg-[#173038] text-[var(--accent)]' : 'border-[rgba(21,38,43,0.08)] bg-white text-[var(--ink)]'}`}>
+                      <Icon size={18} />
+                    </div>
+                    {badge !== null && (
+                      <span className={`inline-flex min-w-7 items-center justify-center rounded-full px-2 py-1 font-mono text-[10px] uppercase tracking-[0.2em] ${tab.id === 'matriz' && badge > 0
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-[rgba(214,255,99,0.18)] text-[var(--ink)]'
+                        }`}>
+                        {badge}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 font-syne text-lg font-bold text-[var(--ink)]">{tab.label}</div>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--ink-soft)]">{tab.description}</p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="mt-8 app-panel rounded-[34px] p-5 shadow-[0_22px_44px_rgba(21,38,43,0.07)] md:p-6">
+          {activeTab === 'dashboard' && <TabDashboard effectiveClientId={effectiveClientId} onNavigateTab={setActiveTab} />}
+          {activeTab === 'clevel' && <TabCLevel effectiveClientId={effectiveClientId} />}
+          {activeTab === 'timeline' && <TabTimeline effectiveClientId={effectiveClientId} />}
+          {activeTab === 'matriz' && <TabMatriz effectiveClientId={effectiveClientId} />}
+          {activeTab === 'comms' && <TabComms effectiveClientId={effectiveClientId} />}
+          {activeTab === 'terceiros' && <TabTerceiros effectiveClientId={effectiveClientId} />}
+          {activeTab === 'sla' && <TabSLA effectiveClientId={effectiveClientId} />}
+        </section>
       </div>
     </Layout>
   );

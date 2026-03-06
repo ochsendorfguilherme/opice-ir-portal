@@ -7,11 +7,15 @@ export const KEYS = {
   info: (id) => `opice_ir_info_${id}`,
   clients: () => `opice_ir_clients`,
   pmo: (id) => `opice_ir_pmo_${id}`,
+  finance: (id) => `opice_ir_finance_${id}`,
+  privacyRequests: (id) => `opice_ir_privacy_requests_${id}`,
   slaConfig: (id) => `opice_ir_sla_config_${id}`,
   crisis: (id, actId) => `opice_ir_crisis_${id}_${actId}`,
   notifications: (id) => `opice_ir_notifications_${id}`,
   meetings: (id) => `opice_ir_meetings_${id}`,
   anpd: (id) => `opice_ir_anpd_${id}`,
+  anpdForm: (id) => `opice_ir_anpd_formulario_${id}`,
+  anpdFormArchives: (id) => `opice_ir_anpd_formulario_arquivos_${id}`,
   users: () => `opice_ir_users`,
   accessLog: () => `opice_ir_access_log`,
   mfaVerified: (email) => `opice_ir_mfa_verified_${email}`,
@@ -58,7 +62,6 @@ export function addNotification(clientId, { type, message, link }) {
 export function fetchClients() {
   const dynamicClients = getStorage(KEYS.clients(), []);
 
-  // Extract clients from hardcoded mock users
   const hardcodedClients = USERS.filter(u => u.role === 'client').map(u => ({
     id: u.clientId,
     name: u.name,
@@ -66,15 +69,8 @@ export function fetchClients() {
     displayName: u.name
   }));
 
-  // We DO NOT merge from opice_ir_users because users are NOT clients entities. 
-  // Clients are created strictly through the Admin page + the legacy hardcoded mock array.
-
   const allClients = [...hardcodedClients, ...dynamicClients];
-
-  // Deduplicate by ID
   const uniqueClients = Array.from(new Map(allClients.map(c => [c.id, c])).values());
-
-  // Filter out soft-deleted clients
   const deletedClientIds = getStorage(KEYS.deletedClients(), []);
   return uniqueClients.filter(c => !deletedClientIds.includes(c.id));
 }
@@ -86,7 +82,6 @@ export function softDeleteClient(clientId) {
   }
 }
 
-// Invites System
 export function createInvite({ name, email, role, message, clientId, createdBy }) {
   const invites = getStorage(KEYS.invites(), []);
   const newInvite = {

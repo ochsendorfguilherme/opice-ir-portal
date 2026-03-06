@@ -1,44 +1,29 @@
-import { useState, useEffect } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { getStorage, setStorage, KEYS } from '../../utils/storage';
 import { businessDaysRemaining, formatCountdown } from '../../utils/businessDays';
-import { Shield, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 
 const DEFAULT_ACTIVITIES = [
-  { id: 1, nome: 'Notificação Preliminar ANPD' },
-  { id: 2, nome: 'Comunicação aos Titulares' },
-  { id: 3, nome: 'Coleta de Evidências' },
-  { id: 4, nome: 'Análise de Impacto' },
-  { id: 5, nome: 'Elaboração de Relatório' },
-  { id: 6, nome: 'Revisão Jurídica' }
+  { id: 1, nome: 'Notificação preliminar ANPD' },
+  { id: 2, nome: 'Comunicação aos titulares' },
+  { id: 3, nome: 'Coleta de evidências' },
+  { id: 4, nome: 'Análise de impacto' },
+  { id: 5, nome: 'Elaboração de relatório' },
+  { id: 6, nome: 'Revisão jurídica' },
 ];
 
-function SemaphoreCard({ title, base, diffHours, totalHours, activities, linked }) {
-  const pct = totalHours ? diffHours / totalHours : 1;
-  let statusColor, statusLabel, borderClass;
-  if (diffHours < 0) {
-    statusColor = 'bg-[#173038] text-[#fffdf8]'; statusLabel = '⛔ VENCIDO'; borderClass = 'border-[rgba(21,38,43,0.16)]';
-  } else if (pct < 0.25) {
-    statusColor = 'bg-red-600 text-[#fffdf8] animate-pulse-red'; statusLabel = '🔴 CRÍTICO'; borderClass = 'border-red-400';
-  } else if (pct < 0.5) {
-    statusColor = 'bg-amber-500 text-black animate-pulse-amber'; statusLabel = '🟡 ATENÇÃO'; borderClass = 'border-amber-400';
-  } else {
-    statusColor = 'bg-green-600 text-[#fffdf8]'; statusLabel = '🟢 OK'; borderClass = 'border-green-300';
-  }
-
+function DeadlineCard({ title, base, result, linked }) {
+  const tone = result?.overdue ? 'border-red-200 bg-red-50' : result && result.diffHours < 24 ? 'border-red-200 bg-red-50' : result && result.diffHours < 48 ? 'border-amber-200 bg-amber-50' : 'border-[rgba(21,38,43,0.08)] bg-white/82';
+  const valueTone = result?.overdue ? 'text-red-700' : result && result.diffHours < 24 ? 'text-red-700' : result && result.diffHours < 48 ? 'text-amber-700' : 'text-[var(--ink)]';
   return (
-    <div className={`border ${borderClass} p-5`}>
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase">{title}</h4>
-        <span className={`font-mono text-xs px-2 py-0.5 ${statusColor}`}>{statusLabel}</span>
-      </div>
-      <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">{base}</p>
-      <div className={`font-mono text-3xl font-bold ${diffHours < 0 ? 'text-gray-800' : pct < 0.25 ? 'text-red-600' : pct < 0.5 ? 'text-amber-600' : 'text-green-700'}`}>
-        {formatCountdown(diffHours)}
-      </div>
-      {linked && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {linked.map(id => (
-            <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>
+    <div className={`rounded-[28px] border p-5 shadow-[0_14px_28px_rgba(21,38,43,0.05)] ${tone}`}>
+      <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">{title}</div>
+      <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">{base}</p>
+      <div className={`mt-4 font-syne text-3xl font-bold ${valueTone}`}>{result ? formatCountdown(result.diffHours) : 'Aguardando data-base'}</div>
+      {linked?.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {linked.map((item) => (
+            <span key={item} className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">#{item}</span>
           ))}
         </div>
       )}
@@ -47,268 +32,236 @@ function SemaphoreCard({ title, base, diffHours, totalHours, activities, linked 
 }
 
 export default function TabSLA({ effectiveClientId }) {
-  const [config, setConfig] = useState({ warnThreshold: 36, critThreshold: 48 });
-  const [info, setInfo] = useState({});
-  const [customDeadlines, setCustomDeadlines] = useState([]);
-  const [prelDate, setPrelDate] = useState('');
-  const [titularEndDate, setTitularEndDate] = useState('');
-  const [customSLADays, setCustomSLADays] = useState(5);
+  const [config, setConfig] = useState(() => getStorage(KEYS.slaConfig(effectiveClientId), { warnThreshold: 36, critThreshold: 48 }));
+  const [info] = useState(() => getStorage(KEYS.info(effectiveClientId), {}));
+  const [customDeadlines, setCustomDeadlines] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}).customDeadlines || []);
+  const [prelDate, setPrelDate] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}).prelDate || '');
+  const [titularEndDate, setTitularEndDate] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}).titularEndDate || '');
+  const [customSLADays, setCustomSLADays] = useState(() => getStorage(KEYS.pmo(effectiveClientId), {}).customSLADays || 5);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customForm, setCustomForm] = useState({ nome: '', baseLegal: '', dataInicio: '', dias: 3, tipo: 'uteis', atividade: '', responsavel: '' });
 
-  useEffect(() => {
-    setConfig(getStorage(KEYS.slaConfig(effectiveClientId), { warnThreshold: 36, critThreshold: 48 }));
-    setInfo(getStorage(KEYS.info(effectiveClientId), {}));
-    const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-    setCustomDeadlines(pmoData.customDeadlines || []);
-    setPrelDate(pmoData.prelDate || '');
-    setTitularEndDate(pmoData.titularEndDate || '');
-    setCustomSLADays(pmoData.customSLADays || 5);
-  }, [effectiveClientId]);
-
-  const saveConfig = (c) => {
-    setConfig(c);
-    setStorage(KEYS.slaConfig(effectiveClientId), c);
+  const saveConfig = (nextConfig) => {
+    setConfig(nextConfig);
+    setStorage(KEYS.slaConfig(effectiveClientId), nextConfig);
   };
 
-  const savePmoField = (field, val) => {
+  const savePmoField = (field, value) => {
     const pmoData = getStorage(KEYS.pmo(effectiveClientId), {});
-    setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, [field]: val });
+    setStorage(KEYS.pmo(effectiveClientId), { ...pmoData, [field]: value });
   };
 
   const dataRef = info.dataConhecimento ? new Date(info.dataConhecimento) : null;
-
-  // Prazo 1 — 3 dias úteis do conhecimento
   const prazo1 = dataRef ? businessDaysRemaining(dataRef, 3) : null;
-  // Prazo 2 — 20 dias úteis da comunicação preliminar
   const prazo2 = prelDate ? businessDaysRemaining(new Date(prelDate), 20) : null;
-  // Prazo 3 — 3 dias úteis do término da comunicação aos titulares
   const prazo3 = titularEndDate ? businessDaysRemaining(new Date(titularEndDate), 3) : null;
-  // Prazo 4 — customSLADays dias úteis da dataRef
   const prazo4 = dataRef ? businessDaysRemaining(dataRef, customSLADays) : null;
+  const activities = DEFAULT_ACTIVITIES;
 
-  const inputClass = "border border-[rgba(21,38,43,0.12)] px-3 py-2 font-dm text-sm focus:outline-none focus:border-[rgba(21,38,43,0.16)]";
+  const summary = useMemo(() => {
+    const results = [prazo1, prazo2, prazo3, prazo4].filter(Boolean);
+    const overdue = results.filter((item) => item.overdue).length;
+    const warning = results.filter((item) => !item.overdue && item.diffHours < 48).length;
+    return { overdue, warning, custom: customDeadlines.length };
+  }, [customDeadlines.length, prazo1, prazo2, prazo3, prazo4]);
+
+  const inputClass = 'w-full rounded-[20px] border border-[rgba(21,38,43,0.08)] bg-white px-4 py-3 text-sm text-[var(--ink)] focus:border-[rgba(21,38,43,0.18)] focus:outline-none';
 
   const addCustom = () => {
     if (!customForm.nome || !customForm.dataInicio) return;
-    const updated = [...customDeadlines, { id: Date.now(), ...customForm }];
+    const updated = [{ id: Date.now(), ...customForm }, ...customDeadlines];
     setCustomDeadlines(updated);
     savePmoField('customDeadlines', updated);
     setCustomForm({ nome: '', baseLegal: '', dataInicio: '', dias: 3, tipo: 'uteis', atividade: '', responsavel: '' });
     setShowCustomForm(false);
   };
 
-  const delCustom = (id) => {
-    const updated = customDeadlines.filter(d => d.id !== id);
-    setCustomDeadlines(updated);
-    savePmoField('customDeadlines', updated);
-  };
-
-  const activities = DEFAULT_ACTIVITIES;
-
   return (
-    <div className="space-y-8">
-      {/* Seção 1 — Config Global */}
-      <div>
-        <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-base mb-4 pb-2 border-b border-[rgba(21,38,43,0.12)]">
-          Configuração Global de SLA
-        </h3>
-        <div className="app-panel rounded-[28px] p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Limiar Aviso (horas)</label>
-              <input
-                type="number"
-                value={config.warnThreshold}
-                onChange={e => setConfig(c => ({ ...c, warnThreshold: +e.target.value }))}
-                className="w-full bg-[#173038] text-[#fffdf8] border border-[rgba(21,38,43,0.16)] px-3 py-2 font-mono text-sm focus:outline-none"
-              />
+    <div className="space-y-6">
+      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.95fr)]">
+        <div className="app-panel-dark rounded-[32px] p-6 shadow-[0_22px_44px_rgba(21,38,43,0.12)]">
+          <div className="flex items-center gap-2 text-[var(--accent)]"><ShieldCheck size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.28em]">Relógio regulatório</span></div>
+          <h2 className="mt-3 font-syne text-3xl font-bold text-white md:text-4xl">SLA, ANPD e marcos internos</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#d7e0e3]">
+            Consolide datas-base, protocolos internos e obrigações de resposta para reduzir risco de perda de prazo crítico.
+          </p>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Vencidos</div>
+              <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.overdue}</div>
+              <p className="mt-2 text-xs leading-5 text-[#c6d0d4]">Marcos que já saíram da janela aceitável.</p>
             </div>
-            <div>
-              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Limiar Crítico (horas)</label>
-              <input
-                type="number"
-                value={config.critThreshold}
-                onChange={e => setConfig(c => ({ ...c, critThreshold: +e.target.value }))}
-                className="w-full bg-[#173038] text-[#fffdf8] border border-[rgba(21,38,43,0.16)] px-3 py-2 font-mono text-sm focus:outline-none"
-              />
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Em atenção</div>
+              <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.warning}</div>
+              <p className="mt-2 text-xs leading-5 text-[#c6d0d4]">Deadlines que já merecem acompanhamento de perto.</p>
             </div>
-            <div>
-              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-2">Data/Hora Conhecimento (UTC)</label>
-              <input
-                type="datetime-local"
-                value={info.dataConhecimento || ''}
-                className="w-full bg-[#173038] text-[var(--ink-soft)] border border-[rgba(21,38,43,0.16)] px-3 py-2 font-mono text-sm focus:outline-none cursor-not-allowed"
-                disabled
-                title="Edite em Informações do Incidente"
-              />
-            </div>
-          </div>
-          <button
-            onClick={() => saveConfig(config)}
-            className="mt-4 bg-[var(--accent)] text-[var(--ink)] font-dm font-medium px-6 py-2 text-sm hover:bg-[var(--accent-deep)] transition-colors"
-          >
-            Salvar Configurações
-          </button>
-        </div>
-      </div>
-
-      {/* Seção 2 — Prazos Regulatórios ANPD */}
-      <div>
-        <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-base mb-4 pb-2 border-b border-[rgba(21,38,43,0.12)]">
-          Prazos Regulatórios (ANPD)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {prazo1 && (
-            <SemaphoreCard
-              title="Prazo 1 — Comunicação à ANPD"
-              base="Art. 6º, Resolução nº 15/2024 · 3 dias úteis do conhecimento"
-              diffHours={prazo1.diffHours}
-              totalHours={3 * 24}
-              linked={[13, 14, 15]}
-            />
-          )}
-
-          <div className="border border-[rgba(21,38,43,0.12)] p-5">
-            <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-1">Prazo 2 — Comunicação Complementar</h4>
-            <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">Art. 6º § 3º · 20 dias úteis da comunicação preliminar</p>
-            <div className="mb-3">
-              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Data Comunicação Preliminar</label>
-              <input
-                type="datetime-local"
-                value={prelDate}
-                onChange={e => { setPrelDate(e.target.value); savePmoField('prelDate', e.target.value); }}
-                className={`${inputClass} w-full`}
-              />
-            </div>
-            {prazo2 && (
-              <div className="font-mono text-2xl font-bold text-[var(--ink)]">{formatCountdown(prazo2.diffHours)}</div>
-            )}
-            <div className="mt-2 flex gap-1">
-              {[16].map(id => <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>)}
-            </div>
-          </div>
-
-          <div className="border border-[rgba(21,38,43,0.12)] p-5">
-            <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-1">Prazo 3 — Declaração DPO</h4>
-            <p className="font-mono text-xs text-[var(--ink-soft)] mb-3">Art. 9º § 4º · 3 dias úteis após encerramento da comunicação aos titulares</p>
-            <div className="mb-3">
-              <label className="block font-mono text-xs text-[var(--ink-soft)] uppercase mb-1">Data Encerramento Comunicação</label>
-              <input
-                type="datetime-local"
-                value={titularEndDate}
-                onChange={e => { setTitularEndDate(e.target.value); savePmoField('titularEndDate', e.target.value); }}
-                className={`${inputClass} w-full`}
-              />
-            </div>
-            {prazo3 && (
-              <div className="font-mono text-2xl font-bold text-[var(--ink)]">{formatCountdown(prazo3.diffHours)}</div>
-            )}
-            <div className="mt-2 flex gap-1">
-              {[23].map(id => <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>)}
-            </div>
-          </div>
-
-          <div className="border border-[rgba(21,38,43,0.12)] p-5">
-            <h4 className="font-syne font-bold text-[var(--ink)] text-sm uppercase mb-1">Prazo 4 — Complementar SEI!</h4>
-            <div className="flex items-center gap-2 mb-3">
-              <label className="font-mono text-xs text-[var(--ink-soft)]">Prazo customizável:</label>
-              <input
-                type="number"
-                value={customSLADays}
-                min={1}
-                onChange={e => { setCustomSLADays(+e.target.value); savePmoField('customSLADays', +e.target.value); }}
-                className="w-20 border border-[rgba(21,38,43,0.12)] px-2 py-1 font-mono text-sm focus:outline-none"
-              />
-              <span className="font-mono text-xs text-[var(--ink-soft)]">dias úteis</span>
-            </div>
-            {prazo4 && (
-              <div className="font-mono text-2xl font-bold text-[var(--ink)]">{formatCountdown(prazo4.diffHours)}</div>
-            )}
-            <div className="mt-2 flex gap-1">
-              {[24].map(id => <span key={id} className="font-mono text-xs bg-white/70 text-gray-600 px-2 py-0.5">#{id}</span>)}
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Customizados</div>
+              <div className="mt-2 font-syne text-3xl font-bold text-white">{summary.custom}</div>
+              <p className="mt-2 text-xs leading-5 text-[#c6d0d4]">Marcos internos ou setoriais criados pelo time.</p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Seção 3 — Prazos Customizados */}
-      <div>
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-[rgba(21,38,43,0.12)]">
-          <h3 className="font-syne font-bold text-[var(--ink)] uppercase text-base">Prazos Customizados</h3>
-          <button onClick={() => setShowCustomForm(!showCustomForm)} className="flex items-center gap-1.5 bg-[#173038] text-[#fffdf8] px-3 py-2 font-mono text-xs hover:bg-[#0f2128]">
-            <Plus size={12} /> Adicionar Prazo
+        <div className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+          <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Configuração</div>
+          <h3 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Sensibilidade do relógio</h3>
+          <div className="mt-5 grid gap-4">
+            <div>
+              <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Aviso (horas)</label>
+              <input type="number" value={config.warnThreshold} onChange={(event) => setConfig((current) => ({ ...current, warnThreshold: Number(event.target.value) }))} className={inputClass} />
+            </div>
+            <div>
+              <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Crítico (horas)</label>
+              <input type="number" value={config.critThreshold} onChange={(event) => setConfig((current) => ({ ...current, critThreshold: Number(event.target.value) }))} className={inputClass} />
+            </div>
+            <div>
+              <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Ciência do incidente</label>
+              <input type="datetime-local" value={info.dataConhecimento || ''} className={`${inputClass} cursor-not-allowed text-[var(--ink-soft)]`} disabled title="Edite em Informações do Incidente" />
+            </div>
+            <button onClick={() => saveConfig(config)} className="btn-primary px-4 py-2 text-[11px] uppercase tracking-[0.18em]">Salvar configuração</button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <DeadlineCard title="Prazo 1 · Comunicação à ANPD" base="3 dias úteis contados da ciência do incidente." result={prazo1} linked={[13, 14, 15]} />
+        <div className="rounded-[28px] border border-[rgba(21,38,43,0.08)] bg-white/82 p-5 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
+          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">Prazo 2 · Comunicação complementar</div>
+          <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">20 dias úteis contados da comunicação preliminar.</p>
+          <div className="mt-4">
+            <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Data da preliminar</label>
+            <input type="datetime-local" value={prelDate} onChange={(event) => { setPrelDate(event.target.value); savePmoField('prelDate', event.target.value); }} className={inputClass} />
+          </div>
+          <div className="mt-4 font-syne text-3xl font-bold text-[var(--ink)]">{prazo2 ? formatCountdown(prazo2.diffHours) : 'Aguardando data-base'}</div>
+          <div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">#16</span></div>
+        </div>
+        <div className="rounded-[28px] border border-[rgba(21,38,43,0.08)] bg-white/82 p-5 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
+          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">Prazo 3 · Declaração do DPO</div>
+          <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">3 dias úteis após o encerramento da comunicação aos titulares.</p>
+          <div className="mt-4">
+            <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Encerramento da comunicação</label>
+            <input type="datetime-local" value={titularEndDate} onChange={(event) => { setTitularEndDate(event.target.value); savePmoField('titularEndDate', event.target.value); }} className={inputClass} />
+          </div>
+          <div className="mt-4 font-syne text-3xl font-bold text-[var(--ink)]">{prazo3 ? formatCountdown(prazo3.diffHours) : 'Aguardando data-base'}</div>
+          <div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">#23</span></div>
+        </div>
+        <div className="rounded-[28px] border border-[rgba(21,38,43,0.08)] bg-white/82 p-5 shadow-[0_14px_28px_rgba(21,38,43,0.05)]">
+          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--ink-soft)]">Prazo 4 · Complementar SEI!</div>
+          <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">Janela interna customizável com base na ciência do incidente.</p>
+          <div className="mt-4 flex items-center gap-3">
+            <input type="number" value={customSLADays} min={1} onChange={(event) => { const next = Number(event.target.value) || 1; setCustomSLADays(next); savePmoField('customSLADays', next); }} className="w-24 rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink)] focus:outline-none" />
+            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">dias úteis</span>
+          </div>
+          <div className="mt-4 font-syne text-3xl font-bold text-[var(--ink)]">{prazo4 ? formatCountdown(prazo4.diffHours) : 'Aguardando data-base'}</div>
+          <div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">#24</span></div>
+        </div>
+      </section>
+
+      <section className="app-panel rounded-[30px] p-5 shadow-[0_18px_36px_rgba(21,38,43,0.06)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Planejamento adicional</div>
+            <h3 className="mt-2 font-syne text-2xl font-bold text-[var(--ink)]">Prazos customizados</h3>
+          </div>
+          <button onClick={() => setShowCustomForm((current) => !current)} className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.18em]">
+            Adicionar prazo <Plus size={13} />
           </button>
         </div>
 
         {showCustomForm && (
-          <div className="border border-[rgba(21,38,43,0.12)] p-5 mb-5 bg-white/72">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Nome *</label><input type="text" value={customForm.nome} onChange={e => setCustomForm(f => ({ ...f, nome: e.target.value }))} className={`${inputClass} w-full`} /></div>
-              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Base Legal</label><input type="text" value={customForm.baseLegal} onChange={e => setCustomForm(f => ({ ...f, baseLegal: e.target.value }))} className={`${inputClass} w-full`} /></div>
-              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Data Início *</label><input type="datetime-local" value={customForm.dataInicio} onChange={e => setCustomForm(f => ({ ...f, dataInicio: e.target.value }))} className={`${inputClass} w-full`} /></div>
-              <div className="flex gap-2">
-                <div className="flex-1"><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Qtd Dias</label><input type="number" value={customForm.dias} min={1} onChange={e => setCustomForm(f => ({ ...f, dias: +e.target.value }))} className={`${inputClass} w-full`} /></div>
-                <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Tipo</label>
-                  <select value={customForm.tipo} onChange={e => setCustomForm(f => ({ ...f, tipo: e.target.value }))} className={`${inputClass} h-[42px]`}>
-                    <option value="uteis">Úteis</option><option value="corridos">Corridos</option>
+          <div className="mt-5 rounded-[28px] border border-[rgba(21,38,43,0.08)] bg-white/78 p-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Nome</label>
+                <input type="text" value={customForm.nome} onChange={(event) => setCustomForm((current) => ({ ...current, nome: event.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Base legal</label>
+                <input type="text" value={customForm.baseLegal} onChange={(event) => setCustomForm((current) => ({ ...current, baseLegal: event.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Data de início</label>
+                <input type="datetime-local" value={customForm.dataInicio} onChange={(event) => setCustomForm((current) => ({ ...current, dataInicio: event.target.value }))} className={inputClass} />
+              </div>
+              <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-3">
+                <div>
+                  <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Quantidade</label>
+                  <input type="number" value={customForm.dias} min={1} onChange={(event) => setCustomForm((current) => ({ ...current, dias: Number(event.target.value) }))} className={inputClass} />
+                </div>
+                <div>
+                  <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Tipo</label>
+                  <select value={customForm.tipo} onChange={(event) => setCustomForm((current) => ({ ...current, tipo: event.target.value }))} className={inputClass}>
+                    <option value="uteis">Úteis</option>
+                    <option value="corridos">Corridos</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Atividade Vinculada</label>
-                <select value={customForm.atividade} onChange={e => setCustomForm(f => ({ ...f, atividade: e.target.value }))} className={`${inputClass} w-full`}>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Atividade vinculada</label>
+                <select value={customForm.atividade} onChange={(event) => setCustomForm((current) => ({ ...current, atividade: event.target.value }))} className={inputClass}>
                   <option value="">Nenhuma</option>
-                  {activities.map(a => <option key={a.id} value={a.id}>#{a.id} — {a.nome.slice(0, 40)}...</option>)}
+                  {activities.map((activity) => <option key={activity.id} value={activity.id}>#{activity.id} {activity.nome}</option>)}
                 </select>
               </div>
-              <div><label className="block font-mono text-xs uppercase text-[var(--ink-soft)] mb-1">Responsável</label><input type="text" value={customForm.responsavel} onChange={e => setCustomForm(f => ({ ...f, responsavel: e.target.value }))} className={`${inputClass} w-full`} /></div>
+              <div>
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--ink-soft)]">Responsável</label>
+                <input type="text" value={customForm.responsavel} onChange={(event) => setCustomForm((current) => ({ ...current, responsavel: event.target.value }))} className={inputClass} />
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowCustomForm(false)} className="border border-[rgba(21,38,43,0.12)] px-4 py-2 font-mono text-xs">Cancelar</button>
-              <button onClick={addCustom} className="bg-[#173038] text-[#fffdf8] px-6 py-2 font-mono text-xs hover:bg-[#0f2128]">Adicionar</button>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button onClick={() => setShowCustomForm(false)} className="btn-outline px-4 py-2 text-[11px] uppercase tracking-[0.18em]">Cancelar</button>
+              <button onClick={addCustom} className="btn-primary px-4 py-2 text-[11px] uppercase tracking-[0.18em]">Salvar prazo</button>
             </div>
           </div>
         )}
 
-        <div className="space-y-3">
-          {customDeadlines.length === 0 && (
-            <div className="border border-dashed border-[rgba(21,38,43,0.12)] p-8 text-center text-[var(--ink-soft)] font-dm text-sm">
-              Nenhum prazo customizado adicionado
+        <div className="mt-5 space-y-3">
+          {customDeadlines.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-[rgba(21,38,43,0.12)] bg-white/76 p-8 text-center text-sm leading-7 text-[var(--ink-soft)]">
+              Nenhum prazo customizado criado ainda.
             </div>
-          )}
-          {customDeadlines.map(d => {
-            const result = d.dataInicio ? (
-              d.tipo === 'uteis' ? businessDaysRemaining(new Date(d.dataInicio), d.dias) :
-                (() => {
-                  const now = new Date();
-                  const deadline = new Date(new Date(d.dataInicio).getTime() + d.dias * 24 * 60 * 60 * 1000);
-                  const diffMs = deadline - now;
-                  return { diffHours: diffMs / (1000 * 60 * 60), overdue: diffMs < 0 };
-                })()
-            ) : null;
-            return (
-              <div key={d.id} className={`border p-4 flex items-center justify-between gap-4 ${result?.overdue ? 'border-red-300 bg-red-50' : 'border-[rgba(21,38,43,0.12)]'}`}>
-                <div>
-                  <div className="font-dm text-sm font-medium text-[var(--ink)]">{d.nome}</div>
-                  {d.baseLegal && <div className="font-mono text-xs text-[var(--ink-soft)]">{d.baseLegal}</div>}
-                  {d.responsavel && <div className="font-mono text-xs text-[var(--ink-soft)]">Resp: {d.responsavel}</div>}
-                  {result && (
-                    <div className={`font-mono text-sm font-bold mt-1 ${result.overdue ? 'text-red-600' : 'text-[var(--ink)]'}`}>
-                      {result.overdue && <AlertTriangle size={12} className="inline mr-1" />}
-                      {formatCountdown(result.diffHours)}
+          ) : (
+            customDeadlines.map((deadline) => {
+              const result = deadline.dataInicio ? (deadline.tipo === 'uteis'
+                ? businessDaysRemaining(new Date(deadline.dataInicio), deadline.dias)
+                : (() => {
+                    const now = new Date();
+                    const end = new Date(new Date(deadline.dataInicio).getTime() + deadline.dias * 24 * 60 * 60 * 1000);
+                    const diffHours = (end - now) / (1000 * 60 * 60);
+                    return { diffHours, overdue: diffHours < 0 };
+                  })()) : null;
+              return (
+                <article key={deadline.id} className={`rounded-[28px] border p-5 shadow-[0_14px_28px_rgba(21,38,43,0.05)] ${result?.overdue ? 'border-red-200 bg-red-50/60' : 'border-[rgba(21,38,43,0.08)] bg-white/82'}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-syne text-2xl font-bold text-[var(--ink)]">{deadline.nome}</div>
+                      {deadline.baseLegal && <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{deadline.baseLegal}</p>}
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-mono text-xs text-[var(--ink-soft)]">{d.dias} dias {d.tipo}</span>
-                  <button onClick={() => delCustom(d.id)} className="text-[var(--ink-soft)] hover:text-red-600"><Trash2 size={13} /></button>
-                </div>
-              </div>
-            );
-          })}
+                    <button onClick={() => { const updated = customDeadlines.filter((item) => item.id !== deadline.id); setCustomDeadlines(updated); savePmoField('customDeadlines', updated); }} className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-red-700 hover:bg-red-100">
+                      Excluir <Trash2 size={13} />
+                    </button>
+                  </div>
+                  <div className="mt-4 grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)]">
+                    <div className="space-y-2 text-sm text-[var(--ink)]">
+                      <div><strong>Responsável:</strong> {deadline.responsavel || 'Não informado'}</div>
+                      <div><strong>Tipo:</strong> {deadline.dias} dias {deadline.tipo}</div>
+                      <div><strong>Início:</strong> {deadline.dataInicio ? deadline.dataInicio.replace('T', ' ') : 'Não informado'}</div>
+                      {deadline.atividade && <div><strong>Atividade:</strong> #{deadline.atividade}</div>}
+                    </div>
+                    <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-[#f9faf6] p-4">
+                      <div className="flex items-center gap-2 text-[var(--ink-soft)]"><CalendarClock size={14} /><span className="font-mono text-[11px] uppercase tracking-[0.22em]">Contagem</span></div>
+                      <div className={`mt-3 font-syne text-3xl font-bold ${result?.overdue ? 'text-red-700' : 'text-[var(--ink)]'}`}>{result ? formatCountdown(result.diffHours) : 'Aguardando data-base'}</div>
+                      {result?.overdue && <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-red-700"><AlertTriangle size={13} /> prazo vencido</div>}
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
