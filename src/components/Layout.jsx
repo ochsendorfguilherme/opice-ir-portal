@@ -169,7 +169,7 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
 
       <div className="relative flex min-h-screen flex-1 flex-col md:ml-72">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[240px] bg-[radial-gradient(circle_at_top_center,rgba(214,255,99,0.16),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.22),transparent_100%)]" />
-        <div className="sticky top-3 z-20 px-3 pt-3 md:px-5">
+        <div className="sticky top-3 z-20 hidden px-3 pt-3 md:block md:px-5">
           <div className="shell-topbar mx-auto flex w-full max-w-[1760px] items-center gap-4 rounded-[30px] border border-[rgba(21,38,43,0.08)] px-4 py-3 shadow-[0_18px_36px_rgba(21,38,43,0.08)] md:px-5">
             <div className="min-w-0 flex-1">
               <TLPBanner />
@@ -207,17 +207,49 @@ export default function Layout({ children, clientId: propClientId, isAdmin = fal
           </div>
         </div>
 
-        <div className="shell-mobilebar px-3 pt-2 md:hidden">
-          <div className="mx-auto flex w-full max-w-[1760px] items-center rounded-[26px] border border-[rgba(21,38,43,0.08)] bg-[rgba(255,251,244,0.82)] px-4 py-3 shadow-[0_14px_30px_rgba(21,38,43,0.08)]">
-            <button onClick={() => setSidebarOpen(true)} className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 p-2 text-[#173038] shadow-[0_10px_22px_rgba(21,38,43,0.08)]">
-              <Menu size={20} />
-            </button>
-            <div className="ml-3">
-              <p className="section-kicker">Console de incidente</p>
-              <span className="font-syne text-lg font-bold text-[#15262b]">Opice IR</span>
+        <div className="shell-mobilebar px-3 pt-3 md:hidden">
+          <div className="mx-auto w-full max-w-[1760px] space-y-3">
+            <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-[rgba(255,251,244,0.84)] px-3 py-2.5 shadow-[0_14px_30px_rgba(21,38,43,0.08)]">
+              <TLPBanner />
             </div>
-            <div className="ml-auto">
-              <NotificationBell key={`${effectiveClientId || 'mobile'}-mobile`} effectiveClientId={effectiveClientId} adminPathPrefix={user?.role === 'admin' && effectiveClientId ? `/admin/cliente/${effectiveClientId}` : ''} navigateTo={navigate} />
+
+            <div className="rounded-[26px] border border-[rgba(21,38,43,0.08)] bg-[rgba(255,251,244,0.82)] px-4 py-3 shadow-[0_14px_30px_rgba(21,38,43,0.08)]">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSidebarOpen(true)} className="rounded-full border border-[rgba(21,38,43,0.08)] bg-white/70 p-2 text-[#173038] shadow-[0_10px_22px_rgba(21,38,43,0.08)]">
+                  <Menu size={20} />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="section-kicker">Console de incidente</p>
+                  <span className="font-syne text-lg font-bold text-[#15262b]">Opice IR</span>
+                </div>
+                <NotificationBell key={`${effectiveClientId || 'mobile'}-mobile`} effectiveClientId={effectiveClientId} adminPathPrefix={user?.role === 'admin' && effectiveClientId ? `/admin/cliente/${effectiveClientId}` : ''} navigateTo={navigate} />
+              </div>
+
+              {user?.role === 'admin' && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {isAdmin && adminClientName ? (
+                    <button
+                      onClick={onAdminBack}
+                      className="flex h-10 items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/78 px-3.5 font-dm text-[11px] font-semibold uppercase tracking-[0.14em] text-[#173038]"
+                    >
+                      <ArrowLeft size={14} /> Voltar ao Admin
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => navigate('/admin/modulos')}
+                      className="flex h-10 items-center gap-2 rounded-full bg-[#173038] px-3.5 font-dm text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fffdf8]"
+                    >
+                      <LayoutGrid size={14} /> Painel Admin
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigate('/admin/acessos')}
+                    className="flex h-10 items-center gap-2 rounded-full border border-[rgba(21,38,43,0.12)] bg-white/78 px-3.5 font-dm text-[11px] font-semibold uppercase tracking-[0.14em] text-[#173038]"
+                  >
+                    <Users size={14} /> Acessos
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

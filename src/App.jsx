@@ -16,6 +16,7 @@ const AdminRiskModule = lazy(() => import('./pages/AdminRiskModule'));
 const AdminThirdPartyModule = lazy(() => import('./pages/AdminThirdPartyModule'));
 const AdminFinanceModule = lazy(() => import('./pages/AdminFinanceModule'));
 const AdminPrivacyModule = lazy(() => import('./pages/AdminPrivacyModule'));
+const AdminForensicsModule = lazy(() => import('./pages/AdminForensicsModule'));
 const AdminSupportCenter = lazy(() => import('./pages/AdminSupportCenter'));
 const AccessControl = lazy(() => import('./pages/AccessControl'));
 const ANPD = lazy(() => import('./pages/ANPD'));
@@ -152,6 +153,7 @@ export default function App() {
             <Route path="/admin/avaliacao-terceiro" element={<AdminRoute><AdminThirdPartyModule /></AdminRoute>} />
             <Route path="/admin/financeiro" element={<AdminRoute><AdminFinanceModule /></AdminRoute>} />
             <Route path="/admin/privacidade" element={<AdminRoute><AdminPrivacyModule /></AdminRoute>} />
+            <Route path="/admin/forense" element={<AdminRoute><AdminForensicsModule /></AdminRoute>} />
             <Route path="/admin/suporte" element={<AdminRoute><AdminSupportCenter /></AdminRoute>} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/admin/acessos" element={<AdminRoute><AccessControl /></AdminRoute>} />

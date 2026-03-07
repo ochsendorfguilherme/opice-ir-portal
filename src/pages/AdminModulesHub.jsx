@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, Landmark, LogOut, ShieldAlert, ShieldCheck, Siren } from 'lucide-react';
+import { ArrowRight, Building2, Fingerprint, Landmark, LogOut, ShieldAlert, ShieldCheck, Siren } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -83,6 +83,21 @@ const MODULES = [
     iconWrapClass: 'border-indigo-200/30 bg-indigo-100/10 text-[#dbe5ff]',
     cardGlow: 'bg-[radial-gradient(circle_at_top_right,rgba(183,200,255,0.2),transparent_42%)]',
   },
+  {
+    id: 'forense',
+    title: 'Módulo de Forense',
+    description: 'Leitura técnica de cadeia de custódia, achados principais, logs suspeitos, IPs relevantes e estado do relatório técnico.',
+    summaryShort: 'Evidências, IOC, hosts suspeitos e trilha técnica consolidados em uma frente dedicada.',
+    accent: 'from-[#244362] via-[#4278a5] to-[#98d0ff]',
+    surface: 'bg-[linear-gradient(160deg,rgba(23,44,66,0.98)_0%,rgba(45,87,126,0.98)_100%)] text-white',
+    summaryLabel: 'Achados técnicos',
+    route: '/admin/forense',
+    icon: Fingerprint,
+    buttonClass: 'bg-[#d5eaff] text-[#1c4267]',
+    badgeClass: 'border-sky-200/30 bg-sky-100/10 text-sky-100',
+    iconWrapClass: 'border-sky-200/30 bg-sky-100/10 text-[#d5eaff]',
+    cardGlow: 'bg-[radial-gradient(circle_at_top_right,rgba(152,208,255,0.22),transparent_42%)]',
+  },
 ];
 
 function StatPill({ label, value }) {
@@ -115,6 +130,7 @@ export default function AdminModulesHub() {
     let monitoredThirdParties = 0;
     let financeFronts = 0;
     let privacyFronts = 0;
+    let forensicFronts = 0;
 
     clients.forEach((client) => {
       const info = getStorage(KEYS.info(client.id), {});
@@ -123,6 +139,7 @@ export default function AdminModulesHub() {
       const archives = getStorage(KEYS.anpdFormArchives(client.id), []);
       const finance = getStorage(KEYS.finance(client.id), []);
       const privacyTickets = getStorage(KEYS.privacyRequests(client.id), []);
+      const answers = getStorage(KEYS.answers(client.id), {});
       const actions = pmo.actions || [];
       const blocked = actions.some((item) => item.status === 'Bloqueado');
       const overdue = actions.some((item) => item.prazo && new Date(item.prazo) < now && item.status !== 'Feito');
@@ -134,6 +151,7 @@ export default function AdminModulesHub() {
       monitoredThirdParties += thirdCount;
       if (finance.length > 0) financeFronts += 1;
       if ((process.statusComunicacao && process.statusComunicacao !== 'Não comunicado') || archives.length > 0 || anpdDeadline || privacyTickets.length > 0) privacyFronts += 1;
+      if (info?.ipSuspeito || answers?.sec2?.q4 || answers?.sec3?.q2 || answers?.sec4?.q1) forensicFronts += 1;
     });
 
     return {
@@ -142,6 +160,7 @@ export default function AdminModulesHub() {
       third: monitoredThirdParties,
       finance: financeFronts,
       privacy: privacyFronts,
+      forensic: forensicFronts,
     };
   }, []);
 
@@ -168,22 +187,22 @@ export default function AdminModulesHub() {
               <OpiceLogo />
               <p className="section-kicker mt-5">Portal executivo</p>
               <h1 className="mt-3 max-w-4xl font-syne text-4xl font-extrabold uppercase tracking-[-0.05em] text-[var(--ink)] sm:text-5xl xl:text-[4.1rem] xl:leading-[0.94]">
-                {'Escolha o módulo'}
+                Escolha o módulo
                 <br />
                 de entrada
               </h1>
               <p className="mt-4 max-w-3xl font-dm text-base leading-7 text-[var(--ink-soft)] md:text-lg">
-                {'Selecione por qual frente deseja começar. O conteúdo interno só é carregado depois da escolha do módulo.'}
+                Selecione por qual frente deseja começar. O conteúdo interno só é carregado depois da escolha do módulo.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               <StatPill label="Administrador" value={user?.name || 'Admin'} />
-              <StatPill label={'Módulos'} value={'5 disponíveis'} />
+              <StatPill label="Módulos" value="6 disponíveis" />
               <div className="rounded-[24px] border border-[rgba(21,38,43,0.08)] bg-white/72 p-4 shadow-[0_10px_24px_rgba(21,38,43,0.05)] sm:col-span-2 xl:col-span-1">
                 <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--ink-soft)]">Modo de uso</div>
                 <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">
-                  {'Entre primeiro no módulo correto e carregue a operação detalhada somente quando precisar atuar naquela frente.'}
+                  Entre primeiro no módulo correto e carregue a operação detalhada somente quando precisar atuar naquela frente.
                 </p>
               </div>
             </div>
@@ -200,7 +219,10 @@ export default function AdminModulesHub() {
                     ? metrics.third
                     : module.id === 'financeiro'
                       ? metrics.finance
-                      : metrics.privacy;
+                      : module.id === 'forense'
+                        ? metrics.forensic
+                        : metrics.privacy;
+
               return (
                 <article key={module.id} className={`relative flex min-h-[320px] flex-col overflow-hidden rounded-[30px] border border-white/10 p-5 shadow-[0_24px_48px_rgba(21,38,43,0.12)] ${module.surface}`}>
                   <div className={`pointer-events-none absolute inset-0 ${module.cardGlow}`} />
@@ -230,7 +252,7 @@ export default function AdminModulesHub() {
                       <div className="mt-2 font-syne text-4xl font-bold text-white">{value}</div>
                     </div>
                     <div className="rounded-[22px] border border-white/8 bg-white/6 p-4">
-                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">{'Leitura rápida'}</div>
+                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">Leitura rápida</div>
                       <p className="mt-2 text-sm leading-6 text-white/72">
                         {module.summaryShort}
                       </p>
@@ -241,7 +263,7 @@ export default function AdminModulesHub() {
                     onClick={() => navigate(module.route)}
                     className={`relative mt-5 inline-flex items-center justify-center gap-2 self-start rounded-full px-5 py-3 font-dm text-sm font-semibold shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition-all hover:-translate-y-0.5 ${module.buttonClass}`}
                   >
-                    {'Entrar no módulo'}
+                    Entrar no módulo
                     <ArrowRight size={16} />
                   </button>
                 </article>
@@ -251,9 +273,9 @@ export default function AdminModulesHub() {
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-3">
-          <FlowStep step="1" title={'Escolha a frente'} description={'Selecione o módulo que melhor representa a sua próxima decisão ou análise executiva.'} />
-          <FlowStep step="2" title={'Entre no detalhe'} description={'O sistema só carrega os dados operacionais completos depois da escolha da frente certa.'} />
-          <FlowStep step="3" title={'Atue com contexto'} description={'Cada módulo preserva o comportamento atual e mantém navegação dedicada para aquela visão.'} />
+          <FlowStep step="1" title="Escolha a frente" description="Selecione o módulo que melhor representa a sua próxima decisão ou análise executiva." />
+          <FlowStep step="2" title="Entre no detalhe" description="O sistema só carrega os dados operacionais completos depois da escolha da frente certa." />
+          <FlowStep step="3" title="Atue com contexto" description="Cada módulo preserva o comportamento atual e mantém navegação dedicada para aquela visão." />
         </section>
       </div>
     </div>
